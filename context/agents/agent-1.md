@@ -5,7 +5,7 @@
 - Текущая задача/ветка/база: `A1-02` / `feature/account-roles` / `be0323c` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-02.3 admin bootstrap audit](../audits/2026-10-09T150813+0300-agent-1-A1-02-3-bootstrap.md); [A1-02.2 permissions audit](../audits/2026-10-09T150454+0300-agent-1-A1-02-2-permissions.md); PR #2 merged at `2484d86`, state-sync PR #4 at `be0323c`.
+- Последний аудит/PR/проверки: [A1-02.4 T02/T20 cross-check](../audits/2026-10-09T150954+0300-agent-1-A1-02-4-security-cross-check.md); [A1-02.3 admin bootstrap audit](../audits/2026-10-09T150813+0300-agent-1-A1-02-3-bootstrap.md); PR #2 merged at `2484d86`, state-sync PR #4 at `be0323c`.
 
 ## Разбивка задач на малые шаги
 
@@ -27,7 +27,7 @@
 - [x] A1-02.1 Реализовать register/login/logout/me и явную CSRF protection; тесты покрывают session, token rotation, ошибки, inactive user и rate limit.
 - [x] A1-02.2 Добавить `IsApplicationAdmin`/`IsParticipant` по active global role; проверено, что `is_staff`/`is_superuser` не заменяют роль. Турнирные actions и object ownership останутся владельцам A1-03/A2.
 - [x] A1-02.3 Добавить защищённую management command для начального admin без пароля в argv/logs; TTY prompt/confirmation, secret injection, idempotency, refusal to promote и отсутствие Django superuser покрыты тестами.
-- [ ] A1-02.4 Сверить T02/T20 и обновить контракт, если реализация выявит расхождение.
+- [x] A1-02.4 Сверить все критерии T02/T20 с PDF кейса, requirements, API/security contracts и фактическими тестами; непокрытые domain/UI/sandbox сценарии оставлены явно открытыми.
 
 ### A1-03 · `feature/tournament-roster` · `TODO`
 
@@ -62,4 +62,4 @@
 - Владею: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/` (включая invites/participants), root tooling, Compose/CI, общей цепочкой миграций, интеграцией и релизом.
 - Не менять пути агентов 2–4 без согласованной передачи. Общие контракты и миграции сверять с потребителями до изменения.
 - Передача агентам 2–4: стабильные пути, auth dependency, ID-модели, конфигурация, миграционная база и локальный запуск.
-- Следующий шаг: выполнить A1-02.4 — полный доступный cross-check T02/T20 и account security contracts; не объявлять сценарии закрытыми, пока не появятся реальные admin writes, object ownership и browser evidence.
+- Следующий шаг: проверить свежий `origin/develop`, повторить feature acceptance, открыть единый PR `feature/account-roles` → `develop`; после подтверждённого merge синхронизировать `context/STATE.md` отдельным GitFlow PR.

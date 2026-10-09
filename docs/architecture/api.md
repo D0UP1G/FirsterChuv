@@ -33,7 +33,7 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 
 Не добавлять public endpoint смены роли. Bootstrap admin — management command. Если команда позже захочет admin role-management, это отдельное защищённое и аудируемое решение.
 
-Успешная регистрация возвращает `201` с `{id, displayName, role}`; login возвращает тот же user summary и обновлённый `csrfToken` после session/CSRF rotation. Auth responses и `/me` имеют `Cache-Control: no-store`. Текущие scoped limits: register `20/hour`, login `10/minute` на клиентский IP; reverse proxy topology должна соответствовать `NUM_PROXIES` в settings. Эти endpoints покрыты auth tests, но полная T02/T20 ещё не пройдена.
+Успешная регистрация возвращает `201` с `{id, displayName, role}`; login возвращает тот же user summary и обновлённый `csrfToken` после session/CSRF rotation. Auth responses и `/me` имеют `Cache-Control: no-store`. Текущие scoped limits: register `20/hour`, login `10/minute` на клиентский IP; reverse proxy topology должна соответствовать `NUM_PROXIES` в settings. Account endpoints, базовые application-role permission probes и bootstrap command покрыты тестами в `feature/account-roles`. Реальных admin write endpoints и object ownership checks пока нет; T02 остаётся открытым, а T20 не проходила как полный security suite.
 
 Пример создания турнира (вариант конфигурации, не реализованный endpoint):
 

@@ -6,6 +6,21 @@
 
 Текущий feature slice A1-02 проверяет явный CSRF на account mutations, HttpOnly session/CSRF cookies, server-assigned participant role, scoped auth throttling и базовые permission classes по активной глобальной роли приложения. `IsApplicationAdmin` не доверяет Django `is_staff`/`is_superuser`; `IsParticipant` также проверяет активную роль. В feature slice пока нет admin mutation endpoints и object/ownership policy для турниров и матчей: их нужно подключать вместе с соответствующими endpoint в A1-03/A2. Это не закрывает T02/T20 целиком. DRF throttle cache пока process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
 
+### Текущие доказательства account slice
+
+Результаты ниже относятся только к feature-ветке `feature/account-roles` и её тестам. Статус полных T02/T20 в `docs/quality/mvp-acceptance.md` остаётся `NOT_RUN` до реализации и проверки сквозных сценариев.
+
+| Проверка | Доказательство в account slice | Что остаётся вне результата |
+|---|---|---|
+| Регистрация всегда выдаёт `participant`; `role=admin` и неизвестные поля отклоняются | `AccountAuthenticationTests.test_register_requires_csrf_and_never_accepts_role_assignment` | Invite accept и полный путь регистрации по приглашению |
+| Анонимный запрос и participant не получают admin permission; inactive admin запрещён; Django staff flags не заменяют application role | `AccountAuthenticationTests.test_admin_permission_uses_application_role_and_active_state` | Это probe view, а не реальный tournament/admin write endpoint; нет object ownership/UUID IDOR checks |
+| Неизвестный email, неверный пароль и inactive account дают одинаковый login failure | `AccountAuthenticationTests.test_login_failure_is_generic_and_success_starts_private_session` | Browser/session matrix и downstream permission checks для реальных endpoint |
+| Auth mutations требуют CSRF, cross-origin registration отклоняется, session/private response не кэшируются | `AccountAuthenticationTests.test_register_requires_csrf_and_never_accepts_role_assignment`, `test_cross_origin_registration_is_rejected`, `test_csrf_token_is_http_only_and_me_requires_login` | Полный hostile browser suite на каждой будущей mutation и всех origins/proxy paths |
+| Bootstrap не принимает password option, не печатает secret, не повышает participant и не меняет существующий пароль | `CreateAdminCommandTests` | Production secret manager/host process review; лог/CI/runtime secret scans всей системы |
+| SQL/XSS/SSRF/archive/worker command attacks, source confidentiality и sandbox isolation | Нет account-slice доказательства для этих threat areas | Владелец/приёмка по A1/A3/A4 и полному T20 |
+
+Следовательно, текущие проверки дают частичные доказательства для `TEAM01`/`S02` и отдельных ветвей `T02`/`T20`, но не pass целого acceptance scenario.
+
 ## Границы доверия
 
 Недоверенные данные: HTTP body/query, UUID, email/displayName/description, source, custom stdin, Markdown/TeX/assets, архивы/manifest и remote import responses. Admin-only upload тоже валидируется. Исполняемый source всегда враждебен, даже если пользователь зарегистрирован.
