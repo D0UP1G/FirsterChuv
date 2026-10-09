@@ -1,12 +1,14 @@
 # Целевой запуск, восстановление и защита MVP
 
-Приложение и команды запуска ещё не реализованы. Этот runbook задаёт результат задач A1-06/A3-05; агент 1 заменит предложения проверенными командами. Не сообщать пользователю, что текущий репозиторий уже можно запустить.
+Полный demo и команда `./scripts/start-demo.sh` ещё не реализованы. На feature-ветке Agent 1 прошли ограниченные проверки Django/миграций, `scripts/dev.sh`, сборки API image и Compose health после запуска/перезапуска; полная приёмка чистой установки и T01 не выполнялись. В backend есть начальный каркас и локальные dev helpers; Compose содержит API scaffold, opt-in web и незавершённые runtime profiles. `match-clock` и `judge-worker` станут запускаемыми после реализации команд агентами 2 и 3. Не сообщать, что MVP или demo уже запускаются.
 
 ## Одна команда запуска
 
 После одноразового заполнения `.env` и предоставления official package целевая команда — `./scripts/start-demo.sh`. Будущий script должен собрать/подготовить compiler images, дождаться SQLite/API/worker readiness, применить миграции один раз и запустить web/API/match-clock/judge-worker через Docker Compose. Не удалять volumes и не сбрасывать историю при обычном restart.
 
 Необходимые условия: Docker Engine/Compose, достаточные CPU/RAM/disk под собственную песочницу, один local persistent volume для SQLite и private package storage. Во время проверки solution network off; trusted startup может получать разрешённые images. Если нужны system permissions/Docker group, это отдельная настройка оператора, не обход изоляции.
+
+Публичный TLS ingress в репозитории не настроен. До внешней публикации reverse proxy должен завершать HTTPS и задавать redirect/HSTS; пока эти два инфраструктурных параметра не определены, `manage.py check --deploy` ожидаемо сообщает W004/W008. Compose API и web ports по умолчанию привязаны к localhost.
 
 `.env.example` должен содержать только реально используемые ключи без секретных значений. Минимальные группы настроек: Django secret/hosts/origins, SQLite path, admin bootstrap identity/password из защищённой конфигурации, official package path, compiler registry, execution/resource caps и request/queue limits. Yandex read credentials отдельны и нужны только import feature, не local checking.
 
