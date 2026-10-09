@@ -1,8 +1,8 @@
 # API и права доступа
 
-Целевой contract будущего DRF API. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; выбрать одно правило в A1-01 и синхронизировать frontend. В этом документе пути без завершающего `/`.
+Целевой contract DRF API. A1-01 реализовал платформенную основу; A1-02 реализовал auth slice в feature-ветке, остальные domain endpoints пока плановые. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.
 
-Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csrf` выдаёт token; frontend посылает `X-CSRFToken`. Register/login защищены явно, а не только SessionAuthentication для уже вошедших. Публичные GET не требуют login.
+Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csrf` выдаёт `csrfToken` в JSON и HttpOnly CSRF cookie; frontend посылает `X-CSRFToken`. Register/login/logout имеют явную CSRF protection, не полагаются только на SessionAuthentication. Публичные GET не требуют login.
 
 Обозначения: `A` — admin, `P` — authenticated participant, `Own` — автор/назначенный игрок с object access, `Public` — public visibility либо действующий unlisted share token. Админские права глобальные в предлагаемом MVP. Поведение admin-only endpoints не даёт admin автоматически право submit.
 
@@ -11,10 +11,10 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 | Метод и путь | Право | Содержание |
 |---|---|---|
 | GET `/health` | Public | Минимальная readiness без secrets/version dump |
-| GET `/auth/csrf` | Без login | Выдача CSRF token |
-| POST `/auth/register` | Без login + CSRF/rate limit | email/password/displayName, всегда participant |
-| POST `/auth/login` | Без login + CSRF/rate limit | Session, одинаковая ошибка неверного аккаунта/пароля |
-| POST `/auth/logout` | Auth + CSRF | Завершить session |
+| GET `/auth/csrf` | Без login | Выдаёт `{csrfToken}` и HttpOnly cookie; `Cache-Control: no-store` |
+| POST `/auth/register` | Без login + CSRF/rate limit | email/password/displayName, неизвестные поля отклоняются, роль всегда participant |
+| POST `/auth/login` | Без login + CSRF/rate limit | Session; одинаковый 401 для неизвестного email, неверного пароля и inactive account |
+| POST `/auth/logout` | Auth + CSRF | Инвалидировать session, 204 |
 | GET `/me` | Auth | id/displayName/role; private cache no-store |
 | GET `/admin/users?role=participant` | A | Ограниченный поиск для назначения; не public каталог email |
 | GET `/tournaments` | Auth | Admin все; participant только joined, pagination |
@@ -32,6 +32,8 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 | POST `/invites/{token}/accept` | P | Идемпотентное join, атомарное use/cap |
 
 Не добавлять public endpoint смены роли. Bootstrap admin — management command. Если команда позже захочет admin role-management, это отдельное защищённое и аудируемое решение.
+
+Успешная регистрация возвращает `201` с `{id, displayName, role}`; login возвращает тот же user summary и обновлённый `csrfToken` после session/CSRF rotation. Auth responses и `/me` имеют `Cache-Control: no-store`. Текущие scoped limits: register `20/hour`, login `10/minute` на клиентский IP; reverse proxy topology должна соответствовать `NUM_PROXIES` в settings. Эти endpoints покрыты auth tests, но полная T02/T20 ещё не пройдена.
 
 Пример создания турнира (вариант конфигурации, не реализованный endpoint):
 

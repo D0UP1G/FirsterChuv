@@ -34,6 +34,7 @@ SECRET_KEY = configured_secret_key or secrets.token_urlsafe(50)
 
 ALLOWED_HOSTS = env_csv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,api")
 CSRF_TRUSTED_ORIGINS = env_csv("DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:8080")
+CSRF_FAILURE_VIEW = "backend.apps.common.views.csrf_failure"
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -117,6 +118,7 @@ SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 
@@ -133,6 +135,12 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "backend.apps.common.api.CamelCaseJSONRenderer",
     ],
-    "DEFAULT_EXCEPTION_HANDLER": "backend.apps.common.api.exception_handler",
+    "EXCEPTION_HANDLER": "backend.apps.common.api.exception_handler",
+    # Compose has one trusted Nginx hop; adjust NUM_PROXIES with deployment topology.
+    "NUM_PROXIES": 1,
+    "DEFAULT_THROTTLE_RATES": {
+        "auth_login": "10/minute",
+        "auth_register": "20/hour",
+    },
     "DATETIME_FORMAT": "iso-8601",
 }
