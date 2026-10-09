@@ -2,16 +2,23 @@
 
 from dataclasses import dataclass
 from functools import wraps
+import hashlib
+import secrets
 import time
 from typing import ClassVar
 from uuid import UUID
 
 from django.db import IntegrityError, OperationalError, transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
 
 from backend.apps.accounts.models import User
-from backend.apps.tournaments.models import Tournament, TournamentParticipant
+from backend.apps.tournaments.models import (
+    Invite,
+    InviteAcceptance,
+    Tournament,
+    TournamentParticipant,
+)
 
 
 @dataclass(eq=False)
@@ -64,6 +71,25 @@ class TournamentUpdateConflict(RosterMutationError):
     code = "tournament_changed"
 
 
+class InviteMutationError(Exception):
+    status_code = 409
+    code = "invite_conflict"
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+class InviteNotFound(InviteMutationError):
+    status_code = 404
+    code = "not_found"
+
+
+class InviteUnavailable(InviteMutationError):
+    status_code = 410
+    code = "invite_unavailable"
+
+
 class AlreadyAssigned(Exception):
     """Internal savepoint signal used to undo a duplicate capacity increment."""
 
@@ -92,6 +118,143 @@ def retry_sqlite_locked_write(function):
                 time.sleep(0.01 * (attempt + 1))
 
     return wrapped
+
+
+def hash_invite_token(token: str) -> str:
+    """Return the only token representation persisted by the application."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def new_invite_token() -> str:
+    """Generate an unguessable URL-safe secret; callers reveal it only once."""
+    return secrets.token_urlsafe(32)
+
+
+def invite_for_token(token: str) -> Invite:
+    invite = (
+        Invite.objects.select_related("tournament")
+        .filter(token_hash=hash_invite_token(token))
+        .first()
+    )
+    if invite is None:
+        raise InviteNotFound("Приглашение не найдено.")
+    ensure_invite_usable(invite)
+    return invite
+
+
+def ensure_invite_usable(invite: Invite, *, now=None) -> None:
+    now = now or timezone.now()
+    if invite.revoked_at is not None:
+        raise InviteUnavailable("Приглашение отозвано.")
+    if invite.expires_at is not None and invite.expires_at <= now:
+        raise InviteUnavailable("Срок действия приглашения истёк.")
+    if invite.max_uses is not None and invite.used_count >= invite.max_uses:
+        raise InviteUnavailable("Лимит активаций приглашения исчерпан.")
+
+
+def create_invite(
+    tournament: Tournament,
+    created_by: User,
+    *,
+    expires_at,
+    max_uses,
+) -> tuple[Invite, str]:
+    if (
+        tournament.roster_frozen_at is not None
+        or tournament.status not in EDITABLE_TOURNAMENT_STATUSES
+    ):
+        raise RosterFrozen("Нельзя создавать приглашения после заморозки состава.")
+
+    for attempt in range(3):
+        token = new_invite_token()
+        try:
+            with transaction.atomic():
+                # Repeat the lifecycle guard in the insert statement so a concurrent
+                # freeze/status transition cannot slip between read and create.
+                if not Tournament.objects.filter(
+                    pk=tournament.pk,
+                    roster_frozen_at__isnull=True,
+                    status__in=EDITABLE_TOURNAMENT_STATUSES,
+                ).exists():
+                    raise RosterFrozen(
+                        "Нельзя создавать приглашения после заморозки состава."
+                    )
+                invite = Invite.objects.create(
+                    tournament_id=tournament.pk,
+                    token_hash=hash_invite_token(token),
+                    expires_at=expires_at,
+                    max_uses=max_uses,
+                    created_by=created_by,
+                )
+            return invite, token
+        except IntegrityError:
+            if attempt == 2:
+                raise
+    raise RuntimeError("Не удалось создать уникальный токен приглашения.")
+
+
+@retry_sqlite_locked_write
+def accept_invite(token: str, user: User) -> tuple[Invite, bool]:
+    """Atomically consume one use and add a participant; retries are idempotent."""
+    if not user.is_active or user.role != User.Roles.PARTICIPANT:
+        raise EntrantUnavailable("Принять приглашение может только активный participant.")
+
+    token_digest = hash_invite_token(token)
+    try:
+        with transaction.atomic():
+            invite = (
+                Invite.objects.select_related("tournament")
+                .filter(token_hash=token_digest)
+                .first()
+            )
+            if invite is None:
+                raise InviteNotFound("Приглашение не найдено.")
+
+            if InviteAcceptance.objects.filter(invite=invite, user=user).exists():
+                return invite, False
+
+            now = timezone.now()
+            ensure_invite_usable(invite, now=now)
+            changed = (
+                Invite.objects.filter(
+                    pk=invite.pk,
+                    revoked_at__isnull=True,
+                    tournament__roster_frozen_at__isnull=True,
+                    tournament__status__in=EDITABLE_TOURNAMENT_STATUSES,
+                )
+                .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
+                .filter(Q(max_uses__isnull=True) | Q(used_count__lt=F("max_uses")))
+                .update(used_count=F("used_count") + 1)
+            )
+            if changed == 0:
+                invite.refresh_from_db()
+                ensure_invite_usable(invite, now=now)
+                tournament = Tournament.objects.filter(pk=invite.tournament_id).first()
+                if tournament is not None and (
+                    tournament.roster_frozen_at is not None
+                    or tournament.status not in EDITABLE_TOURNAMENT_STATUSES
+                ):
+                    raise RosterFrozen(
+                        "Принять приглашение нельзя после заморозки состава."
+                    )
+                raise InviteUnavailable("Приглашение больше нельзя активировать.")
+
+            assign_participant(invite.tournament_id, user.id)
+            InviteAcceptance.objects.create(invite=invite, user=user)
+        return invite, True
+    except IntegrityError:
+        # A unique acceptance can win a concurrent retry. Roll back the whole
+        # transaction first, then report the existing acceptance without a use.
+        accepted = InviteAcceptance.objects.filter(
+            invite__token_hash=token_digest,
+            user=user,
+        ).exists()
+        if accepted:
+            invite = Invite.objects.select_related("tournament").get(
+                token_hash=token_digest
+            )
+            return invite, False
+        raise
 
 
 def _capacity_increment(tournament_id: UUID) -> bool:

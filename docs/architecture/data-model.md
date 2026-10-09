@@ -23,8 +23,8 @@ erDiagram
 | User | id, displayName, normalizedEmail unique, passwordHash, role participant/admin, isActive. Custom Django User с первой миграции. |
 | Tournament | id, slug unique, title, description, startsAt/endsAt, format single_elimination, participantLimit, visibility public/unlisted, будущий `shareTokenHash` для unlisted-доступа, status, createdBy, defaultMatchConfig, activeParticipantCount, rosterFrozenAt, createdAt/updatedAt. A1-03.1 сохраняет остальные перечисленные поля; выдача share token ещё не реализована. `activeParticipantCount` обновляется атомарно вместе с roster mutations; `rosterFrozenAt` выставляется во внешней транзакции bracket generation. |
 | TournamentParticipant | UUID id, tournamentId, userId, seed nullable positive integer, status ACTIVE/REMOVED, addedAt/removedAt. Unique tournament/user; active non-null seeds are unique within the tournament. Removal is logical and match references preserve the entrant. |
-| Invite | id, tournamentId, tokenHash unique, expiresAt или maxUses (минимум одно), usedCount, revokedAt, createdBy. Plain token отдаётся при создании, не хранится. |
-| InviteAcceptance | inviteId/userId unique, acceptedAt. Идемпотентный accept, повтор не расходует use. |
+| Invite | UUID id, tournamentId, уникальный SHA-256 `tokenHash`, nullable `expiresAt`/`maxUses` (минимум одно ограничение), `usedCount`, `revokedAt`, `createdBy`, `createdAt`. Случайный raw token отдаётся только в create response и не хранится; list DTO не содержит hash/token. |
+| InviteAcceptance | inviteId/userId с unique constraint, acceptedAt. Идемпотентный accept; повтор не расходует use и не меняет roster. |
 | ProblemPackage | id, checksum, formatVersion, importedAt/by, validationStatus, privateStorageRef. Формат берётся из фактического README пакета. |
 | ProblemVersion | id, packageId, localKey, source metadata, statementMarkdown, publicAssetRefs, limits, privateTestRefs/checkerRef/validatorRef/referenceRef, readiness. Версия фиксируется в run. |
 | Language | serverId, displayName, compilerImage digest/tag, fixed compile/run argv, sourceFilename, template, enabled. Browser не задаёт executable/image. |
@@ -44,6 +44,7 @@ Session/cookie storage использует стандартную Django sessio
 
 - `users.role` имеет только participant/admin, default participant. `is_staff`/`is_superuser` не назначаются из регистрации.
 - Назначается только активный `participant`, не admin. Активных игроков не больше cap; добавление/accept атомарно обновляет их число. Seed — положительное целое и уникален среди active entrants, если задан; один игрок не попадает дважды в раунд.
+- Для Invite БД требует хотя бы один `expiresAt`/`maxUses`, положительный лимит и `usedCount <= maxUses`. Accept условно увеличивает `usedCount`, вызывает roster service и создаёт уникальный InviteAcceptance в одной SQLite-транзакции; отказ из-за cap/freeze/status откатывает use. SQLite lock retry ограничен; повторная acceptance не расходует use.
 - Изменения состава отклоняются после `rosterFrozenAt`. `freeze_roster(tournament_id)` идемпотентен, проверяет active count и заново проверяет, что каждая активная roster-запись ссылается на активную учётную запись с ролью `participant`. Он возвращает seed-ascending roster (null seed last, `userId` tie-break) и вызывается внутри внешней транзакции генерации bracket; ошибка проверки или создания bracket откатывает freeze. После freeze нельзя снимать, добавлять или менять seed участника, поэтому ссылки будущих матчей не теряются.
 - Пары и набор задач нельзя незаметно менять после старта. Run хранит immutable версии задачи/правил.
 - Unique `(userId, runId, idempotencyKey)` связывает повторный submission request с одним объектом; при том же ключе и другом source/language/problem возвращается 409.
