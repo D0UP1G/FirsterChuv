@@ -58,7 +58,9 @@ git worktree add ../firster-agent-4 -b feature/frontend-shell-auth origin/develo
 
 Проверить теги/remote refs и demo URI после публикации. Если на время release develop продолжает получать новые функции, не переносить их в текущий release случайным merge всей develop. Hotfix main также возвращается в develop, чтобы дефект не появился в следующей версии.
 
-Ревизия 2026-10-09: main/develop protected=false, configured checks отсутствуют. Агент 1 может подготовить рекомендуемые правила для владельца: обязательный PR, checks и merge commits для main/develop. Наличие текста GitFlow не означает, что GitHub уже технически запрещает прямой push.
+Ревизия 2026-10-09: main/develop protected=false, configured checks отсутствуют. P1-02 добавляет workflow jobs `contracts-and-common-imports`, `backend`, `domain`, `sandbox-unit`; при включении защиты рекомендуются обязательные PR для обеих веток, required checks по этим четырём именам, разрешённый merge commit, запрет force push/delete и хотя бы одно независимое approval review, если это позволяет размер команды. `sandbox-unit` остаётся зелёным с явным сообщением, когда suite отсутствует в ref. `Real sandbox smoke / real-smoke` не является обычным required check и требует boolean-подтверждения; его GitHub dispatch станет доступен после добавления workflow в текущую default branch `main` по обычному GitFlow release.
+
+Это рекомендации для владельца репозитория. P1-02 не меняет GitHub rulesets/branch protection; после PR требуется отдельно проверить настройки и только тогда писать, что защита включена. Само наличие checks в PR не делает их обязательными для merge.
 
 ## Короткие срезы и актуальность
 
