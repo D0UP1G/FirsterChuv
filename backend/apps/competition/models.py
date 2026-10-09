@@ -227,6 +227,7 @@ class MatchRun(models.Model):
         default=StartMode.MANUAL,
     )
     problem_versions = models.JSONField(default=list)
+    participant_user_ids = models.JSONField(default=list)
     score_snapshot = models.JSONField(default=dict)
     finished_at = models.DateTimeField(null=True, blank=True)
     winner = models.ForeignKey(
@@ -312,6 +313,25 @@ class AttemptResult(models.Model):
     )
     verdict = models.CharField(max_length=2, choices=AcceptedAttempt.Verdicts.choices)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MatchAdminCommandReceipt(models.Model):
+    """Durable idempotency receipt for applied match administration commands."""
+
+    match = models.ForeignKey(Match, on_delete=models.PROTECT, related_name="admin_command_receipts")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="match_admin_command_receipts")
+    run = models.ForeignKey(MatchRun, null=True, blank=True, on_delete=models.PROTECT, related_name="admin_command_receipts")
+    command_id = models.CharField(max_length=128)
+    action = models.CharField(max_length=32)
+    request_sha256 = models.CharField(max_length=64)
+    reason = models.CharField(max_length=500, blank=True)
+    response_payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("match", "command_id"), name="unique_match_admin_command_id")
+        ]
 
 
 class BracketCommandReceipt(models.Model):

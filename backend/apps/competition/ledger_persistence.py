@@ -68,12 +68,7 @@ def _rules(run: MatchRun) -> ScoreRules:
 
 
 def _ledger(run: MatchRun) -> ResultLedger:
-    participants = tuple(
-        UUID(str(value))
-        for value in run.match.slots.filter(participant__isnull=False)
-        .order_by("slot_index")
-        .values_list("participant__user_id", flat=True)
-    )
+    participants = tuple(UUID(str(value)) for value in run.participant_user_ids)
     problems = tuple(UUID(item["problemId"]) for item in run.problem_versions)
     try:
         ledger = ResultLedger(
