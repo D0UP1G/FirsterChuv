@@ -37,7 +37,7 @@
 - Проверены/integration feature: #3 6950f10 harness F01/F07 fixes, 12 units/5 actual smoke/bounded isolation+cleanup+recovery; #14 9234951 normalized catalog/private split/immutable versions. GitHub MERGED общего PR определяет integration. Не повторять готовые cores.
 - P3-04.1 #15 реализован в `a6d3674`: busy/locked → bounded whole-transaction retry/503, исходный `received_at`, file-backed concurrent keys/rollback tests; PR #15 обновлён и ждёт CI/review.
 - Главный execution READY P3-03: реальный LocalJudge/verified compiler на programmatically imported normalized smoke bundle, task limits/checker/OK WA TL ML RE CE, private diagnostics, infra отдельно. Это возможно без A2/UI/official package.
-- Следом actual worker/recovery/result+failure adapters/immutable run version/checksum P3-04.2–4; Runtime без real gateway/provider отказывает, fixture verdict запрещён.
+- Следом actual worker/recovery/result+failure adapters/immutable run version/checksum P3-04.2–4; runtime без real gateway/provider отказывает, fixture verdict запрещён.
 - Резерв READY P3-05 private revisioned drafts/history; P3-02 import/public workspace/assets/languages и strict artifact language type validation. Test access ports до короткого CONNECT A2.
 - ONLY P3-06 WAITING_EXTERNAL: official package/README. Пока package нет, роль продолжает P3-02/03/04/05. P3-07 Yandex после обязательного MVP.
 - Пути: sandbox/problems/submissions/drafts/judge и собственные migrations/tests. Full T12–15/T18–21 не закрыты; ML нельзя выводить только из signal9, source/checkers/tests не public.
@@ -96,6 +96,15 @@
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
 
+## Срез P3-05, начатый до перепланирования v3
+
+- Статус: `IN_REVIEW`; [PR #21](https://github.com/D0UP1G/FirsterChuv/pull/21), feature `feature/private-drafts-history` → `develop`.
+- Начальная база: `cad34ea4ddf1171779dc22139f2e1533160b5015`; синхронизации `origin/develop=1f60aa9` (`4b6030d`) и `origin/develop=ae0846b22953527d74835febf963169e2093238d` (`bb33c11`, merge commit). Код/audit commit `fbdb01c`.
+- Реализация: private storage/history, CAS, common `WorkspaceContext` actions, active participant/CSRF/IDOR guard, своя миграция. Без настоящего A2 provider runtime fail-closed с 503. Contract proposal остаётся `PROPOSED`.
+- Проверки на locked dependencies после последней синхронизации: backend 118/118; contracts 9 fixtures; common imports; domain 36/36; sandbox unit 12/12; Django check, migration drift, compileall и diff check прошли. Browser T15/T20 не выполнялись.
+- `context/contracts/agent-3-private-draft-get.md` — `PROPOSED`: уточнить GET run selector и поведение отсутствующей записи. Browser T15 и полная T20 приёмка не выполнены; P4-04 остаётся CONNECT для autosave/history UI. `context/STATE.md` агентом 3 не менялся.
+- Следующий шаг: дождаться review/checks PR #21 и решения по contract proposal; затем продолжить очередь ROADMAP v3 с P3-04.1, не изменяя чужую ветку/checkout без проверки владельца.
+
 ## Исторический checkpoint: P3-04.1 / admission race
 
 - ID: `P3-04.1`; статус: `IN_REVIEW`.
@@ -140,3 +149,13 @@
 - Последний CI run `37988555234` на этом head завершился `success`, 4/4 job; PR #37 остаётся `OPEN/CLEAN` с базой `develop`.
 - Код P3-04 не менялся в ходе сверки. Результат проверки и остающиеся CONNECT ограничения записаны в [аудите](../audits/2026-10-09T234207+0300-agent-3-P3-04-final-sync-ci.md).
 - PR не слит. Следующий шаг: дождаться review; не интегрировать в `develop` без решения команды. Конкретные ожидания по container recovery, run snapshot и production A2 sinks остаются в contract requests.
+
+## Текущая задача P3-05.1 · CAS race в приватных черновиках · 2026-10-10
+
+- Статус: `IN_REVIEW`; PR [#21](https://github.com/D0UP1G/FirsterChuv/pull/21), feature `feature/private-drafts-history` → `develop`.
+- Исходный head `1706ecfb8d16a693a462b3f3b7f379caeedc0060` синхронизирован обычными merge-коммитами с `origin/develop=1b7cc9e`, `659c45fe7e10250a0ea8dd14b637cce6b304a359` (PR #48) и свежим `cc204e62a060eb2ceb16067a1b0693a2e083d9ab` (PR #49). PR #48/#49 изменяли только A4 карточки/audits; единственный sync conflict был в этой карточке Agent 3, все historical блоки сохранены.
+- Исправление: вся CAS transaction повторяется до 3 раз только для SQLite BUSY/LOCKED; после каждой ошибки транзакция откатывается перед повтором. После exhausted lock сервис выдаёт безопасный `503 draft_busy`; конкурентная запись после retry возвращает 409 с текущим server draft. Другие `OperationalError` не маскируются.
+- Пути: `backend/apps/drafts/{services.py,errors.py,views.py,README.md,test_settings.py,tests/test_services.py,tests/test_api.py,tests/test_concurrency.py}`, эта карточка и audits.
+- Проверки: file-backed drafts 18/18; отдельная first-create/update race 2/2; полный backend 248/248 PASS при повторном запуске (4 skips); queue admission file-backed 5/5; domain suites, 9 strict fixtures/common imports, Django check, migration drift, compileall и diff check PASS. В первом общем backend запуске один queue admission тест на in-memory SQLite закончил retryable `AdmissionBusy`; отдельный повтор 5/5 и полный suite повторно прошли. Эта отдельная flakiness записана в audit, не изменяла draft code.
+- Требования `docs/requirements.md`: E04/S02; T15/T20 покрыты частично. Browser autosave/reconnect, hostile и полная T15/T20 приёмка не заявляются; настоящий A2 WorkspaceAccess provider отсутствует, поэтому production drafts API остаётся fail-closed.
+- Стартовый аудит sync: [`2026-10-10T002545+0300-agent-3-P3-05.1-sync.md`](../audits/2026-10-10T002545+0300-agent-3-P3-05.1-sync.md); итоговый аудит: [`2026-10-10T003648+0300-agent-3-P3-05.1-cas-fix.md`](../audits/2026-10-10T003648+0300-agent-3-P3-05.1-cas-fix.md). Следующий шаг: опубликовать fast-forward push в PR #21 и проверить CI на новом head; PR не сливать.

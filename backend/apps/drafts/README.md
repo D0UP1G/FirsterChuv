@@ -1,0 +1,13 @@
+# Приватные черновики
+
+`drafts` хранит редакторский код по ключу participant/run/problem/language. Чтение и запись требуют `WorkspaceContext`, выданный портом `WorkspaceAccess`; сама база не принимает actor/run/problem от браузера как доказательство доступа. HTTP routes также требуют активную глобальную роль `participant`, session/CSRF для PUT и `Cache-Control: no-store`. Admin и зритель не получают исходник.
+
+`GET /api/v1/matches/{matchId}/problems/{problemId}/draft?runId=...&languageId=...` возвращает сохранённый draft; если его ещё нет, ответ — `404`, редактор начинает с пустого локального текста и посылает первую запись с `expectedRevision: 0`. `PUT` принимает `{runId, source, expectedRevision}` и `languageId` в query. Сохранение выполняется compare-and-set в короткой транзакции; принятые версии хранятся в private history. Повтор сохранения неизменившегося source не создаёт лишнюю ревизию.
+
+Если `expectedRevision` устарела, ответ `409 revision_conflict` включает текущий server draft и revision; `currentDraft: null` возвращается, только если draft отсутствует и никто не успел сохранить его параллельно. При конфликте первой записи после параллельного PUT ответ содержит победивший server draft. Сохранённая серверная версия не затирается, а редактор сохраняет локальную версию для разрешения конфликта. Код ограничен 32 KiB UTF-8. История и draft никак не влияют на judge или score.
+
+При SQLite `BUSY/LOCKED` сервер ограниченно повторяет целую CAS-транзакцию и заново читает текущую revision. Если lock сохраняется после трёх попыток, API отвечает `503 draft_busy` без текста ошибки базы; клиент может повторить тот же source с тем же `expectedRevision`. Если другая вкладка уже сохранила новую revision, повторная проверка вернёт `409 revision_conflict` с актуальным серверным вариантом. Другие ошибки БД не повторяются и не маскируются.
+
+В `common/contracts.py` источник `WorkspaceContext` и действий: `read_draft`, `write_draft`, `read_history`; приложение не подменяет общую v1 модель локальным типом. Contract v1 не задаёт отдельный HTTP endpoint чтения history, поэтому приложение хранит history и предоставляет приватный service method, но не выдумывает дополнительный route. Autosave/history UI остаётся CONNECT P4-04. До реализации A2 `WorkspaceAccess` production factory отсутствует, поэтому draft HTTP API fail-closed с `503 workspace_unavailable`; тестовые access adapters живут только в tests.
+
+File-backed concurrency regression suite запускается командой `DJANGO_DEBUG=true uv run --locked python manage.py test backend.apps.drafts.tests.test_concurrency --settings=backend.apps.drafts.test_settings`.
