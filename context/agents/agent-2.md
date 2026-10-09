@@ -13,8 +13,8 @@
 - Статус: `IN_PROGRESS` — P2-03 pure readiness/start policy для `manual` и `both_ready`; ветка `feature/match-ready-gate`, база синхронизирована merge из `origin/develop` `6320b4b51ef2e053c1e9ce81349d4480be85f9d4`.
 - Пути текущего независимого среза: `backend/apps/competition/domain/start_policy.py`, тесты в `backend/apps/competition/tests/test_clock.py`, эта карточка и audit. Pure clock #11 повторно не реализуется.
 - Граница: закрыть идемпотентную ready policy и auto-start обоих игроков для `both_ready`; не добавлять persistence/API. `Match`/`MatchRun` модели принадлежат незавершённому PR #7, поэтому ORM wiring продолжается после его интеграции.
-- Реализация: [P2-03 readiness gate, PR #34](https://github.com/D0UP1G/FirsterChuv/pull/34), head `8e87973852111521208d3712931f8ae42809b15d`, OPEN; GitHub CI на момент публикации: contracts/domain/sandbox-unit PASS, backend ещё выполняется.
-- Аудиты сессии и публикации: [readiness gate](../audits/2026-10-09T231559+0300-agent-2-P2-03-readiness-gate.md), [PR #34 publication](../audits/2026-10-09T231837+0300-agent-2-P2-03-readiness-publication.md).
+- Реализация: [P2-03 readiness gate, PR #34](https://github.com/D0UP1G/FirsterChuv/pull/34), latest head `fba94a28aabbfd773e025e9ee626dc11b8326994`, OPEN/CLEAN; четыре CI check прошли.
+- Аудиты сессии и публикации: [readiness gate](../audits/2026-10-09T231559+0300-agent-2-P2-03-readiness-gate.md), [PR #34 publication](../audits/2026-10-09T231837+0300-agent-2-P2-03-readiness-publication.md), [зелёные checks](../audits/2026-10-09T232130+0300-agent-2-P2-03-readiness-checks.md).
 - Свежая GitHub сверка: PR #7 head `1a2b54a` OPEN/DIRTY; PR #16 head `a0b1dcc` OPEN/DIRTY; integration PR #32 MERGED и develop на `6320b4b`. MatchRun persistence остаётся WAITING_CONNECT на PR #7.
 - Следующий независимый срез Agent 2: P2-04 accepted-ledger/result domain core в отдельной `feature/*` ветке; P2-03 persistence/API продолжить после интеграции #7.
 
