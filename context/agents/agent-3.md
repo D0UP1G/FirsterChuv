@@ -12,13 +12,15 @@
 
 ## Текущая сессия: P3-04.2 · submission worker/recovery
 
-- ID задачи: `P3-04.2`; статус: `IN_PROGRESS`.
+- ID задачи: `P3-04.2`; статус: `IN_PROGRESS` (реализация и локальная проверка завершены; публикация ждёт интеграции PR #15).
 - Ветка: `feature/submission-worker`; база `origin/develop`: `15e3edf4fdfe7910f0984f97f26eee8589d5319b`.
-- Зависимость: PR #15 (`feature/submission-queue-core`, head `555ca0ee692fdc4472857e3f2350c01819224f1e`) содержит queue core и P3-04.1. Его код будет включён только в собственную локальную feature-ветку; исходную ветку/worktree не менять.
-- Планируемые пути: `backend/apps/submissions/worker.py`, management command для запуска worker, worker/recovery tests, `backend/apps/submissions/README.md`, эта карточка и отдельный audit. Общие config/Compose и чужие paths не менять без необходимости/координации.
-- Объём по ROADMAP v3: durable claim/lease loop, retry/outbox delivery, restart recovery и уборка только собственных orphan jobs; реальные ports остаются fail-closed, test doubles только в tests.
-- Основание: требования J04/E03 и T09/T14/T19/T20; runtime CONNECT с A2 и LocalJudge отдельно фиксировать, не подменять fake verdict.
-- Стартовый аудит: [`2026-10-09T213942+0300-agent-3-P3-04.2-start.md`](../audits/2026-10-09T213942+0300-agent-3-P3-04.2-start.md).
+- Зависимость: PR #15 (`feature/submission-queue-core`, head `555ca0ee692fdc4472857e3f2350c01819224f1e`) остаётся OPEN/CLEAN, четыре CI jobs PASS. Queue core включён merge commit `cae2d74` только в эту собственную feature-ветку; исходную ветку/worktree не менять.
+- Изменены только `backend/apps/submissions/{worker.py,factory.py,README.md}`, собственные management command/tests, эта карточка и audit. Общие config/Compose/contracts и чужие paths не менялись.
+- Реализованы durable loop с приоритетом due outbox, worker/executor/result sink fail-closed factory, heartbeat ограниченного claim lease, stale-result guard, infra retry без verdict, command `run_judge_worker` с bounded CLI options, recovery очереди/outbox при повторных циклах.
+- Основание: J04/E03 и частичные серверные сценарии T09/T14/T19/T20; runtime snapshot/adapters/failure sink P3-04.3–4 и реальный LocalJudge остаются отдельной работой. В этой задаче нет sandbox process registry, поэтому cleanup ограничен durable DB lease recovery.
+- Проверки этой ревизии: submissions suite 41/41 PASS на файловой SQLite; system checks PASS; migration drift отсутствует; compileall и `git diff --check` PASS; command обнаруживается и без factory отказывает закрыто.
+- Аудит старта: [`2026-10-09T213942+0300-agent-3-P3-04.2-start.md`](../audits/2026-10-09T213942+0300-agent-3-P3-04.2-start.md). Аудит реализации: [`2026-10-09T214617+0300-agent-3-P3-04.2-worker.md`](../audits/2026-10-09T214617+0300-agent-3-P3-04.2-worker.md).
+- Следующий шаг: дождаться merge PR #15 в `develop`; затем обновить эту ветку обычным `git merge origin/develop`, проверить собственный diff и опубликовать PR строго в `develop`. До публикации PR #15 не создавать дублирующий stacked PR.
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
 
