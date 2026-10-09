@@ -21,8 +21,10 @@
 - Пути в работе: `backend/apps/problems/`, `backend/config/settings.py`, эта карточка и отдельный аудит сессии.
 - Объём: внутренняя версия ProblemBundleV1, безопасное чтение ограниченного архива без распаковки на файловую систему, immutable version/checksum catalog и разделённые public/private данные.
 - Ограничение: официальный пакет/README отсутствует; синтетическая форма используется только как внутренний нормализованный контракт и тестовые данные. Внешний формат не угадывается.
-- Проверено до изменений: рабочее дерево чистое; отдельный worktree создан от актуального `origin/develop`.
+- Проверено до изменений: рабочее дерево чистое; отдельный worktree создан от `origin/develop` SHA `d9488e3bf960c6a2248fd4399ba5848a091b8769`.
 - Сделано: app `problems` с миграцией, version/checksum/readiness, public/private storage, ProblemCatalogV1 и compiler registry. ZIP reader ограничен по размеру/ratio/типам записей/путям и не пишет на диск. Синтетические fixtures покрывают нормализацию и ошибки.
-- Проверки: весь backend 58/58, `makemigrations --check`, Django system check, `compileall`, `git diff --check` прошли. Поиск в app не нашёл `extractall`, shell/process execution API.
+- Проверки: после синхронизации свежего develop весь backend 68/68, `makemigrations --check`, Django system check, `compileall`, `git diff --check` прошли. Поиск в app не нашёл `extractall`, shell/process execution API.
 - Ограничение: production compiler spec `cpp20` остаётся `verified=False`, пока нет Docker runtime proof; поэтому production catalog fail-closed и новые versions не переходят в READY. Test-only registry проверяет state transition без подмены execution/verdict.
-- Следующий шаг: опубликовать PR с базой `develop`; P3-03 подключит проверенный JudgeProvider и доступные compiler specs. Official archive mapping остаётся отдельной задачей P3-06 после получения README.
+- Синхронизация: merge `origin/develop` SHA `cad34ea4ddf1171779dc22139f2e1533160b5015`; merge commit `5ff96ad4c639e35cd5b5bf457d3e4d525da793cd`.
+- PR: [#14](https://github.com/D0UP1G/FirsterChuv/pull/14), `OPEN`, base `develop`, head SHA `5ff96ad4c639e35cd5b5bf457d3e4d525da793cd`, merge state `CLEAN`; merge не выполнялся.
+- Следующий шаг: P3-03 подключит проверенный JudgeProvider и доступные compiler specs. Official archive mapping остаётся отдельной задачей P3-06 после получения README.
