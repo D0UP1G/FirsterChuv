@@ -4,8 +4,8 @@
 
 - Статус: `IN_PROGRESS` — P2-05.1 pure admin action guards; P2-05 целиком остаётся `IN_PROGRESS`.
 - Исполнитель: Codex в роли агента 2.
-- Текущая задача/ветка/база: `P2-05.1` / `feature/match-admin-actions` / `origin/develop` `cad34ea4ddf1171779dc22139f2e1533160b5015`.
-- Пути: `backend/apps/competition/domain/admin_actions.py`, `backend/apps/competition/tests/test_admin_actions.py`, эта карточка и audit [P2-05.1](../audits/2026-10-09T175534+0300-agent-2-P2-05-1-admin-action-guards.md). Файлы отличаются от открытых competition PR #7/#11/#13.
+- Текущая задача/ветка/база: `P2-05.1` / `feature/match-admin-actions` / актуальный `origin/develop` `1f60aa9ad93a818d12c0b04b94cacec3f25b8d4e` включён merge-коммитом в feature.
+- Пути: `backend/apps/competition/domain/admin_actions.py`, `backend/apps/competition/tests/test_admin_actions.py`, регистрация suite в `scripts/check_domain_suites.py`, эта карточка и audit [P2-05.1](../audits/2026-10-09T175534+0300-agent-2-P2-05-1-admin-action-guards.md). Код ограничен своими competition paths и одной записью suite в интегрированном CI runner.
 - Scope: pure typed permits/guards для pause, resume, positive bounded extension, technical result, rematch и replacement; admin/active role, UUIDs, reason/command key, state/downstream guards, no score carry-over при новом run.
 - Граница: без ORM, state mutation, events, command-idempotency store, HTTP или миграций; `command_id` будет проверяться/сохраняться в следующем persistence срезе.
 - Отдельные review slices: P2-01 PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7), P2-03 clock PR [#11](https://github.com/D0UP1G/FirsterChuv/pull/11), P2-04 score PR [#13](https://github.com/D0UP1G/FirsterChuv/pull/13), P2-06 event-store PR [#16](https://github.com/D0UP1G/FirsterChuv/pull/16) были OPEN/ready/CLEAN при начале этого среза; ни одна из этих веток не изменяется здесь.
