@@ -133,3 +133,10 @@
 - Merge PR #39 в свою feature завершён без конфликтов; изменились только `frontend/src/pages/ParticipantWorkspacePage.test.tsx`, `frontend/src/workspace/devTransport.ts`, A4 card/audits. Проверен `git diff --check`; A3 source/test files не изменились. Завершающий sync audit: [`2026-10-09T233646+0300-agent-3-P3-04-sync-pr-head-followup.md`](../audits/2026-10-09T233646+0300-agent-3-P3-04-sync-pr-head-followup.md).
 - PR #37 обновлён fast-forward push до head `d532df06123057dcf395dffce7f8b3b264028b43`; base `25a82c092236d98275f897d624452b24bd501883`; `OPEN/MERGEABLE`. В CI run `37988178652` первый `backend` запуск упал на unrelated P1 invite concurrency (`database_busy`), rerun упал только этот job и прошёл; итоговый CI 4/4 PASS. A3 source не менялся. Audit: [`2026-10-09T234001+0300-agent-3-P3-04-ci-rerun.md`](../audits/2026-10-09T234001+0300-agent-3-P3-04-ci-rerun.md).
 - Следующий шаг: дождаться review PR #37 и оставить его открытым до решения о слиянии. Container cleanup, immutable run snapshot и production A2 sinks остаются конкретными CONNECT подпунктами; P3-02.2/P3-05.1 выполняются в отдельных worktree.
+
+### Финальная сверка PR #37 — 2026-10-09
+
+- Повторный `git fetch origin` не выявил новых коммитов: `origin/develop=25a82c092236d98275f897d624452b24bd501883`; ветка `feature/submission-worker` чиста на `26b5cf1916a531868c41cc4728fd38009a400bf8`.
+- Последний CI run `37988555234` на этом head завершился `success`, 4/4 job; PR #37 остаётся `OPEN/CLEAN` с базой `develop`.
+- Код P3-04 не менялся в ходе сверки. Результат проверки и остающиеся CONNECT ограничения записаны в [аудите](../audits/2026-10-09T234207+0300-agent-3-P3-04-final-sync-ci.md).
+- PR не слит. Следующий шаг: дождаться review; не интегрировать в `develop` без решения команды. Конкретные ожидания по container recovery, run snapshot и production A2 sinks остаются в contract requests.
