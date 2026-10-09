@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+import sqlite3
 from uuid import UUID
 
-from django.db import models, transaction
+from django.db import OperationalError, connection, models, transaction
 
 from backend.apps.common.contracts import ProblemCatalogV1
 from backend.apps.competition.domain.clock import (
@@ -35,6 +36,40 @@ class MatchRuntimeError(RuntimeError):
 
     status_code = 409
     code = "match_runtime_conflict"
+
+
+class MatchRuntimeBusy(MatchRuntimeError):
+    """A short-lived SQLite write contention requires a client retry."""
+
+    status_code = 503
+    code = "match_runtime_busy"
+
+
+def _is_sqlite_lock_error(error: OperationalError) -> bool:
+    if connection.vendor != "sqlite":
+        return False
+
+    current: BaseException | None = error
+    saw_sqlite_error_code = False
+    while current is not None:
+        code = getattr(current, "sqlite_errorcode", None)
+        if isinstance(code, int):
+            saw_sqlite_error_code = True
+            if (code & 0xFF) in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                return True
+        current = current.__cause__ or current.__context__
+
+    if saw_sqlite_error_code:
+        return False
+
+    message = " ".join(str(error).lower().split())
+    return (
+        message == "database is locked"
+        or message == "database table is locked"
+        or message.startswith("database table is locked: ")
+        or message == "database schema is locked"
+        or message.startswith("database schema is locked: ")
+    )
 
 
 def _score_rule(value: Mapping[str, object] | None) -> tuple[ScoreRules, dict]:
@@ -96,13 +131,14 @@ def _problem_snapshot(problem_ids: Sequence[UUID | str], catalog: ProblemCatalog
                 "languageIds": [language.id for language in item.languages],
             })
         return result
+    except OperationalError:
+        raise
     except Exception as error:
         if isinstance(error, MatchRuntimeError):
             raise
         raise MatchRuntimeError("a configured problem is not ready for execution") from error
 
 
-@transaction.atomic
 def configure_match_run(
     match_id: UUID | str,
     *,
@@ -120,49 +156,60 @@ def configure_match_run(
     except ValueError as error:
         raise MatchRuntimeError("startMode is invalid") from error
     _rules, rules_snapshot = _score_rule(scoring_rule)
-    problems = _problem_snapshot(problem_ids, catalog)
+    # Catalog providers may read from SQLite. Resolve immutable task data before
+    # opening the short write transaction so those reads cannot leave a deferred
+    # snapshot that later has to be upgraded into a writer.
 
-    changed = Match.objects.filter(pk=match_id, kind=Match.Kind.PLAYED).update(
-        updated_at=models.F("updated_at")
-    )
-    if not changed:
-        raise MatchRuntimeError("played match was not found")
-    match = Match.objects.select_related("current_run").get(pk=match_id)
-    slots = list(
-        MatchSlot.objects.filter(match=match, resolution=MatchSlot.Resolution.PLAYER)
-        .select_related("participant")
-        .order_by("slot_index")
-    )
-    if len(slots) != 2 or len({slot.participant_id for slot in slots}) != 2:
-        raise MatchRuntimeError("both match participants must be assigned")
-    if match.current_run_id:
-        current = match.current_run
-        if (
-            current.status == MatchRun.Status.READY
-            and current.allowed_duration_ms == allowed_duration_ms
-            and current.start_mode == normalized_mode
-            and current.score_rule == rules_snapshot
-            and current.problem_versions == problems
-        ):
-            return current
-        raise MatchRuntimeError("match already has a configured run")
-    if match.status != Match.Status.WAITING:
-        raise MatchRuntimeError("only a waiting match can be configured")
+    try:
+        problems = _problem_snapshot(problem_ids, catalog)
+        with transaction.atomic():
+            # This write reservation is deliberately the first ORM operation in
+            # the transaction; all following reads share the serialized view.
+            changed = Match.objects.filter(pk=match_id, kind=Match.Kind.PLAYED).update(
+                updated_at=models.F("updated_at")
+            )
+            if not changed:
+                raise MatchRuntimeError("played match was not found")
+            match = Match.objects.select_related("current_run").get(pk=match_id)
+            slots = list(
+                MatchSlot.objects.filter(match=match, resolution=MatchSlot.Resolution.PLAYER)
+                .select_related("participant")
+                .order_by("slot_index")
+            )
+            if len(slots) != 2 or len({slot.participant_id for slot in slots}) != 2:
+                raise MatchRuntimeError("both match participants must be assigned")
+            if match.current_run_id:
+                current = match.current_run
+                if (
+                    current.status == MatchRun.Status.READY
+                    and current.allowed_duration_ms == allowed_duration_ms
+                    and current.start_mode == normalized_mode
+                    and current.score_rule == rules_snapshot
+                    and current.problem_versions == problems
+                ):
+                    return current
+                raise MatchRuntimeError("match already has a configured run")
+            if match.status != Match.Status.WAITING:
+                raise MatchRuntimeError("only a waiting match can be configured")
 
-    sequence = (match.runs.aggregate(latest=models.Max("sequence"))["latest"] or 0) + 1
-    run = MatchRun.objects.create(
-        match=match,
-        sequence=sequence,
-        status=MatchRun.Status.READY,
-        allowed_duration_ms=allowed_duration_ms,
-        score_rule=rules_snapshot,
-        start_mode=normalized_mode,
-        problem_versions=problems,
-    )
-    match.current_run = run
-    match.status = Match.Status.READY
-    match.save(update_fields=("current_run", "status", "updated_at"))
-    return run
+            sequence = (match.runs.aggregate(latest=models.Max("sequence"))["latest"] or 0) + 1
+            run = MatchRun.objects.create(
+                match=match,
+                sequence=sequence,
+                status=MatchRun.Status.READY,
+                allowed_duration_ms=allowed_duration_ms,
+                score_rule=rules_snapshot,
+                start_mode=normalized_mode,
+                problem_versions=problems,
+            )
+            match.current_run = run
+            match.status = Match.Status.READY
+            match.save(update_fields=("current_run", "status", "updated_at"))
+            return run
+    except OperationalError as error:
+        if _is_sqlite_lock_error(error):
+            raise MatchRuntimeBusy("match storage is busy; retry the request") from error
+        raise
 
 
 def _claim_run(run_id: UUID | str) -> MatchRun:

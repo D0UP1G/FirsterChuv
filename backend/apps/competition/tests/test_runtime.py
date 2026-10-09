@@ -1,12 +1,15 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from unittest.mock import patch
 from uuid import uuid4
 
+from django.db import OperationalError
 from django.test import TestCase
 
 from backend.apps.accounts.models import User
 from backend.apps.competition.models import Match, MatchRun, MatchRunReady
 from backend.apps.competition.runtime import (
+    MatchRuntimeBusy,
     MatchRuntimeError,
     configure_match_run,
     mark_match_ready,
@@ -134,3 +137,14 @@ class PersistedMatchRuntimeTests(TestCase):
         with self.assertRaises(MatchRuntimeError):
             start_match_run(run.pk, now=NOW)
 
+    def test_sqlite_catalog_lock_is_retryable_but_other_db_errors_are_not_masked(self):
+        with patch.object(TestCatalog, "describe_ready", side_effect=OperationalError("database is locked")):
+            with self.assertRaises(MatchRuntimeBusy) as raised:
+                self.configure()
+        self.assertEqual(raised.exception.status_code, 503)
+        self.assertEqual(MatchRun.objects.filter(match=self.match).count(), 0)
+
+        with patch.object(TestCatalog, "describe_ready", side_effect=OperationalError("disk I/O error")):
+            with self.assertRaisesRegex(OperationalError, "disk I/O error"):
+                self.configure()
+        self.assertEqual(MatchRun.objects.filter(match=self.match).count(), 0)
