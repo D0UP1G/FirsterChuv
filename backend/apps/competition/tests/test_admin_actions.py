@@ -16,6 +16,13 @@ from backend.apps.competition.domain.admin_actions import (
     plan_resume,
     plan_technical_result,
 )
+from backend.apps.competition.domain.command_store import (
+    AdminCommandIntent,
+    AdminCommandStore,
+    AdminCommandStoreError,
+    lookup_command,
+    record_command,
+)
 
 
 ACTOR_ID = uuid4()
@@ -50,6 +57,15 @@ def snapshot(
     )
 
 
+def command_intent(action, *, command_value=None, parameters=(), match_id=MATCH_ID):
+    return AdminCommandIntent(
+        match_id=match_id,
+        command=command_value or command(),
+        action=action,
+        parameters=parameters,
+    )
+
+
 class AdminActionContextTests(unittest.TestCase):
     def test_only_active_admin_actor_can_be_constructed(self):
         with self.assertRaisesRegex(AdminActionError, "admin role"):
@@ -75,6 +91,156 @@ class AdminActionContextTests(unittest.TestCase):
             command(command_id=" ")
         with self.assertRaisesRegex(AdminActionError, "reason"):
             command(reason=" " * 2)
+
+
+class AdminCommandStoreTests(unittest.TestCase):
+    def test_exact_retry_returns_original_plan_before_state_revalidation(self):
+        request = command(command_id="pause-retry", reason="Safety stop")
+        intent = command_intent(AdminAction.PAUSE, command_value=request)
+        plan = plan_pause(snapshot(), request)
+        store = record_command(AdminCommandStore(), intent, plan)
+
+        self.assertIsNone(lookup_command(AdminCommandStore(), intent))
+        self.assertEqual(lookup_command(store, intent), plan)
+        self.assertIs(record_command(store, intent, plan), store)
+        self.assertEqual(len(store.receipts), 1)
+
+    def test_reusing_key_with_changed_reason_is_a_conflict(self):
+        request = command(command_id="pause-conflict", reason="Safety stop")
+        intent = command_intent(AdminAction.PAUSE, command_value=request)
+        store = record_command(
+            AdminCommandStore(), intent, plan_pause(snapshot(), request)
+        )
+        changed = command_intent(
+            AdminAction.PAUSE,
+            command_value=command(command_id="pause-conflict", reason="Other reason"),
+        )
+
+        with self.assertRaisesRegex(AdminCommandStoreError, "different intent"):
+            lookup_command(store, changed)
+
+    def test_reusing_key_with_changed_action_argument_is_a_conflict(self):
+        request = command(command_id="extend-conflict", reason="Longer round")
+        plan = plan_extension(
+            snapshot(), request, seconds=30, max_extension_seconds=600
+        )
+        original = command_intent(
+            AdminAction.EXTEND,
+            command_value=request,
+            parameters=(("extension_seconds", 30),),
+        )
+        store = record_command(AdminCommandStore(), original, plan)
+        changed = command_intent(
+            AdminAction.EXTEND,
+            command_value=request,
+            parameters=(("extension_seconds", 60),),
+        )
+
+        with self.assertRaisesRegex(AdminCommandStoreError, "different intent"):
+            lookup_command(store, changed)
+
+    def test_fingerprint_distinguishes_integer_from_boolean_parameters(self):
+        request = command(command_id="extend-bool", reason="Short extension")
+        plan = plan_extension(
+            snapshot(), request, seconds=1, max_extension_seconds=600
+        )
+        intent = command_intent(
+            AdminAction.EXTEND,
+            command_value=request,
+            parameters=(("extension_seconds", 1),),
+        )
+        store = record_command(AdminCommandStore(), intent, plan)
+        boolean_payload = command_intent(
+            AdminAction.EXTEND,
+            command_value=request,
+            parameters=(("extension_seconds", True),),
+        )
+
+        with self.assertRaisesRegex(AdminCommandStoreError, "different intent"):
+            lookup_command(store, boolean_payload)
+
+    def test_command_key_isolated_by_match_and_actor_is_in_request_fingerprint(self):
+        request = command(command_id="pause-scope", reason="Safety stop")
+        intent = command_intent(AdminAction.PAUSE, command_value=request)
+        store = record_command(
+            AdminCommandStore(), intent, plan_pause(snapshot(), request)
+        )
+        other_match = command_intent(
+            AdminAction.PAUSE,
+            command_value=request,
+            match_id=uuid4(),
+        )
+        other_admin = command_intent(
+            AdminAction.PAUSE,
+            command_value=command(
+                command_id="pause-scope",
+                reason="Safety stop",
+                admin=AdminActor(user_id=uuid4(), role="admin", is_active=True),
+            ),
+        )
+
+        self.assertIsNone(lookup_command(store, other_match))
+        with self.assertRaisesRegex(AdminCommandStoreError, "different intent"):
+            lookup_command(store, other_admin)
+
+    def test_recorded_plan_must_match_intent_arguments(self):
+        request = command(command_id="extend-plan", reason="Longer round")
+        intent = command_intent(
+            AdminAction.EXTEND,
+            command_value=request,
+            parameters=(("extension_seconds", 60),),
+        )
+        plan = plan_extension(
+            snapshot(), request, seconds=30, max_extension_seconds=600
+        )
+
+        with self.assertRaisesRegex(AdminCommandStoreError, "does not match"):
+            record_command(AdminCommandStore(), intent, plan)
+
+    def test_replacement_intent_uses_normalized_participant_ids(self):
+        request = command(command_id="replace-1", reason="Player withdrew")
+        replacement = ReplacementParticipant(
+            user_id=PLAYER_C,
+            role="participant",
+            is_active=True,
+        )
+        plan = plan_replacement(
+            snapshot(RunStatus.READY),
+            request,
+            old_user_id=PLAYER_A,
+            replacement=replacement,
+        )
+        intent = command_intent(
+            AdminAction.REPLACE_PARTICIPANT,
+            command_value=request,
+            parameters=(
+                ("replaced_user_id", PLAYER_A),
+                ("replacement_user_id", PLAYER_C),
+            ),
+        )
+
+        store = record_command(AdminCommandStore(), intent, plan)
+
+        self.assertEqual(lookup_command(store, intent), plan)
+
+    def test_intent_rejects_unsupported_parameters_and_duplicate_names(self):
+        request = command(command_id="pause-parameters")
+
+        with self.assertRaisesRegex(AdminCommandStoreError, "do not match"):
+            command_intent(
+                AdminAction.PAUSE,
+                command_value=request,
+                parameters=(("unexpected", "value"),),
+            )
+        with self.assertRaisesRegex(AdminCommandStoreError, "unique"):
+            command_intent(
+                AdminAction.EXTEND,
+                command_value=request,
+                parameters=(
+                    ("extension_seconds", 30),
+                    ("extension_seconds", 60),
+                ),
+            )
 
 
 class PauseResumeExtensionTests(unittest.TestCase):
