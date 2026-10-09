@@ -4,7 +4,7 @@
 
 ## Текущая задача
 
-- `P4-02` — `IN_REVIEW`; ветка `feature/admin-roster-invites-ui`, база `f7f4e2d42b42170b2169b608d1e86b6eb7af6921` (`origin/develop`). Пути: `frontend/**`, эта карточка и audits P4-01 merge checkpoint/P4-02. PR будет направлен в `develop` с merge commit.
+- `P4-02` — `IN_REVIEW`; [PR #24](https://github.com/D0UP1G/FirsterChuv/pull/24), ветка `feature/admin-roster-invites-ui`, база `f7f4e2d42b42170b2169b608d1e86b6eb7af6921` (`origin/develop`). Пути: `frontend/**`, эта карточка и audits P4-01 merge checkpoint/P4-02. Ожидает CI перед merge commit.
 - Подзадачи: (1) настоящий API UI для создания/редактирования/списка турниров с пустым, загрузочным и ошибочным состояниями; (2) каталог участников, добавление/снятие, ручной seed и видимые ошибки cap/freeze/role; (3) создание, копирование и отзыв invite; (4) публичный preview, регистрация/вход по invite и accept без ручных SQL/API действий для двух новых участников; (5) UI/API tests и браузерная проверка на изолированной тестовой БД.
 - Проверка среза: реальный CRUD/invite CONNECT и browser-сценарий на disposable SQLite проверены, включая двух участников, отзыв, истечение, cap, preview и seed. Два аккаунта проверялись последовательно в одном браузерном профиле; независимые сессии, ручное roster removal и полные T03–T05 остаются частично непроверенными. Статус требований не повышать до подтверждённого merge/приёмки.
 
