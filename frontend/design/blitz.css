@@ -91,6 +91,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: var(--ba-space-2); color: var(--ba-acid); font-family: var(--ba-font-base); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
 .page-lede, .ba-lede { max-width: 640px; margin-top: var(--ba-space-3); color: var(--ba-text-muted); font-size: 14px; }
 .ba-mono-muted, .inline-note, .field-help { color: var(--ba-text-muted); font-size: 12px; }
+.ba-state-label { display: block; color: var(--ba-text-dim); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; } /* подпись состояния в макете */
 .ba-terminal { font-family: var(--ba-font-terminal); }
 .live-dot { width: 8px; height: 8px; background: var(--ba-acid-ok); box-shadow: var(--ba-glow-ok); display: inline-block; }
 
@@ -278,6 +279,18 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .workspace-task-button.is-locked { border-color: var(--ba-alarm-line); cursor: not-allowed; }
 .workspace-task-label { font-family: var(--ba-font-display); font-size: 15px; font-weight: 700; letter-spacing: 0.08em; }
 .workspace-task-name { display: flex; flex-direction: column; color: var(--ba-text-muted); font-size: 12px; }
+/* Статус задачи словами кейса (стр. 5): не начата / есть попытки / решена — дополняет тег брендбука */
+.ba-node-status { display: inline-flex; align-items: center; gap: 6px; color: var(--ba-text-muted); font-size: 12px; }
+.ba-node-status::before { width: 8px; height: 8px; border: 1px solid var(--ba-text-dim); content: ''; }
+.ba-node-status.is-tried { color: #ffd6d6; }
+.ba-node-status.is-tried::before { border-color: var(--ba-alarm); background: var(--ba-alarm); }
+.ba-node-status.is-solved { color: var(--ba-acid-ok); }
+.ba-node-status.is-solved::before { border-color: var(--ba-acid-ok); background: var(--ba-acid-ok); }
+/* Изображение и таблица в условии задачи */
+.problem-figure { margin: 0; }
+.problem-figure-image { display: grid; place-items: center; min-height: 140px; border: 1px dashed var(--ba-grid-line); color: var(--ba-text-dim); background: var(--ba-void); font-size: 12px; }
+.problem-figure figcaption { margin-top: 6px; color: var(--ba-text-muted); font-size: 12px; }
+.problem-table { min-width: 0; }
 .workspace-statement-panel { flex: 1; min-height: 0; padding: var(--ba-space-5); border: 1px solid var(--ba-grid-line); background: var(--ba-grid-fill); overflow: auto; }
 .problem-statement { color: var(--ba-text); font-size: 14px; line-height: 1.7; }
 .problem-statement h2 { margin-bottom: var(--ba-space-3); }
