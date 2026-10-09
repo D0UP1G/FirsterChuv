@@ -14,14 +14,15 @@
 
 ## Текущая сессия: P3-04
 
-- ID задачи: `P3-04`; статус: `IN_PROGRESS`.
+- ID задачи: `P3-04`; статус: `IN_REVIEW`.
 - Ветка: `feature/submission-queue-core`; база `origin/develop`: `cad34ea4ddf1171779dc22139f2e1533160b5015`; исходный HEAD: `cad34ea4ddf1171779dc22139f2e1533160b5015`.
 - Пути в работе: `backend/apps/submissions/`, `backend/config/settings.py`, разрешённая регистрация `backend/apps/common/api_urls.py`, эта карточка и отдельный аудит.
 - Объём: private source/submission storage, idempotent bounded admission через обязательные injected ports, SQLite conditional claim/lease/retry/recovery и durable result outbox. HTTP/runtime без настоящих ports не принимать.
 - Ограничения: provider/CompetitionGateway/EventWriter не реализованы в develop; тестовые adapters будут только в изолированных tests. Не менять чужие apps/branches и общий `context/STATE.md`.
 - Реализовано в этой feature-сессии: admission + private author API, idempotency/hash, глобальная/авторская/матчевая capacity, rate limit, leases/renewal/recovery/backoff и ResultSink outbox; приложение и routes зарегистрированы штатно. Production POST без ports отвечает 503.
 - Проверки feature worktree: `backend.apps.submissions` — 19 tests; полный backend — 66 tests; Django check, migration drift, compileall и diff check прошли. Реальный judge, HTTP 202 на настоящих MatchPort adapters и browser/hostile acceptance не запускались.
-- Текущий статус: реализация готова к публикации; задача остаётся `IN_PROGRESS`, пока нет PR в `develop`. `context/STATE.md` не менялся.
-- Следующий шаг: merge свежего `origin/develop` в эту ветку при необходимости, открыть PR в `develop`, затем отметить P3-04 `IN_REVIEW` отдельным publication audit. После готовности P2-03/04 и P3-03 выполнить runtime CONNECT.
+- PR: [#15](https://github.com/D0UP1G/FirsterChuv/pull/15), base `develop`, head `8462ba287585b0b548bfb4b44b113d7d77e4720c`, статус OPEN/MERGEABLE. Обязательных status checks нет.
+- Текущий статус: срез опубликован и ожидает review; `context/STATE.md` не менялся. Подробности публикации — отдельный audit.
+- Следующий шаг agent 3: пока P3-04 ожидает review/CONNECT, начать независимую P3-05 в отдельной feature-ветке от свежего `origin/develop`. После готовности P2-03/04 и P3-03 выполнить runtime CONNECT; не выдавать текущий core за работающий judge.
 
 План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
