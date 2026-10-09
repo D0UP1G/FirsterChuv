@@ -25,7 +25,7 @@ E04/T15 требует draft namespace как минимум по user/run/probl
 - `npm test -- --run`: PASS, 18 файлов / 80 тестов.
 - `npm run lint`: exit 0; 5 существующих `react(set-state-in-effect)` warnings в draft/page effects.
 - `npm run build`: PASS; остаётся прежнее предупреждение о CodeEditor chunk `612.88 kB` (>500 kB).
-- После записи карточки и этого audit выполнить и зафиксировать финальный `git diff --check`.
+- `git diff --check`: PASS после изменений кода, карточки и этого audit.
 
 ## Ограничения и следующий шаг
 
