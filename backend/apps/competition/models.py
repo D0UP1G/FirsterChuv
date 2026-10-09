@@ -191,6 +191,10 @@ class MatchSlot(models.Model):
 
 
 class MatchRun(models.Model):
+    class StartMode(models.TextChoices):
+        MANUAL = "manual", "Ручной запуск"
+        BOTH_READY = "both_ready", "После готовности обоих"
+
     class Status(models.TextChoices):
         WAITING = "WAITING", "Ожидает"
         READY = "READY", "Готов"
@@ -216,6 +220,12 @@ class MatchRun(models.Model):
         validators=[MinValueValidator(1)]
     )
     score_rule = models.JSONField(default=dict)
+    start_mode = models.CharField(
+        max_length=16,
+        choices=StartMode.choices,
+        default=StartMode.MANUAL,
+    )
+    problem_versions = models.JSONField(default=list)
     finished_at = models.DateTimeField(null=True, blank=True)
     winner = models.ForeignKey(
         "tournaments.TournamentParticipant",
@@ -243,6 +253,23 @@ class MatchRun(models.Model):
 
     def __str__(self) -> str:
         return f"{self.match_id} run {self.sequence}"
+
+
+class MatchRunReady(models.Model):
+    """Durable readiness signal from one frozen match participant."""
+
+    run = models.ForeignKey(MatchRun, on_delete=models.CASCADE, related_name="ready_signals")
+    participant = models.ForeignKey(
+        "tournaments.TournamentParticipant",
+        on_delete=models.PROTECT,
+        related_name="match_run_ready_signals",
+    )
+    ready_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("run", "participant"), name="unique_match_run_ready_participant")
+        ]
 
 
 class BracketCommandReceipt(models.Model):
