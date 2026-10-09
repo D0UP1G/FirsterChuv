@@ -45,8 +45,10 @@ describe('useDraftController', () => {
     expect(result.current.draft?.source).toBe('typed before server response')
   })
 
-  it('starts a task switch from that task and language scoped draft', async () => {
-    const transport = makeTransport()
+  it('restores each task-scoped draft when switching away and back', async () => {
+    const transport = makeTransport({
+      saveDraft: vi.fn().mockRejectedValue(new ApiError('Server drafts unavailable', 503, 'integration_unavailable')),
+    })
     const { result, rerender } = renderHook(
       (props: { problemId: string; template: string }) => useDraftController({ ...baseProps, ...props, transport }),
       { initialProps: { problemId: 'problem-1', template: 'template A' } },
@@ -58,7 +60,34 @@ describe('useDraftController', () => {
     await waitFor(() => expect(result.current.scopeReady).toBe(true))
 
     expect(result.current.source).toBe('template B')
-    expect(result.current.source).not.toBe('solution A')
+    act(() => result.current.changeSource('solution B'))
+
+    rerender({ problemId: 'problem-1', template: 'template A' })
+    await waitFor(() => expect(result.current.source).toBe('solution A'))
+    rerender({ problemId: 'problem-2', template: 'template B' })
+    await waitFor(() => expect(result.current.source).toBe('solution B'))
+  })
+
+  it('restores the local copy after a reload when server draft reads and writes are unavailable', async () => {
+    const offline = new ApiError('Server drafts unavailable', 503, 'integration_unavailable')
+    const offlineTransport = () => makeTransport({
+      draft: vi.fn().mockRejectedValue(offline),
+      saveDraft: vi.fn().mockRejectedValue(offline),
+    })
+    const firstTransport = offlineTransport()
+    const first = renderHook(() => useDraftController({ ...baseProps, transport: firstTransport }))
+
+    await waitFor(() => expect(first.result.current.scopeReady).toBe(true))
+    act(() => first.result.current.changeSource('unsynced solution'))
+    await act(async () => { await first.result.current.flush() })
+    expect(first.result.current.status).toBe('unavailable')
+    first.unmount()
+
+    const reloadedTransport = offlineTransport()
+    const afterReload = renderHook(() => useDraftController({ ...baseProps, transport: reloadedTransport }))
+    await waitFor(() => expect(afterReload.result.current.status).toBe('unavailable'))
+
+    expect(afterReload.result.current.source).toBe('unsynced solution')
   })
 
   it('stops autosave on a revision conflict and exposes both copies', async () => {
