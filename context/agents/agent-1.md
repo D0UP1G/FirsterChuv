@@ -5,7 +5,7 @@
 - Текущая задача/ветка/база: `A1-01` / `feature/platform-bootstrap` / `e5f421b` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-01 audit](../audits/2026-10-09T134327+0300-agent-1-A1-01.md), два follow-up; [PR #2](https://github.com/D0UP1G/FirsterChuv/pull/2) открыт как draft в `develop`.
+- Последний аудит/PR/проверки: [A1-01 audit](../audits/2026-10-09T134327+0300-agent-1-A1-01.md), три follow-up; [PR #2](https://github.com/D0UP1G/FirsterChuv/pull/2) открыт как draft в `develop`.
 
 ## Разбивка задач на малые шаги
 
