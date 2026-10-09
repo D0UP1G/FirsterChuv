@@ -17,12 +17,13 @@
 - P2-03 pure readiness/start slice опубликован в PR #34; head `730edd827236a42d98b3efe85551f6277a1d5d97`, OPEN/CLEAN, четыре checks SUCCESS.
 - P2-03 persisted MatchRun/config/API — `WAITING_CONNECT` на #7; работу продолжать по следующей независимой очереди.
 - Текущая база обновлена обычным fast-forward до `origin/develop` `56c20eb3323c892d7f2fa9aadc6beb905548f677` (PR #35 MERGED).
-- Статус: `IN_REVIEW` — P2-04 accepted-ledger/result pure core опубликован как [PR #38](https://github.com/D0UP1G/FirsterChuv/pull/38), head `669890cf556a2690264684789d7300c05adabc28`; GitHub checks запущены.
+- Статус: `IN_REVIEW` — P2-04 accepted-ledger/result pure core опубликован как [PR #38](https://github.com/D0UP1G/FirsterChuv/pull/38), текущая локальная ветка синхронизирована с develop до `7e2cb466676e13f6ecc5a90eba858f3655eed570`; локальный head `4bb3f267b2f8b42a200dc8a4d9f48bbeba15be86` ожидает публикации sync merge.
 - Планируемые пути: `backend/apps/competition/domain/result_ledger.py`, tests в существующем `backend/apps/competition/tests/test_scoring.py` (suite уже запускает этот файл), эта карточка и audit. Shared suite runner/API/ORM/events не менять в этом срезе.
 - Подзадача: immutable `AttemptReceipt` registry, duplicate/conflicting/out-of-order `ResultReceipt`, stale/superseded run без score mutation, pending-aware финализация по runtime handoff. Полный P2-04 дополнительно требует persistence, infrastructure-failure port/outbox и atomic downstream/event transition.
 - PR #7 head `1a2b54a12d2070c39c1c47ef67d37396c345a064` и PR #16 head `a0b1dcc682fac8f2fb1285743a62758310feeaa3` остаются OPEN/DIRTY; чужие ветки не менялись.
 - Начальный audit P2-04: [accepted ledger core](../audits/2026-10-09T232844+0300-agent-2-P2-04-ledger-core.md).
 - Publication audit P2-04: [PR #38](../audits/2026-10-09T233257+0300-agent-2-P2-04-ledger-publication.md).
+- Develop sync P2-04: [fresh-ref merge](../audits/2026-10-09T233507+0300-agent-2-P2-04-develop-sync.md).
 - Следующий независимый срез: P2-05 persisted command/effects core, отдельная ветка от свежего develop; не смешивать с #38.
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
