@@ -29,6 +29,34 @@ describe('CodeEditor', () => {
     expect(onSubmitHotkey).toHaveBeenCalledOnce()
   })
 
+  it('indents the current line when Tab is pressed', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<CodeEditor value={'int main() {\n'} languageId="cpp20" ariaLabel="Исходный код" onChange={onChange} />)
+
+    const editor = screen.getByRole('textbox', { name: 'Исходный код' })
+    editor.focus()
+    await user.keyboard('{Control>}{End}{/Control}')
+    await user.keyboard('{Tab}')
+
+    expect(onChange).toHaveBeenLastCalledWith('int main() {\n  ')
+  })
+
+  it.each([
+    ['parentheses', '(x', '(x)'],
+    ['square brackets', '[[x', '[x]'],
+    ['curly braces', '{{x', '{x}'],
+  ])('auto-closes %s around the next character', async (_name, input, expected) => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<CodeEditor value="" languageId="cpp20" ariaLabel="Исходный код" onChange={onChange} />)
+
+    const editor = screen.getByRole('textbox', { name: 'Исходный код' })
+    await user.type(editor, input)
+
+    expect(onChange).toHaveBeenLastCalledWith(expected)
+  })
+
   it('keeps the editor read-only and ignores submit hotkeys when disabled', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
