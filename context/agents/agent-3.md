@@ -13,3 +13,16 @@
 - Следующий шаг: sync develop, собственные IN_PROGRESS/branch/base/paths; устранить F01/F07 и перепроверить реальные контейнеры. Отсутствующий adapter/provider в runtime всегда fail closed.
 
 План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
+
+## Текущая сессия: P3-02
+
+- ID задачи: `P3-02`; статус: `IN_REVIEW`.
+- Ветка: `feature/problem-storage-import-core`; база `origin/develop`: `d9488e3bf960c6a2248fd4399ba5848a091b8769`; исходный HEAD: `d9488e3bf960c6a2248fd4399ba5848a091b8769`.
+- Пути в работе: `backend/apps/problems/`, `backend/config/settings.py`, эта карточка и отдельный аудит сессии.
+- Объём: внутренняя версия ProblemBundleV1, безопасное чтение ограниченного архива без распаковки на файловую систему, immutable version/checksum catalog и разделённые public/private данные.
+- Ограничение: официальный пакет/README отсутствует; синтетическая форма используется только как внутренний нормализованный контракт и тестовые данные. Внешний формат не угадывается.
+- Проверено до изменений: рабочее дерево чистое; отдельный worktree создан от актуального `origin/develop`.
+- Сделано: app `problems` с миграцией, version/checksum/readiness, public/private storage, ProblemCatalogV1 и compiler registry. ZIP reader ограничен по размеру/ratio/типам записей/путям и не пишет на диск. Синтетические fixtures покрывают нормализацию и ошибки.
+- Проверки: весь backend 58/58, `makemigrations --check`, Django system check, `compileall`, `git diff --check` прошли. Поиск в app не нашёл `extractall`, shell/process execution API.
+- Ограничение: production compiler spec `cpp20` остаётся `verified=False`, пока нет Docker runtime proof; поэтому production catalog fail-closed и новые versions не переходят в READY. Test-only registry проверяет state transition без подмены execution/verdict.
+- Следующий шаг: опубликовать PR с базой `develop`; P3-03 подключит проверенный JudgeProvider и доступные compiler specs. Official archive mapping остаётся отдельной задачей P3-06 после получения README.
