@@ -63,6 +63,48 @@ describe('public and private routes', () => {
     expect(window.location.search).toContain(encodeURIComponent('/dashboard'))
   })
 
+  it('keeps a protected match destination when switching from login to registration', async () => {
+    const next = '/matches/match-42?problem=problem-7#editor'
+    window.history.replaceState({}, '', next)
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Войти в аккаунт' })).toBeInTheDocument()
+    await waitFor(() => expect(new URLSearchParams(window.location.search).get('next')).toBe(next))
+    await userEvent.click(screen.getAllByRole('link', { name: 'Создать аккаунт' }).at(-1)!)
+
+    expect(await screen.findByRole('heading', { name: 'Создать аккаунт' })).toBeInTheDocument()
+    expect(new URLSearchParams(window.location.search).get('next')).toBe(next)
+  })
+
+  it('returns a participant to the requested protected match after login', async () => {
+    const next = '/matches/match-42?problem=problem-7#editor'
+    window.history.replaceState({}, '', next)
+    vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/auth/csrf')) return Promise.resolve(jsonResponse({ csrfToken: 'csrf-before-login' }))
+      if (url.endsWith('/me')) return Promise.resolve(jsonResponse({ error: { code: 'not_authenticated', message: 'Требуется вход.' } }, 401))
+      if (url.endsWith('/auth/login')) return Promise.resolve(jsonResponse({
+        id: 'participant-1',
+        displayName: 'Участник',
+        role: 'participant',
+        csrfToken: 'csrf-after-login',
+      }))
+      return Promise.resolve(jsonResponse({ error: { code: 'integration_unavailable', message: 'Матч пока недоступен.' } }, 503))
+    })
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Войти в аккаунт' })).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Электронная почта'), 'participant@example.test')
+    await userEvent.type(screen.getByLabelText('Пароль'), 'secret-example')
+    await userEvent.click(screen.getByRole('button', { name: 'Войти' }))
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/matches/match-42')
+      expect(window.location.search).toBe('?problem=problem-7')
+      expect(window.location.hash).toBe('#editor')
+    })
+  })
+
   it('shows admin navigation only for the server-provided admin role', async () => {
     vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
       const url = String(input)
