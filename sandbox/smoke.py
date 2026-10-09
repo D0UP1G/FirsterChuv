@@ -7,9 +7,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from runner import DockerRunner, ExecutionResult, RunnerInfrastructureError
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT.parent))
+
+from backend.apps.judge.runner import DockerRunner, ExecutionResult, RunnerInfrastructureError  # noqa: E402
+
 FIXTURES = ROOT / "fixtures"
 EXPECTED_VERDICTS = {
     "ok": "OK",
