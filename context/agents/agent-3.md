@@ -1,6 +1,16 @@
 # Агент 3: sandbox, задачи, код
 
-## Текущая сессия
+## Актуальный checkpoint координатора: разблокирование 2026-10-09
+
+- По поручению команды координатор проверил опубликованные PR и аудиты. Конкретный merge-блокер normalized import management снят: [#25](https://github.com/D0UP1G/FirsterChuv/pull/25) `MERGED`, merge `ed14416fee0d1cccbd0b9a202e563d49f062572a` в `develop`.
+- #26 `435cef7` admin catalog, #15 `555ca0e` очередь с исправленным admission race и #23 `942b4f5` LocalJudge проверены и объединены обычными merge commits в `feature/agent-3-merge-unblock`. До `MERGED` её PR это проверенная интеграционная ветка; после merge брать свежий `origin/develop`, отдельный STATE PR не prerequisite. Исходные feature refs автора сохранены.
+- P3-04.1 исправлен: file-backed submissions suite 29/29. P3-03 получил настоящую проверку координатора на Docker Engine 29.8.2: 5 sandbox smoke, task limit 100 ms/64 MiB и LocalJudge → immutable stored synthetic bundle → OK. Образ `firsterchuv/review-local-judge:942b4f5` создан отдельно; production image/registry не переключались. `cpp20.verified=False` сохраняется до deployment/readiness wiring. Checker protocol/official acceptance по-прежнему ждут README пакета.
+- [#21](https://github.com/D0UP1G/FirsterChuv/pull/21) `1706ecf` остаётся на исправлении: одновременный первый PUT из двух вкладок на файловой SQLite воспроизводит `OperationalError: database is locked`; API не переводит его в контролируемый ответ. **P3-05.1 READY:** bounded retry всей CAS transaction только для BUSY/LOCKED, повторно проверить revision, после исчерпания вернуть retryable 503; другой победивший source должен дать 409, не перезаписываться. File-backed tests: first creation/update, один namespace, оба разных source, ровно одна победившая revision/history, CSRF/IDOR не ослаблять.
+- Следующие независимые READY: P3-02.2 normalized upload/import status management (parser #25 уже доступен), P3-04.2 actual worker/lease/recovery/result outbox, P3-05.1 CAS race #21. Не писать заново уже проверенные queue/catalog/LocalJudge cores.
+- WAITING_CONNECT ограничен конкретными подпунктами: production A2 gateway/ledger/result/failure sink, version/checksum workspace contract. До подключения использовать DI/test-only ports; runtime fail-closed. Если один подпункт ждёт — в той же сессии продолжать следующую READY задачу. P3-06 отдельно WAITING_EXTERNAL на official package.
+- Полная приёмка MVP/browser/hostile/restart не закрыта. Подробности проверки и передачи: [новый аудит](../audits/2026-10-09T224851+0300-coordinator-agent-3-unblock.md).
+
+## Исторические checkpoint публикаций
 
 ### Снимок P3-02.3 до подтверждённого merge #25
 
@@ -31,7 +41,7 @@
 - ONLY P3-06 WAITING_EXTERNAL: official package/README. Пока package нет, роль продолжает P3-02/03/04/05. P3-07 Yandex после обязательного MVP.
 - Пути: sandbox/problems/submissions/drafts/judge и собственные migrations/tests. Full T12–15/T18–21 не закрыты; ML нельзя выводить только из signal9, source/checkers/tests не public.
 
-## Текущая сессия: P3-03 · LocalJudge
+## Исторический checkpoint: P3-03 · LocalJudge
 
 - Статус: `IN_REVIEW`.
 - Ветка: `feature/local-judge`; база: `origin/develop` SHA `f7f4e2d42b42170b2169b608d1e86b6eb7af6921` (сверена после `git fetch origin develop`).
@@ -45,7 +55,7 @@
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
 
-## Текущая сессия: P3-04.1 / admission race
+## Исторический checkpoint: P3-04.1 / admission race
 
 - ID: `P3-04.1`; статус: `IN_REVIEW`.
 - Ветка PR: `feature/submission-queue-core`; исходный HEAD `7d76d0b1bf85c7a707de72ebaa1cb8364b4c9207`; исходная база `cad34ea4ddf1171779dc22139f2e1533160b5015`; `origin/develop=ae0846b` синхронизирован merge `c2a653e`, затем `origin/develop=f7f4e2d42b42170b2169b608d1e86b6eb7af6921` (#22) синхронизирован merge `6c1ccbf37d9acbaf482b696240a54b9c903ec2e5`.
