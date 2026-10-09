@@ -15,12 +15,13 @@
 
 ## Текущий срез: P5-01 — перенос дизайн-системы в React
 
-- Статус: `IN_PROGRESS`; implementation slice ready locally and synced with fresh develop; preparing a P5-01 design PR.
+- Статус: `IN_PROGRESS`; implementation slice published in open P5-01 design PR #64; CI/review/merge pending.
 - Ветка: `feature/agent-5-p5-01-design`, базовый SHA `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (`origin/develop` после merge #60).
 - Sync: ordinary merge commit `afc4b26fc6934962a976aa53db97d3b000b4d5bd` with fresh `develop` `85e0cd0d2b82fce9996106af3922171dcee17c76`; no conflicts. Auth PR #62 is merged at that develop SHA.
-- Paths: `frontend/index.html`, `frontend/src/index.css`, `frontend/src/App.css`, `frontend/src/App.tsx`, `frontend/src/pages/Admin.css`, `context/audits/2026-10-10T014600+0300-agent-5-P5-01-design-system.md`, `context/audits/2026-10-10T014632+0300-agent-5-P5-01-design-sync.md`, and this card.
+- PR: https://github.com/D0UP1G/FirsterChuv/pull/64; opened at head `127920d667066cfdc588751f8a284183dd9c6847`, CI was `IN_PROGRESS` at publication snapshot.
+- Paths: `frontend/index.html`, `frontend/src/index.css`, `frontend/src/App.css`, `frontend/src/App.tsx`, `frontend/src/pages/Admin.css`, `context/audits/2026-10-10T014600+0300-agent-5-P5-01-design-system.md`, `context/audits/2026-10-10T014632+0300-agent-5-P5-01-design-sync.md`, `context/audits/2026-10-10T014724+0300-agent-5-P5-01-design-publication.md`, and this card.
 - Цель: применить verified `frontend/design` / brandbook v2.0 tokens, type, grid, spacing and shared status/button/panel language to the existing React shell, auth, invite and bracket views; preserve current logic and HTTP states.
-- Implementation commit: `aa3912b3414c4f9376af76d440e2e45fa5f42a79`. This slice has no PR yet and is not in develop. P5-03 provider status is independent; no new endpoint is needed.
+- Implementation commit: `aa3912b3414c4f9376af76d440e2e45fa5f42a79`; publication audit commit may advance the PR head. This slice is not in develop yet. P5-03 provider status is independent; no new endpoint is needed.
 - Later P5-02 remains a separate feature slice for responsive/projector/accessibility/error-state review.
 
 ## Наблюдение координатора 2026-10-10T01:29:46+03:00
