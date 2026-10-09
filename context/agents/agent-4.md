@@ -1,5 +1,13 @@
 # Агент 4 (прежний 1): API и логика соревнования
 
+## Текущая работа · P1-02.5 · 2026-10-10
+
+- Статус: IN_PROGRESS (implementation PASS, publication/merge pending). GitFlow feature `feature/a4-p1-02-5-common-ports`, создана от `origin/develop` на base `a6083263b54538275317d86f23d1034125813848` после синхронизации с develop.
+- Scope: additive common frozen DTO/Protocol для `InfrastructureFailureReceipt/Sink` и `RunProblemSnapshot/Provider`; paths — `backend/apps/common/contracts.py`, `backend/apps/common/tests.py`, `scripts/check_contract_imports.py`, этот файл и отдельный append-only implementation audit.
+- Invariants: не менять `SubmissionPermit`, `AttemptReceipt`, `ResultReceipt`, `JudgeVerdict`; common contracts без импортов optional apps; producer/consumer runtime CONNECT не входит в этот срез.
+- Следующий READY после этого короткого порта: P2-03 file-backed SQLite race/config→READY/start/gateway; параллельный резерв P2-04 и P4-07 остаётся в ROADMAP.
+- Implementation checkpoint: четыре additive common type добавлены, v1 fields guard/immutability/signature tests проходят. Full backend `259 tests / 4 skipped`, focused common `8/8`, nine contract fixtures, import isolation, Django check, migration drift и compileall PASS. `ruff` не установлен в locked env. [Audit](../audits/2026-10-10T021642+0300-agent-4-P1-02-5-common-ports.md); runtime providers ещё не подключены.
+
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
 - Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
