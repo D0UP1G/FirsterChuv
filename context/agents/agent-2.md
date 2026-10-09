@@ -61,3 +61,11 @@
 - Added migration `competition.0002_bracketcommandreceipt`, API/domain regression coverage, and same-key concurrency coverage.
 - Verification on this branch: targeted bracket API plus persistence tests `23 passed`; same-key concurrency test `1 passed`; full backend suite `237 passed, 2 skipped`; Django system check clean; migration drift check clean; `git diff --check` clean.
 - Branch includes fresh `origin/develop` sync at merge commit `7815160`; P2-02.2 implementation remains ready to publish as a follow-up PR after merged PR #7.
+
+## P2-04 finalization continuation, 2026-10-10
+
+- Status: `IN_REVIEW` — deadline reconciliation and pending-result drain committed to `feature/a2-p2-04-result-persistence`, base SHA `1f3fae5fc3ee70ab4e2bff713fd3a6cd7439d6a8` (PR #58).
+- Changes: RUNNING→FINALIZING on exact deadline; completion only after all accepted receipts have results; terminal result, winner/next-slot update, and public `score.changed` event commit in one DB transaction. Ties remain explicitly TIED for rematch policy.
+- Verification on updated head: focused ledger persistence 8 passed; full backend 250 passed, 2 skipped; Django check, migration drift, compileall, four competition domain suites and `git diff --check` clean.
+- Session audit: [P2-04 FINALIZING drain and atomic score event](../audits/2026-10-10T013100+0300-agent-2-P2-04-finalizing-drain.md).
+- Residual full P2-04: deadline service is not yet scheduled/called by a production timer worker; result/queue adapter is CONNECT; infrastructure failure sink and audited recovery are separate; public events remain limited to allowlisted `score.changed`.
