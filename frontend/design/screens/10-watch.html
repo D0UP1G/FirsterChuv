@@ -10,7 +10,7 @@
 body{margin:0}
 a{color:#ccff00}a:hover{color:#00ff66}
 .ba-watch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.ba-watch-card{display:flex;flex-direction:column;gap:12px;padding:20px}
+.ba-watch-card{display:flex;flex-direction:column;gap:16px;padding:20px}
 @media (max-width:1000px){.ba-watch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.ba-watch-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
@@ -36,25 +36,22 @@ a{color:#ccff00}a:hover{color:#00ff66}
       <div class="ba-watch-grid">
         <a class="ba-watch-card ba-panel ba-frame" href="#">
           <div style="display: flex; justify-content: space-between; align-items: center"><span class="ba-tag ba-tag-live">LIVE</span><span class="ba-mono-muted">1 матч идёт</span></div>
-          <h2 class="ba-h2">Блиц 2026</h2>
-          <p class="ba-mono-muted">Полуфинал · 4 участника · 20 минут на матч</p>
+          <div class="ba-copy"><h2 class="ba-h2">Блиц 2026</h2><p class="ba-mono-muted">Полуфинал · 4 участника · 20 минут на матч</p></div>
           <span class="text-link">Открыть карту ↗</span>
         </a>
         <a class="ba-watch-card ba-panel" href="#">
           <div style="display: flex; justify-content: space-between; align-items: center"><span class="ba-tag ba-tag-neutral">SCHEDULED</span><span class="ba-mono-muted">18.10 10:00</span></div>
-          <h2 class="ba-h2">Осенний отбор</h2>
-          <p class="ba-mono-muted">Сетка ещё не создана</p>
+          <div class="ba-copy"><h2 class="ba-h2">Осенний отбор</h2><p class="ba-mono-muted">Сетка ещё не создана</p></div>
           <span class="text-link">Открыть ↗</span>
         </a>
         <a class="ba-watch-card ba-panel" href="#">
           <div style="display: flex; justify-content: space-between; align-items: center"><span class="ba-tag ba-tag-ok">COMPLETED</span><span class="ba-mono-muted">02.10</span></div>
-          <h2 class="ba-h2">Пробный блиц</h2>
-          <p class="ba-mono-muted">Победитель определён</p>
+          <div class="ba-copy"><h2 class="ba-h2">Пробный блиц</h2><p class="ba-mono-muted">Победитель определён</p></div>
           <span class="text-link">Результаты ↗</span>
         </a>
       </div>
 
-      <div class="empty-state" style="margin-top: 32px" data-state="empty">
+      <div class="ba-mt-6 empty-state" data-state="empty">
         <p class="ba-kicker">Пустое состояние</p>
         <h2 class="ba-h2">Открытых турниров пока нет</h2>
         <p>Трансляции появятся здесь, когда организатор откроет публичный доступ.</p>

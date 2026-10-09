@@ -69,7 +69,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
                 </tbody>
               </table>
             </div>
-            <div class="ba-banner ba-banner-alarm" role="alertdialog" aria-label="Снятие участника Денис" style="margin-top: 16px; margin-bottom: 0"><span>Снять Дениса с турнира? Запись сохранится как REMOVED.</span><button class="button button-small text-danger" type="button">Снять</button><button class="button button-quiet button-small" type="button">Отмена</button></div>
+            <div class="ba-banner ba-banner-alarm ba-mt-4" role="alertdialog" aria-label="Снятие участника Денис"><span>Снять Дениса с турнира? Запись сохранится как REMOVED.</span><button class="button button-small text-danger" type="button">Снять</button><button class="button button-quiet button-small" type="button">Отмена</button></div>
           </section>
 
           <section class="management-panel" aria-labelledby="problems-heading">
@@ -91,7 +91,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
           <section class="management-panel" aria-labelledby="directory-heading">
             <div class="panel-heading"><div><h2 id="directory-heading">Найти участника</h2><p>Каталог показывает только имя, без e-mail.</p></div></div>
             <form class="directory-controls search-form"><label class="ba-sr-only" for="dir-q">Имя участника</label><input id="dir-q" class="ba-input" value="Ан"><button class="button button-small" type="submit">Найти</button></form>
-            <ul class="directory-results" style="list-style: none; margin: 12px 0 0; padding: 0">
+            <ul class="directory-results ba-mt-3" style="list-style: none; padding: 0">
               <li class="directory-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(0,229,255,.10)"><span class="directory-name">Анна</span><button class="button button-quiet button-small" type="button">Добавить</button></li>
               <li class="directory-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0"><span class="directory-name">Антон</span><button class="button button-quiet button-small" type="button">Добавить</button></li>
             </ul>
@@ -104,11 +104,11 @@ a{color:#ccff00}a:hover{color:#00ff66}
               <label class="form-field"><span>Лимит активаций</span><input type="number" min="1" value="10"></label>
               <div class="form-field-wide"><button class="button button-small" type="submit">Создать ссылку</button></div>
             </form>
-            <div class="invite-result success-panel" style="margin-top: 16px">
-              <p class="ba-kicker" style="margin-bottom: 8px">Новая ссылка — скопируйте сейчас</p>
-              <div class="invite-url-row"><label class="ba-sr-only" for="invite-url">Ссылка-приглашение</label><input id="invite-url" class="ba-input" readonly="readonly" value="https://[домен]/invites/[token]"><button class="button button-small" type="button">Копировать</button></div>
+            <div class="ba-mt-4 invite-result success-panel">
+              <p class="ba-kicker">Новая ссылка — скопируйте сейчас</p>
+              <div class="invite-url-row ba-mt-2"><label class="ba-sr-only" for="invite-url">Ссылка-приглашение</label><input id="invite-url" class="ba-input" readonly="readonly" value="https://[домен]/invites/[token]"><button class="button button-small" type="button">Копировать</button></div>
             </div>
-            <ul class="invite-list" style="list-style: none; margin: 16px 0 0; padding: 0">
+            <ul class="invite-list ba-mt-4" style="list-style: none; padding: 0">
               <li class="invite-row" style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px dashed rgba(0,229,255,.10)"><span class="ba-mono-muted">до 12.10 18:00 · 3 / 10</span><span class="invite-status ba-tag ba-tag-ok">ACTIVE</span><button class="button button-small text-danger" type="button">Отозвать</button></li>
               <li class="invite-row" style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 0"><span class="ba-mono-muted">до 08.10 18:00 · 2 / 5</span><span class="invite-status ba-tag ba-tag-locked">REVOKED</span><span></span></li>
             </ul>
