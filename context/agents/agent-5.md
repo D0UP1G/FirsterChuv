@@ -7,7 +7,8 @@
 - До реализации зарезервированы пути: `frontend/src/App.tsx`, новый `frontend/src/responsive.css`, `frontend/src/workspace/workspace.css`, `frontend/src/spectator/spectator.css`, эта карточка и append-only audit текущей сессии. Тесты затрагивать только при необходимости подтвердить поведение.
 - Область: мобильная оболочка и формы, рабочее место участника, публичная карта, отдельный projector layout, видимый keyboard focus, reduced motion, читаемое переполнение ошибок и статусов. Существующие CodeMirror, безопасный Markdown/URL, TeX и локальные черновики сохраняются.
 - Проверки по ROADMAP: UI tests, typecheck, lint и build с ограниченными workers; визуально проверить обычный/mobile/projector сценарии в disposable browser session, если среда доступна.
-- Следующий READY после этого среза: P5-03 — подключать каждый доступный реальный provider отдельно; недостающий endpoint записывать как `WAITING_CONNECT`.
+- Уточнение приоритета команды: публиковать минимальную адаптивность и keyboard focus; отдельную projector-компоновку/полировку отложить до рабочего матча M0.
+- Следующий приоритет после минимального среза: реальный browser M0 путь; доступные endpoints подключать по одному, каждый отсутствующий port фиксировать как `WAITING_CONNECT` и продолжать независимую READY UI-работу.
 
 ## Передача координатором 2026-10-10T01:11:53+03:00
 
