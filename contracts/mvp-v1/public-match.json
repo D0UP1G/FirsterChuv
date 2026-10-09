@@ -1,0 +1,103 @@
+{
+  "matchId": "00000000-0000-0000-0000-000000000020",
+  "runId": "00000000-0000-0000-0000-000000000030",
+  "status": "RUNNING",
+  "serverNow": "2026-10-09T12:03:00Z",
+  "elapsedMs": 180000,
+  "remainingMs": 1020000,
+  "allowedDurationMs": 1200000,
+  "leaderUserId": "00000000-0000-0000-0000-000000000001",
+  "winnerUserId": null,
+  "lastEventId": 42,
+  "scoringRule": {
+    "order": [
+      "solved_desc",
+      "penalty_asc",
+      "last_accepted_asc"
+    ],
+    "wrongAttemptPenaltySec": 60,
+    "penalizedVerdicts": [
+      "WA",
+      "TL",
+      "ML",
+      "RE"
+    ],
+    "finalTiePolicy": "rematch"
+  },
+  "players": [
+    {
+      "userId": "00000000-0000-0000-0000-000000000001",
+      "displayName": "Ира",
+      "solvedCount": 1,
+      "penaltyMs": 120000,
+      "lastAcceptedElapsedMs": 120000,
+      "tasks": [
+        {
+          "problemId": "00000000-0000-0000-0000-000000000040",
+          "label": "A",
+          "status": "ATTEMPTED",
+          "attempts": 1,
+          "lastVerdict": "WA"
+        },
+        {
+          "problemId": "00000000-0000-0000-0000-000000000041",
+          "label": "B",
+          "status": "NOT_STARTED",
+          "attempts": 0,
+          "lastVerdict": null
+        },
+        {
+          "problemId": "00000000-0000-0000-0000-000000000042",
+          "label": "C",
+          "status": "SOLVED",
+          "attempts": 1,
+          "lastVerdict": "OK"
+        },
+        {
+          "problemId": "00000000-0000-0000-0000-000000000043",
+          "label": "D",
+          "status": "NOT_STARTED",
+          "attempts": 0,
+          "lastVerdict": null
+        }
+      ]
+    },
+    {
+      "userId": "00000000-0000-0000-0000-000000000004",
+      "displayName": "Олег",
+      "solvedCount": 1,
+      "penaltyMs": 150000,
+      "lastAcceptedElapsedMs": 150000,
+      "tasks": [
+        {
+          "problemId": "00000000-0000-0000-0000-000000000040",
+          "label": "A",
+          "status": "SOLVED",
+          "attempts": 1,
+          "lastVerdict": "OK"
+        },
+        {
+          "problemId": "00000000-0000-0000-0000-000000000041",
+          "label": "B",
+          "status": "NOT_STARTED",
+          "attempts": 0,
+          "lastVerdict": null
+        },
+        {
+          "problemId": "00000000-0000-0000-0000-000000000042",
+          "label": "C",
+          "status": "NOT_STARTED",
+          "attempts": 0,
+          "lastVerdict": null
+        },
+        {
+          "problemId": "00000000-0000-0000-0000-000000000043",
+          "label": "D",
+          "status": "NOT_STARTED",
+          "attempts": 0,
+          "lastVerdict": null
+        }
+      ]
+    }
+  ]
+}
