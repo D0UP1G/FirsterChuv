@@ -68,5 +68,13 @@
 - Participant replacement writes a durable command receipt; updates the tournament roster and selected slot; clears the replaced participant's readiness signal; updates a READY run's frozen roster, or supersedes an active run and creates an empty-score READY run. Historical runs retain their original participant snapshot.
 - `MatchRun.participant_user_ids` was persisted to make each ledger and run's roster immutable across later bracket-slot changes. Migration `competition.0006_matchrun_participant_user_ids` included.
 - Verification on the updated head: focused admin tests 10 passed; full backend 256 passed, 2 skipped; Django check, migration drift, compileall, domain suites and `git diff --check` clean.
-- Remaining P2-05 work: trusted HTTP request adapter/endpoint and coordinated FINALIZING/downstream/event effects. Do not expose production admin endpoint without access adapter.
+- Remaining P2-05 work: trusted HTTP request adapter/endpoint and any coordinator-authorized integration follow-up.
 - Session audit: [P2-05 replacement and immutable run roster](../audits/2026-10-10T012500+0300-agent-2-P2-05-participant-replacement.md).
+
+## P2-04 finalization continuation, 2026-10-10
+
+- Status: `IN_REVIEW` — deadline reconciliation and pending-result drain committed to `feature/a2-p2-04-result-persistence`, base SHA `1f3fae5fc3ee70ab4e2bff713fd3a6cd7439d6a8` (PR #58).
+- Changes: RUNNING→FINALIZING on exact deadline; completion only after all accepted receipts have results; terminal result, winner/next-slot update, and public `score.changed` event commit in one DB transaction. Ties remain explicitly TIED for rematch policy.
+- Verification on updated head: focused ledger persistence 8 passed; full backend 250 passed, 2 skipped; Django check, migration drift, compileall, four competition domain suites and `git diff --check` clean.
+- Session audit: [P2-04 FINALIZING drain and atomic score event](../audits/2026-10-10T013100+0300-agent-2-P2-04-finalizing-drain.md).
+- Residual full P2-04: deadline service is not yet scheduled/called by a production timer worker; result/queue adapter is CONNECT; infrastructure failure sink and audited recovery are separate; public events remain limited to allowlisted `score.changed`.
