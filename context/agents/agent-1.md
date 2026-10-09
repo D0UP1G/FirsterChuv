@@ -5,7 +5,7 @@
 - Текущая задача/ветка/база: `A1-02 integration/state sync` / `feature/a1-02-state-sync` / `c64555c` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-02 integration/state-sync audit](../audits/2026-10-09T151339+0300-agent-1-A1-02-integration-state-sync.md); [PR #5](https://github.com/D0UP1G/FirsterChuv/pull/5) merged в `c64555c`; A1-02.4 T02/T20 cross-check; PR #2 merged at `2484d86`, A1-01 state-sync PR #4 at `be0323c`.
+- Последний аудит/PR/проверки: [A1-02 integration/state-sync audit](../audits/2026-10-09T151339+0300-agent-1-A1-02-integration-state-sync.md); [PR #6](https://github.com/D0UP1G/FirsterChuv/pull/6) docs/state sync открыт; [PR #5](https://github.com/D0UP1G/FirsterChuv/pull/5) merged в `c64555c`; A1-02.4 T02/T20 cross-check.
 
 ## Разбивка задач на малые шаги
 

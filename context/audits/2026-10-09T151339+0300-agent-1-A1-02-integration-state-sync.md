@@ -35,3 +35,7 @@ Merge добавляет только auth endpoints, базовые global-role
 ## Следующий шаг
 
 Открыть отдельный PR этого state sync в `develop`. После его merge от актуального `origin/develop` начать A1-03 на `feature/tournament-roster` и согласовать roster freeze/participant lifecycle с владельцем A2 до изменения API. PR #3 и чужие ветки не менять.
+
+## Последующее изменение
+
+STATE sync PR открыт: [#6](https://github.com/D0UP1G/FirsterChuv/pull/6), `feature/a1-02-state-sync` → `develop`. GitHub сообщает `mergeStateStatus=CLEAN`; configured checks и review requests отсутствуют. Следующий шаг — merge commit, подтверждение remote и начало A1-03 от обновлённого `develop`.
