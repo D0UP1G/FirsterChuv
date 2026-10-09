@@ -14,6 +14,7 @@ from backend.apps.common.contracts import WorkspaceAction
 from backend.apps.drafts.errors import (
     DraftError,
     DraftRevisionConflict,
+    DraftStorageBusy,
     WorkspaceDenied,
     WorkspaceUnavailable,
 )
@@ -26,6 +27,12 @@ class DraftAccessUnavailable(APIException):
     status_code = 503
     default_code = "workspace_unavailable"
     default_detail = "Рабочая область временно недоступна."
+
+
+class DraftSaveUnavailable(APIException):
+    status_code = 503
+    default_code = "draft_busy"
+    default_detail = "Сохранение черновика временно занято; повторите запрос."
 
 
 def _draft_data(draft: DraftSnapshot) -> dict[str, object]:
@@ -139,6 +146,8 @@ class MatchDraftView(PrivateDraftAPIView):
                 },
                 status=409,
             )
+        except DraftStorageBusy as error:
+            raise DraftSaveUnavailable() from error
         except WorkspaceDenied as error:
             raise NotFound("Черновик не найден.") from error
         except WorkspaceUnavailable as error:

@@ -14,6 +14,10 @@ class DraftRevisionConflict(RuntimeError):
         super().__init__("draft revision changed")
 
 
+class DraftStorageBusy(RuntimeError):
+    """SQLite stayed busy after the bounded draft-save retry budget."""
+
+
 class WorkspaceDenied(LookupError):
     """The workspace port denies access to this match/run/problem."""
 

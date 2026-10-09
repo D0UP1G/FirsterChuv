@@ -1,6 +1,7 @@
 from uuid import UUID, uuid4
 from unittest.mock import patch
 
+from django.db import OperationalError
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -110,6 +111,19 @@ class DraftAPITests(TestCase):
 
         self.assertEqual(conflict.status_code, 409)
         self.assertIsNone(conflict.json()["error"]["fields"]["currentDraft"])
+
+    def test_exhausted_sqlite_contention_is_a_retryable_503(self):
+        with (
+            patch("backend.apps.drafts.views.get_workspace_access", return_value=self.access),
+            patch.object(DraftService, "_save_once", side_effect=OperationalError("database is locked")) as save_once,
+            patch("backend.apps.drafts.services.sleep"),
+        ):
+            response = self.put_draft(source="local source", expected_revision=0)
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"]["code"], "draft_busy")
+        self.assertNotIn("database is locked", str(response.json()))
+        self.assertEqual(save_once.call_count, 3)
 
     def test_missing_workspace_port_fails_closed(self):
         response = self.get_draft()

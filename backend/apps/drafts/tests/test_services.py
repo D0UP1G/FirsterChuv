@@ -1,10 +1,12 @@
 from uuid import UUID, uuid4
+from unittest.mock import call, patch
 
+from django.db import OperationalError
 from django.test import TestCase
 
 from backend.apps.accounts.models import User
 from backend.apps.common.contracts import WorkspaceContext
-from backend.apps.drafts.errors import DraftError, DraftRevisionConflict
+from backend.apps.drafts.errors import DraftError, DraftRevisionConflict, DraftStorageBusy
 from backend.apps.drafts.services import DraftService
 
 
@@ -165,3 +167,31 @@ class DraftServiceTests(TestCase):
                 source="source",
                 expected_revision=True,
             )
+
+    def test_save_retries_sqlite_busy_then_returns_a_bounded_busy_error(self):
+        with (
+            patch.object(DraftService, "_save_once", side_effect=OperationalError("database is locked")) as save_once,
+            patch("backend.apps.drafts.services.sleep") as retry_sleep,
+        ):
+            with self.assertRaises(DraftStorageBusy):
+                DraftService.save(
+                    context=self.draft_context,
+                    language_id="cpp20",
+                    source="source",
+                    expected_revision=0,
+                )
+
+        self.assertEqual(save_once.call_count, 3)
+        retry_sleep.assert_has_calls([call(0.025), call(0.075)])
+
+    def test_save_does_not_retry_unrelated_database_operational_errors(self):
+        with patch.object(DraftService, "_save_once", side_effect=OperationalError("disk I/O error")) as save_once:
+            with self.assertRaisesRegex(OperationalError, "disk I/O error"):
+                DraftService.save(
+                    context=self.draft_context,
+                    language_id="cpp20",
+                    source="source",
+                    expected_revision=0,
+                )
+
+        self.assertEqual(save_once.call_count, 1)

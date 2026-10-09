@@ -4,20 +4,24 @@ from __future__ import annotations
 
 import hashlib
 import re
+import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
+from time import sleep
 from uuid import UUID
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, connection, transaction
 from django.db.models import F
 from django.utils import timezone
 
-from .errors import DraftError, DraftRevisionConflict
+from .errors import DraftError, DraftRevisionConflict, DraftStorageBusy
 from .models import Draft, DraftRevision
 from .ports import WorkspaceAction, WorkspaceContext
 
 MAX_DRAFT_BYTES = 32 * 1024
 MAX_DRAFT_REVISION = 2**31 - 1
+MAX_DRAFT_SAVE_ATTEMPTS = 3
+DRAFT_SAVE_RETRY_DELAYS = (0.025, 0.075)
 LANGUAGE_ID_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}")
 
 
@@ -89,6 +93,33 @@ def _from_record(record: Draft) -> DraftSnapshot:
     )
 
 
+def _is_sqlite_lock_error(error: OperationalError) -> bool:
+    if connection.vendor != "sqlite":
+        return False
+
+    current: BaseException | None = error
+    saw_sqlite_error_code = False
+    while current is not None:
+        code = getattr(current, "sqlite_errorcode", None)
+        if isinstance(code, int):
+            saw_sqlite_error_code = True
+            if (code & 0xFF) in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                return True
+        current = current.__cause__ or current.__context__
+
+    if saw_sqlite_error_code:
+        return False
+
+    message = " ".join(str(error).lower().split())
+    return (
+        message == "database is locked"
+        or message == "database table is locked"
+        or message.startswith("database table is locked: ")
+        or message == "database schema is locked"
+        or message.startswith("database schema is locked: ")
+    )
+
+
 class DraftService:
     @staticmethod
     def get_current(*, context: WorkspaceContext, language_id: str) -> DraftSnapshot | None:
@@ -123,73 +154,103 @@ class DraftService:
             raise DraftError("expected revision is invalid")
 
         now = timezone.now()
-        try:
-            with transaction.atomic():
-                record = Draft.objects.filter(
+        for attempt in range(MAX_DRAFT_SAVE_ATTEMPTS):
+            try:
+                return DraftService._save_once(
+                    actor_id=actor_id,
+                    run_id=run_id,
+                    problem_id=problem_id,
+                    language_id=language_id,
+                    source=source,
+                    expected_revision=expected_revision,
+                    now=now,
+                )
+            except IntegrityError:
+                current = Draft.objects.filter(
                     actor_id=actor_id,
                     run_id=run_id,
                     problem_id=problem_id,
                     language_id=language_id,
                 ).first()
-                if record is None:
-                    if expected_revision != 0:
-                        raise DraftRevisionConflict(None)
-                    record = Draft.objects.create(
-                        actor_id=actor_id,
-                        run_id=run_id,
-                        problem_id=problem_id,
-                        language_id=language_id,
-                        source=source,
-                        revision=1,
-                        updated_at=now,
-                    )
-                    DraftRevision.objects.create(
-                        draft=record,
-                        revision=1,
-                        source=source,
-                        source_sha256=hashlib.sha256(source.encode("utf-8")).hexdigest(),
-                    )
-                    return _from_record(record)
+                if current is None:
+                    raise
+                if current.revision == expected_revision:
+                    raise
+                raise DraftRevisionConflict(_from_record(current)) from None
+            except OperationalError as error:
+                if not _is_sqlite_lock_error(error):
+                    raise
+                if attempt + 1 == MAX_DRAFT_SAVE_ATTEMPTS:
+                    raise DraftStorageBusy("draft storage remained busy after bounded retries") from error
+                sleep(DRAFT_SAVE_RETRY_DELAYS[attempt])
 
-                if expected_revision != record.revision:
-                    raise DraftRevisionConflict(_from_record(record))
-                if record.source == source:
-                    return _from_record(record)
-                if expected_revision >= MAX_DRAFT_REVISION:
-                    raise DraftError("draft revision limit has been reached")
-                next_revision = expected_revision + 1
-                updated = Draft.objects.filter(pk=record.pk, revision=expected_revision).update(
-                    source=source,
-                    revision=F("revision") + 1,
-                    updated_at=now,
-                )
-                if updated != 1:
-                    current = Draft.objects.filter(pk=record.pk).first()
-                    if current is None:
-                        raise DraftRevisionConflict(None)
-                    raise DraftRevisionConflict(_from_record(current))
-                DraftRevision.objects.create(
-                    draft=record,
-                    revision=next_revision,
-                    source=source,
-                    source_sha256=hashlib.sha256(source.encode("utf-8")).hexdigest(),
-                )
-                record.source = source
-                record.revision = next_revision
-                record.updated_at = now
-                return _from_record(record)
-        except IntegrityError:
-            current = Draft.objects.filter(
+        raise AssertionError("draft save retry loop exited unexpectedly")
+
+    @staticmethod
+    def _save_once(
+        *,
+        actor_id: UUID,
+        run_id: UUID,
+        problem_id: UUID,
+        language_id: str,
+        source: str,
+        expected_revision: int,
+        now: datetime,
+    ) -> DraftSnapshot:
+        with transaction.atomic():
+            record = Draft.objects.filter(
                 actor_id=actor_id,
                 run_id=run_id,
                 problem_id=problem_id,
                 language_id=language_id,
             ).first()
-            if current is None:
-                raise
-            if current.revision == expected_revision:
-                raise
-            raise DraftRevisionConflict(_from_record(current)) from None
+            if record is None:
+                if expected_revision != 0:
+                    raise DraftRevisionConflict(None)
+                record = Draft.objects.create(
+                    actor_id=actor_id,
+                    run_id=run_id,
+                    problem_id=problem_id,
+                    language_id=language_id,
+                    source=source,
+                    revision=1,
+                    updated_at=now,
+                )
+                DraftRevision.objects.create(
+                    draft=record,
+                    revision=1,
+                    source=source,
+                    source_sha256=hashlib.sha256(source.encode("utf-8")).hexdigest(),
+                )
+                return _from_record(record)
+
+            if expected_revision != record.revision:
+                raise DraftRevisionConflict(_from_record(record))
+            if record.source == source:
+                return _from_record(record)
+            if expected_revision >= MAX_DRAFT_REVISION:
+                raise DraftError("draft revision limit has been reached")
+            next_revision = expected_revision + 1
+            updated = Draft.objects.filter(pk=record.pk, revision=expected_revision).update(
+                source=source,
+                revision=F("revision") + 1,
+                updated_at=now,
+            )
+            if updated != 1:
+                current = Draft.objects.filter(pk=record.pk).first()
+                if current is None:
+                    raise DraftRevisionConflict(None)
+                raise DraftRevisionConflict(_from_record(current))
+            DraftRevision.objects.create(
+                draft=record,
+                revision=next_revision,
+                source=source,
+                source_sha256=hashlib.sha256(source.encode("utf-8")).hexdigest(),
+            )
+            record.source = source
+            record.revision = next_revision
+            record.updated_at = now
+            return _from_record(record)
 
     @staticmethod
     def history(*, context: WorkspaceContext, language_id: str) -> list[DraftHistoryEntry]:
