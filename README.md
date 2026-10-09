@@ -20,6 +20,7 @@
 
 - [Навигация по документации](docs/README.md).
 - [Требования кейса и их покрытие](docs/requirements.md).
+- [Исходный PDF кейса](docs/source/Кейс_Платформа_соревнований.pdf) в репозитории.
 - [Архитектура и решения](docs/architecture/README.md).
 - [API и права доступа](docs/architecture/api.md).
 - [Пользовательские сценарии](docs/architecture/user-flows.md).
