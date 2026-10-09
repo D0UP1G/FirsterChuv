@@ -13,6 +13,6 @@
 - Следующий шаг: завершить merge актуальной develop и публикацию проверяемого P2-03.1 slice; затем расширить clock/start state machine по `match.json` с immutable task/rule config и `manual`/`both_ready`. DB MatchRun wiring требует merge P2-01 и отсутствующие MatchRun lifecycle fields.
 - Порты: использовать `ProblemCatalogV1.describe_ready`, `CompetitionGatewayV1.authorize_submission/register_accepted/apply_result`, `EventWriter` только по v1. Отсутствующий runtime provider должен fail closed; test catalog допустим только в tests.
 - Владеет: `backend/apps/competition/`, `backend/apps/events/`, собственными migrations/tests; общие настройки и другие apps не менять без разрешённого узкого wiring.
-- Последние аудиты: [A2-02.1 clock core](../audits/2026-10-09T164411+0300-agent-2-A2-02-clock-domain.md); аудит sync/publication этого P2-03 среза будет добавлен после проверки.
+- Последние аудиты: [P2-03.1 clock core sync](../audits/2026-10-09T170108+0300-agent-2-P2-03-clock-core.md), исходный [clock core audit](../audits/2026-10-09T164411+0300-agent-2-A2-02-clock-domain.md). Домен проверен после merge актуального develop; остаются push и отдельный PR.
 
 Разделять implementation, integration и full acceptance. Общий `context/STATE.md` обновляет координатор после merge.
