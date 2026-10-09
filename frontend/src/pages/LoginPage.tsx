@@ -8,6 +8,8 @@ export function LoginPage() {
   const { status, signIn } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const next = safeNext(location.search)
+  const registerPath = next ? `/register?next=${encodeURIComponent(next)}` : '/register'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -38,7 +40,7 @@ export function LoginPage() {
       eyebrow="С возвращением"
       title="Войти в аккаунт"
       description="Продолжите турнир с того места, где остановились."
-      footer={<>Ещё нет аккаунта? <Link to="/register">Создать аккаунт</Link></>}
+      footer={<>Ещё нет аккаунта? <Link to={registerPath}>Создать аккаунт</Link></>}
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {message && <div className="form-alert" role="alert">{message}</div>}

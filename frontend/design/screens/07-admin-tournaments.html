@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — турниры организатора</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.ba-admin-cols{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.tournament-list{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.tournament-form{flex:1 1 440px;min-width:0}
+.tournament-card{padding:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
+.tournament-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ba-checks{display:flex;flex-wrap:wrap;gap:16px;padding:10px 0}
+.ba-checks label{display:inline-flex;align-items:center;gap:8px;font-size:13px}
+.ba-checks input{accent-color:#ccff00;width:18px;height:18px}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/admin" data-api="GET|POST /api/v1/tournaments · DELETE /api/v1/tournaments/{id}">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация">
+      <a class="nav-link" href="#">Зрителям</a>
+      <a class="nav-link" href="#">Кабинет</a>
+      <a class="nav-link active" href="#">Организатору</a>
+    </nav>
+    <div class="account-nav">
+      <span class="account-name">Организатор</span>
+      <span class="role-pill role-admin">организатор</span>
+      <button class="button button-quiet button-small" type="button">Выйти</button>
+    </div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="page-section management-page">
+      <div class="management-heading">
+        <div>
+          <p class="eyebrow">CONTROL ROOM // ТУРНИРЫ</p>
+          <h1>Турниры</h1>
+          <p class="page-lede">Формат MVP — одиночное выбывание. Управлять турнирами может только организатор.</p>
+        </div>
+        <div class="management-actions"><button class="button" type="button">Создать турнир</button></div>
+      </div>
+
+      <div class="ba-admin-cols">
+        <div class="tournament-list">
+          <article class="tournament-card ba-frame">
+            <div>
+              <h2 class="ba-h2"><a href="#">Блиц 2026</a></h2>
+              <div class="tournament-meta">
+                <span class="ba-tag ba-tag-live">RUNNING</span>
+                <span class="meta-pill">09.10 12:00 – 15:00</span>
+                <span class="meta-pill">8 / 16 участников</span>
+                <span class="meta-pill">public</span>
+              </div>
+            </div>
+            <div class="tournament-card-actions" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+              <a class="button button-quiet button-small" href="#">Управление</a>
+              <a class="button button-quiet button-small" href="#">Сетка и матчи</a>
+            </div>
+          </article>
+          <article class="tournament-card">
+            <div>
+              <h2 class="ba-h2"><a href="#">Осенний отбор</a></h2>
+              <div class="tournament-meta">
+                <span class="ba-tag ba-tag-neutral">DRAFT</span>
+                <span class="meta-pill">18.10 10:00 – 13:00</span>
+                <span class="meta-pill">3 / 8 участников</span>
+                <span class="meta-pill">unlisted</span>
+              </div>
+            </div>
+            <div class="tournament-card-actions" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+              <a class="button button-quiet button-small" href="#">Управление</a>
+              <button class="button button-small text-danger" type="button">Удалить</button>
+            </div>
+          </article>
+          <div class="confirmation-panel ba-banner ba-banner-alarm" role="alertdialog" aria-label="Подтверждение удаления турнира">
+            <span>Удалить «Осенний отбор»? Черновик без заморозки удаляется полностью, иначе архивируется.</span>
+            <button class="button button-small text-danger" type="button">Удалить</button>
+            <button class="button button-quiet button-small" type="button">Отмена</button>
+          </div>
+        </div>
+
+        <form class="tournament-form management-panel ba-frame" aria-labelledby="create-tournament-heading">
+          <div class="panel-heading"><div><h2 id="create-tournament-heading">Новый турнир</h2><p>Статус, автора и slug назначает сервер.</p></div></div>
+          <div class="form-grid">
+            <label class="form-field form-field-wide"><span>Название</span><input name="title" value="Блиц 2026"></label>
+            <label class="form-field form-field-wide"><span>Описание</span><textarea name="description">Четыре задачи, один соперник</textarea></label>
+            <label class="form-field"><span>Начало</span><input type="datetime-local" name="startsAt" value="2026-10-09T12:00"></label>
+            <label class="form-field"><span>Окончание</span><input type="datetime-local" name="endsAt" value="2026-10-09T15:00"></label>
+            <label class="form-field"><span>Формат</span><select name="format" disabled="disabled"><option>Одиночное выбывание</option></select></label>
+            <label class="form-field"><span>Лимит участников</span><input type="number" name="participantLimit" min="2" value="16"></label>
+            <label class="form-field"><span>Видимость</span><select name="visibility"><option>Публичный</option><option>По ссылке (unlisted)</option></select></label>
+            <label class="form-field"><span>Длительность матча, с</span><input type="number" name="matchDurationSec" min="60" max="7200" value="1200"></label>
+            <label class="form-field"><span>Запуск матчей</span><select name="startMode"><option>Вручную</option><option>Готовность обоих</option></select></label>
+            <label class="form-field"><span>Штраф за неверную попытку, с</span><input type="number" name="scoringRule.wrongAttemptPenaltySec" min="0" max="7200" value="60"></label>
+            <fieldset class="form-field form-field-wide" style="border: 0; padding: 0; margin: 0">
+              <legend class="field-label">Штрафуемые вердикты</legend>
+              <div class="ba-checks">
+                <label><input type="checkbox" checked="checked"> WA</label>
+                <label><input type="checkbox" checked="checked"> TL</label>
+                <label><input type="checkbox" checked="checked"> ML</label>
+                <label><input type="checkbox" checked="checked"> RE</label>
+              </div>
+            </fieldset>
+            <div class="form-field-wide ba-banner"><span class="ba-kicker">Правило победы</span><span>Решено ↓ · штраф ↑ · последнее принятое ↑ · полное равенство → переигровка</span></div>
+          </div>
+          <div class="form-actions"><button class="button" type="submit">Создать</button><button class="button button-quiet" type="button">Отмена</button></div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

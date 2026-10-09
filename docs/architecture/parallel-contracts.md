@@ -1,6 +1,6 @@
 # Контракты v1 для независимой разработки
 
-Дата: 2026-10-09. Назначение: реализация четырёх дорожек без ожидания соседней feature-ветки. Это спецификация целевых границ; готовность конкретного адаптера подтверждается кодом/PR, а не этим документом. В `common/contracts.py` объявлены immutable DTO и typing Protocol для submission/result/workspace, problem catalog, public access, judge и events; они не содержат provider implementations и не импортируют optional apps. До интеграции конкретных apps доступ к ним остаётся только через готовый adapter, а отсутствие provider закрывает действие.
+Дата: 2026-10-09. Назначение: реализация пяти дорожек без ожидания соседней feature-ветки. Это спецификация целевых границ; готовность конкретного адаптера подтверждается кодом/PR, а не этим документом. В `common/contracts.py` объявлены immutable DTO и typing Protocol для submission/result/workspace, problem catalog, public access, judge и events; они не содержат provider implementations и не импортируют optional apps. До интеграции конкретных apps доступ к ним остаётся только через готовый adapter, а отсутствие provider закрывает действие.
 
 ## Приоритет и версия
 
@@ -43,8 +43,8 @@
 | ProblemCatalogV1 / A3 | `describe_ready(problemIds)` → immutable public versions/limits/languages, отказ для NOT_READY/unknown | A2 config/start |
 | ProblemCatalogV1 / A3 | `load_bundle(problemId, version)` → private ProblemBundleV1 | A3 JudgeProvider |
 | LanguageRegistry / A3 | `is_supported(languageId)` → `bool` из server-owned allowlist | A3 admission |
-| PublicAccessV1 / A1 | `assert_can_view(tournamentId, shareToken?)` → public-safe access context | A2 snapshot/SSE |
-| EventWriter / A2 | `append(scope, eventType, publicPayload)` → monotonic event ID | Domain changes в той же transaction |
+| PublicAccessV1 / A1 | `assert_can_view(tournamentId, shareToken?)` → public-safe access context | A4 snapshot/SSE |
+| EventWriter / A4 | `append(scope, eventType, publicPayload)` → monotonic event ID | Domain changes в той же transaction |
 | JudgeProvider / A3 | `execute(TrustedJudgeJob)` → JudgeResult; infrastructure failure отдельным typed error | Один trusted worker |
 
 `AttemptReceipt`: submissionId, runId, userId, problemId, receivedAt, elapsedMs, scoringVersion. `ResultReceipt`: та же неизменяемая идентичность + verdict; данные A2 сверяются с уже принятым ledger, worker не может подменить elapsed/player/problem. Accepted ledger уникален по submissionId. При duplicate result возвращается applied=false; старый run сохраняет history и не меняет current/downstream score. При lease смене только текущий claim может завершить submission, старый worker результат не публикует.
@@ -99,3 +99,7 @@ Frontend `ApiTransport` имеет HTTP implementation и отдельный dev
 [Runtime handoffs](runtime-handoffs.md) задаёт production owners/queue receipt adapters, immutable job snapshots и отдельный additive infrastructure failure port. Core не заменяет provider. #7 lifecycle и #16 SOLVED.lastVerdict требуют исправлений; детали — [отчёт](../reviews/2026-10-09-integration-review.md). Старые ссылки a89b8fc выше фиксируют происхождение serializer/rank, не последний HEAD (#7 сейчас 1952244).
 
 Обновление 2026-10-09T23:54+03:00: исправления #7 `1a2b54a` и #16 `a0b1dcc` проверены в новой coordinator integration feature. #34/#38/#41 дают pure readiness/ledger/command receipts; #37 даёт worker/common adapters и local technical-failure outbox. Существующий common v1/HTTP contract не менялся; production providers и additive common failure port ещё нужны. После фактического MERGED integration PR продолжать CONNECT по [STATE](../../context/STATE.md); исторические blockers выше не выполнять повторно.
+
+## Передача владельцев и уточнения 2026-10-10
+
+ROADMAP v4 передаёт events/public HTTP/SSE A4, frontend A5; competition/run/ledger A2. [Принятые MVP boundaries](../../context/contracts/2026-10-10-mvp-boundaries.md) фиксируют GET draft runId/404, additive accepted-run snapshot provider/failure sink и per-claim container fencing. Это target contracts, не утверждение готовности adapters. Source #53 snapshot остаётся OPEN с двумя correctness blockers; старый event store #16 integrated.

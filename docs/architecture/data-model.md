@@ -35,6 +35,7 @@ erDiagram
 | ParticipantRunState | runId, userId, ready, solvedCount, penaltyMs, lastAcceptedElapsedMs. Unique run/user. Производная проекция из eligible submissions. |
 | Submission | id, runId, userId, problemVersionId, languageId, source, sourceHash, idempotencyKey, receivedAt, elapsedMs, processStatus, verdict nullable, attempts, availableAt, leaseToken/leaseUntil, bounded diagnostics/metrics. |
 | Draft | userId/runId/problemVersionId/languageId unique, source, revision, updatedAt. Отдельные языки не затирают код друг друга. |
+| DraftRevision | draftId/revision unique, private source snapshot, sourceHash, createdAt. Хранит принятые версии черновика для восстановления; доступ требует `WorkspaceContext` с purpose `history`. |
 | MatchEvent | integer eventId монотонный, tournamentId, matchId/runId nullable, type, occurredAt, publicPayload allowlist. Private исходники не хранятся в publicPayload. |
 | AdminAction | actorId, tournamentId, matchId/runId, action, reason, before/after refs, timestamp. Изменения фиксируются без копирования секретов/source. |
 
@@ -51,6 +52,7 @@ Session/cookie storage использует стандартную Django sessio
 - Worker claim/recovery guarded by status и leaseToken. Старый worker не перезаписывает новый результат.
 - Winner в downstream slot записывается только один раз по resolved upstream match; повторный callback не создаёт новый слот/матч.
 - Verdict может быть null до завершения; инфраструктурный сбой не хранится как RE участника.
+- Draft PUT использует conditional revision update; конфликт возвращает автору текущую server revision и source с 409, не затирает ни её, ни локальную версию клиента. Сохранённые private snapshots не входят в public payload.
 - Случайные invite/share tokens хранятся хешами. Role/draft/source/email не входят в public snapshot.
 
 ## Миграции и жизненный цикл
