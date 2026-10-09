@@ -92,6 +92,7 @@ export function AdminTournamentsPage() {
           <p>Настройте соревнование, ростер и приглашения. Статусы и ограничения подтверждает сервер.</p>
         </div>
         <div className="management-actions">
+          {import.meta.env.DEV && <Link className="button button-outline button-small" to="/admin/tournaments/dev-match/matches?scenario=match-ui&participants=4">Открыть сценарий match UI</Link>}
           <button className="button" type="button" onClick={() => { setCreating((value) => !value); setFormError(null) }}>
             {creating ? 'Закрыть форму' : 'Создать турнир'}
           </button>

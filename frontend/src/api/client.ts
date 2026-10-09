@@ -95,6 +95,115 @@ export interface InvitePreview {
   expiresAt: string | null
 }
 
+export interface BracketParticipant {
+  id: string
+  userId: string
+  displayName: string
+  seed: number | null
+}
+
+export interface BracketSlot {
+  index: number
+  resolution: 'PLAYER' | 'WAITING' | 'BYE'
+  participant: BracketParticipant | null
+  sourceMatchId: string | null
+}
+
+export type MatchStatus = 'WAITING' | 'READY' | 'RUNNING' | 'PAUSED' | 'FINALIZING' | 'FINISHED' | 'TIED' | 'SUPERSEDED'
+export type BracketMatchStatus = MatchStatus | 'BYE'
+
+export interface BracketMatch {
+  id: string
+  key: string
+  roundIndex: number
+  position: number
+  kind: 'MATCH' | 'BYE'
+  status: BracketMatchStatus
+  winner: BracketParticipant | null
+  nextMatchId: string | null
+  nextSlot: number | null
+  slots: [BracketSlot, BracketSlot]
+}
+
+export interface Bracket {
+  tournamentId: string
+  bracketSize: number
+  rosterFrozenAt: string
+  matches: BracketMatch[]
+}
+
+export interface ProblemVersion {
+  problemId: string
+  label: string
+  version: string
+  conditionAvailable: boolean
+}
+
+export interface ProblemCatalogEntry {
+  problemId: string
+  label: string
+  version: string
+  readiness: 'READY' | 'NOT_READY'
+}
+
+export interface MatchTaskState {
+  problemId: string
+  label: string
+  status: 'NOT_STARTED' | 'ATTEMPTED' | 'SOLVED'
+  attempts: number
+  lastVerdict: 'OK' | 'WA' | 'TL' | 'ML' | 'RE' | 'CE' | null
+}
+
+export interface MatchPlayerState {
+  userId: string
+  displayName: string
+  solvedCount: number
+  penaltyMs: number
+  lastAcceptedElapsedMs: number | null
+  tasks: MatchTaskState[]
+}
+
+export interface MatchView {
+  matchId: string
+  runId: string
+  status: MatchStatus
+  serverNow: string
+  elapsedMs: number
+  remainingMs: number
+  allowedDurationMs: number
+  leaderUserId: string | null
+  winnerUserId: string | null
+  lastEventId: number
+  scoringRule: Tournament['scoringRule']
+  players: [MatchPlayerState, MatchPlayerState]
+  tournamentId: string
+  startMode: Tournament['startMode']
+  readyUserIds: string[]
+  problemVersions: ProblemVersion[]
+}
+
+export interface MatchConfigInput {
+  problemIds: string[]
+  matchDurationSec: number
+  startMode: Tournament['startMode']
+}
+
+export interface FirstRoundPairing {
+  position: number
+  leftUserId: string | null
+  rightUserId: string | null
+}
+
+export type MatchActionName = 'start' | 'pause' | 'resume' | 'extend' | 'technical-result' | 'rematches' | 'replacements'
+
+export type MatchActionInput =
+  | { name: 'start' }
+  | { name: 'pause' | 'resume'; reason: string }
+  | { name: 'extend'; seconds: number; reason: string }
+  | { name: 'technical-result'; winnerUserId: string; reason: string }
+  | { name: 'rematches'; problemIds?: string[]; reason: string }
+  | { name: 'replacements'; oldUserId: string; newUserId: string; reason: string }
+
 interface ApiErrorBody {
   error?: {
     code?: string
@@ -202,11 +311,18 @@ async function ensureCsrfToken(): Promise<string> {
   return pending
 }
 
-async function mutate<T>(path: string, payload?: unknown, method: 'POST' | 'PATCH' | 'DELETE' = 'POST'): Promise<T> {
+async function mutate<T>(
+  path: string,
+  payload?: unknown,
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST',
+  idempotencyKey?: string,
+): Promise<T> {
   const token = await ensureCsrfToken()
+  const headers: Record<string, string> = { 'X-CSRFToken': token }
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
   return request<T>(path, {
     method,
-    headers: { 'X-CSRFToken': token },
+    headers,
     body: payload === undefined ? undefined : JSON.stringify(payload),
   })
 }
@@ -316,6 +432,54 @@ export const api = {
 
   acceptInvite(token: string): Promise<{ tournamentId: string; userId: string; joined: true }> {
     return mutate<{ tournamentId: string; userId: string; joined: true }>(`/invites/${segment(token)}/accept`)
+  },
+
+  readyProblems(): Promise<Page<ProblemCatalogEntry>> {
+    return request<Page<ProblemCatalogEntry>>('/problems?limit=100&offset=0')
+  },
+
+  bracket(tournamentId: string): Promise<Bracket> {
+    return request<Bracket>(`/tournaments/${segment(tournamentId)}/bracket`)
+  },
+
+  generateBracket(tournamentId: string, idempotencyKey: string): Promise<Bracket> {
+    return mutate<Bracket>(
+      `/tournaments/${segment(tournamentId)}/bracket/generate`,
+      { seedingMode: 'manual' },
+      'POST',
+      idempotencyKey,
+    )
+  },
+
+  saveFirstRoundPairings(
+    tournamentId: string,
+    pairings: FirstRoundPairing[],
+    reason: string,
+    idempotencyKey: string,
+  ): Promise<Bracket> {
+    return mutate<Bracket>(
+      `/tournaments/${segment(tournamentId)}/bracket/pairings`,
+      { pairings, reason },
+      'PUT',
+      idempotencyKey,
+    )
+  },
+
+  updateMatchConfig(matchId: string, input: MatchConfigInput, idempotencyKey: string): Promise<MatchView> {
+    return mutate<MatchView>(`/matches/${segment(matchId)}`, input, 'PATCH', idempotencyKey)
+  },
+
+  match(matchId: string): Promise<MatchView> {
+    return request<MatchView>(`/matches/${segment(matchId)}`)
+  },
+
+  readyMatch(matchId: string, idempotencyKey: string): Promise<MatchView> {
+    return mutate<MatchView>(`/matches/${segment(matchId)}/ready`, {}, 'POST', idempotencyKey)
+  },
+
+  matchAction(matchId: string, action: MatchActionInput, idempotencyKey: string): Promise<MatchView> {
+    const { name, ...payload } = action
+    return mutate<MatchView>(`/matches/${segment(matchId)}/${name}`, payload, 'POST', idempotencyKey)
   },
 }
 
