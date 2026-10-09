@@ -1,6 +1,6 @@
 # Реестр архитектурных решений
 
-Обновлено: 2026-10-09. `CONFIRMED` — прямое решение команды. `PROPOSED` — предложение архитектуры, реализация должна записать фактический выбор и результаты. `SUPERSEDED` — предыдущий вариант больше не применяется. `IMPLEMENTED` — наблюдаемый код, не новое подтверждение команды; `ADOPTED` — выбранная спецификация в рамках текущего поручения, ещё не код.
+Обновлено: 2026-10-10. `CONFIRMED` — прямое решение команды. `PROPOSED` — предложение архитектуры, реализация должна записать фактический выбор и результаты. `SUPERSEDED` — предыдущий вариант больше не применяется. `IMPLEMENTED` — наблюдаемый код, не новое подтверждение команды; `ADOPTED` — выбранная спецификация в рамках текущего поручения, ещё не код.
 
 | ID | Статус | Решение и основание |
 |---|---|---|
@@ -12,7 +12,7 @@
 | ADR06 | IMPLEMENTED | Session auth/CSRF и management command admin интегрированы PR #5; один origin proxy остаётся целью, не full browser acceptance. |
 | ADR07 | PROPOSED | Durable queue в SQLite, один judge-worker, один узел, WAL/timeout и атомарные обновления. Redis/Celery не требуются для MVP. |
 | ADR08 | PROPOSED | SSE + snapshots/events для публичных обновлений; собственный безопасный DTO, без private source. |
-| ADR09 | PROPOSED | React + TypeScript, Monaco, безопасный Markdown и TeX-renderer. Конкретные библиотеки/версии фиксировать lockfiles при bootstrap. |
+| ADR09 | SUPERSEDED | Исходное предложение React/TypeScript/Monaco. Реальный редактор выбран CodeMirror 6, фактическая реализация записана ADR21; не возвращать Monaco без новой причины. |
 | ADR10 | PROPOSED | Admin глобально управляет всеми турнирами. Участие admin в матчах выключено; роль participant играет, публичный просмотр открыт всем. |
 | ADR11 | PROPOSED | Solved ↓, penalty ↑, last accepted active time ↑, окончательное равенство → rematch. Параметры публикуются до старта и замораживаются для run. |
 | ADR12 | PROPOSED | Условия/тесты/checkers из официального пакета — основной import. Импорт Яндекс описаний/метаданных связывается с этим пакетом; source-only задачи не готовы для матча. |
@@ -39,3 +39,15 @@ ADR16, **ADOPTED**: по поручению команды ROADMAP v2 даёт R
 ## Повторная ревизия и runtime приоритет
 
 ADR17, ADOPTED 2026-10-09: готовые pure clock/score/catalog/harness интегрировать как малые срезы, далее production MatchRun/gateway/ledger/JudgeProvider/worker/UI; не повторять helpers. При зависимости продолжать резервную очередь ROADMAP v3. Для exhausted infrastructure failures принят отдельный additive failure DTO/sink по runtime-handoffs; existing v1 ResultReceipt/verdicts неизменны. Причина: queue освобождает capacity без verdict, accepted ledger требует понятного восстановления без автоматического поражения. Это спецификация, не уже реализованный provider.
+
+## Визуальный стиль
+
+ADR18, CONFIRMED 2026-10-10 по поручению команды: интерфейс оформляется по брендбуку «BLITZ_ARENA // BRANDBOOK & DESIGN SYSTEM v2.0» (Marathon / Cyberpunk: `#000000`, `#CCFF00`/`#00FF66`, `#FF3333`, полупрозрачный `#00E5FF`; Space Mono, Orbitron/Rajdhani, VT323). В интерфейсе продукт называется BLITZ_ARENA, имена репозитория, пакетов и папок не меняются. Эталон — [frontend/design](../../frontend/design/README.md). Разделы брендбука 5–8 (профиль/рейтинг, магазин и CREDITS, чат и «типы», ачивки/комбо, комментаторская панель) остаются вне MVP по PROJECT.md и нарисованы только как концепт. Тотализатор не проектируется. Просмотр исходников соперника после матча не реализуется: противоречит правилу «код посылки доступен только автору». Статусы брендбука сопоставлены с API: SOLVED → `[BREACHED]`, доступная задача → `[ACTIVE]`, до старта → `[LOCKED]`.
+
+## Решения координатора 2026-10-10 по текущему поручению команды
+
+ADR19 — ADOPTED: пять владельцев; новый A5 frontend/design, A4 public events/SSE/system acceptance, A2 competition/run/ledger. P4-01–06 сохраняют UI meaning и передаются A5. Причина: убрать последовательное ожидание всех runtime/frontend частей и дать публичному backend отдельного владельца.
+
+ADR20 — ADOPTED target boundaries: [MVP handoff](../../context/contracts/2026-10-10-mvp-boundaries.md): separate frozen RunProblemSnapshot/Provider, сохраняемый в accepted submission; additive failure sink; GET draft run selector/404; per-claim container fencing. Причина: закрыть обсуждение формы точными совместимыми contracts и продолжить независимую реализацию. Existing v1 receipt/verdict fields не меняются; implementations/readiness требуют отдельных tests/CI/runtime acceptance.
+
+ADR21 — IMPLEMENTED 2026-10-10, наблюдение координатора: текущий frontend/package-lock и workspace используют CodeMirror 6, TypeScript, безопасный Markdown/TeX renderer. Первоначальная Monaco proposal ADR09 устарела. Проверенные UI tests/build не означают full workspace API/browser acceptance; A5 сохраняет текущий редактор и подключает реальные providers.

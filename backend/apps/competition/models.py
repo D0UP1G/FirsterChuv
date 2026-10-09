@@ -243,3 +243,40 @@ class MatchRun(models.Model):
 
     def __str__(self) -> str:
         return f"{self.match_id} run {self.sequence}"
+
+
+class BracketCommandReceipt(models.Model):
+    """Durable idempotency receipt for an administrator bracket command."""
+
+    class Action(models.TextChoices):
+        SET_PAIRINGS = "bracket.pairings", "Ручные пары"
+        RESET = "bracket.reset", "Сброс сетки"
+
+    id = models.BigAutoField(primary_key=True)
+    tournament = models.ForeignKey(
+        "tournaments.Tournament",
+        on_delete=models.CASCADE,
+        related_name="bracket_command_receipts",
+    )
+    actor = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.PROTECT,
+        related_name="bracket_command_receipts",
+    )
+    action = models.CharField(max_length=32, choices=Action.choices)
+    idempotency_sha256 = models.CharField(max_length=64)
+    request_sha256 = models.CharField(max_length=64)
+    reason = models.CharField(max_length=500)
+    response_payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("tournament", "idempotency_sha256"),
+                name="unique_tournament_bracket_command_key",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.tournament_id}:{self.action}:{self.id}"

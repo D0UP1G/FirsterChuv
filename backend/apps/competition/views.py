@@ -13,10 +13,20 @@ from rest_framework.views import APIView
 
 from backend.apps.accounts.models import User
 from backend.apps.accounts.permissions import IsApplicationAdmin
+from backend.apps.competition.bracket_commands import (
+    BracketCommandInputError,
+    BracketCommandIdempotencyConflict,
+    execute_bracket_command,
+)
 from backend.apps.competition.domain.bracket import BracketInputError
 from backend.apps.competition.models import Match
 from backend.apps.competition.serializers import TournamentBracketSerializer
-from backend.apps.competition.services import BracketPersistenceError, generate_bracket
+from backend.apps.competition.services import (
+    BracketPersistenceError,
+    generate_bracket,
+    reset_bracket,
+    set_first_round_pairings,
+)
 from backend.apps.tournaments.models import Tournament, TournamentParticipant
 from backend.apps.tournaments.services import RosterMutationError
 
@@ -55,6 +65,65 @@ class GenerateBracketRequestSerializer(serializers.Serializer):
         return super().to_internal_value(data)
 
 
+class StrictPositionField(serializers.IntegerField):
+    def to_internal_value(self, data):
+        if type(data) is not int:
+            raise ValidationError("Позиция должна быть целым числом.")
+        return super().to_internal_value(data)
+
+
+class FirstRoundPairingRequestSerializer(serializers.Serializer):
+    position = StrictPositionField(min_value=0)
+    left_user_id = serializers.UUIDField(allow_null=True)
+    right_user_id = serializers.UUIDField(allow_null=True)
+
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping) or set(data) != {
+            "position",
+            "left_user_id",
+            "right_user_id",
+        }:
+            raise ValidationError(
+                {
+                    "non_field_errors": (
+                        "Каждая пара должна содержать position, leftUserId и rightUserId."
+                    )
+                }
+            )
+        return super().to_internal_value(data)
+
+
+class SetFirstRoundPairingsRequestSerializer(serializers.Serializer):
+    pairings = FirstRoundPairingRequestSerializer(many=True, allow_empty=False)
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping) or set(data) != {"pairings", "reason"}:
+            raise ValidationError(
+                {"non_field_errors": "Ожидаются только поля pairings и reason."}
+            )
+        return super().to_internal_value(data)
+
+    def validate_pairings(self, value):
+        positions = [pairing["position"] for pairing in value]
+        if positions != list(range(len(positions))):
+            raise ValidationError(
+                "Позиции первого раунда должны идти подряд от нуля."
+            )
+        return value
+
+
+class ResetBracketRequestSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping) or set(data) != {"reason"}:
+            raise ValidationError(
+                {"non_field_errors": "Ожидается только поле reason."}
+            )
+        return super().to_internal_value(data)
+
+
 def bracket_payload(tournament: Tournament, matches: list[Match]) -> dict:
     participant_count = TournamentParticipant.objects.filter(
         tournament_id=tournament.pk,
@@ -81,6 +150,19 @@ def bracket_match_queryset():
     )
 
 
+def current_bracket_payload(tournament_id):
+    tournament = Tournament.objects.get(pk=tournament_id)
+    matches = list(bracket_match_queryset().filter(tournament_id=tournament.pk))
+    return bracket_payload(tournament, matches)
+
+
+def _idempotency_key(request):
+    key = request.headers.get("Idempotency-Key")
+    if key is None:
+        raise ValidationError({"Idempotency-Key": "This header is required."})
+    return key
+
+
 @method_decorator(csrf_protect, name="dispatch")
 class GenerateBracketView(APIView):
     permission_classes = [IsApplicationAdmin]
@@ -99,6 +181,115 @@ class GenerateBracketView(APIView):
         response = Response(
             bracket_payload(tournament, list(matches)), status=status.HTTP_200_OK
         )
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class SetFirstRoundPairingsView(APIView):
+    permission_classes = [IsApplicationAdmin]
+
+    def put(self, request, tournament_id):
+        serializer = SetFirstRoundPairingsRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        command = serializer.validated_data
+
+        def perform():
+            active_entries = {
+                user_id: entry_id
+                for entry_id, user_id in TournamentParticipant.objects.filter(
+                    tournament_id=tournament_id,
+                    status=TournamentParticipant.Status.ACTIVE,
+                ).values_list("id", "user_id")
+            }
+            requested_user_ids = {
+                user_id
+                for pairing in command["pairings"]
+                for user_id in (pairing["left_user_id"], pairing["right_user_id"])
+                if user_id is not None
+            }
+            if not requested_user_ids <= set(active_entries):
+                raise BracketInputError(
+                    "Ручные пары могут содержать только активных участников турнира."
+                )
+            entry_pairings = [
+                (
+                    active_entries.get(pairing["left_user_id"]),
+                    active_entries.get(pairing["right_user_id"]),
+                )
+                for pairing in command["pairings"]
+            ]
+            set_first_round_pairings(tournament_id, entry_pairings)
+            return current_bracket_payload(tournament_id)
+
+        try:
+            payload = execute_bracket_command(
+                tournament_id=tournament_id,
+                actor_id=request.user.pk,
+                action="bracket.pairings",
+                idempotency_key=_idempotency_key(request),
+                reason=command["reason"],
+                arguments={
+                    "pairings": [
+                        {
+                            "position": pairing["position"],
+                            "leftUserId": pairing["left_user_id"],
+                            "rightUserId": pairing["right_user_id"],
+                        }
+                        for pairing in command["pairings"]
+                    ]
+                },
+                perform=perform,
+            )
+        except BracketCommandInputError as error:
+            raise ValidationError({"Idempotency-Key": str(error)}) from error
+        except BracketCommandIdempotencyConflict as error:
+            raise BracketRequestError(error) from error
+        except Tournament.DoesNotExist as error:
+            raise NotFound("Турнир не найден.") from error
+        except BracketInputError as error:
+            raise ValidationError({"pairings": str(error)}) from error
+        except (RosterMutationError, BracketPersistenceError) as error:
+            raise BracketRequestError(error) from error
+
+        response = Response(payload, status=status.HTTP_200_OK)
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ResetBracketView(APIView):
+    permission_classes = [IsApplicationAdmin]
+
+    def post(self, request, tournament_id):
+        serializer = ResetBracketRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        command = serializer.validated_data
+
+        def perform():
+            reset_bracket(tournament_id)
+            return current_bracket_payload(tournament_id)
+
+        try:
+            payload = execute_bracket_command(
+                tournament_id=tournament_id,
+                actor_id=request.user.pk,
+                action="bracket.reset",
+                idempotency_key=_idempotency_key(request),
+                reason=command["reason"],
+                arguments={},
+                perform=perform,
+            )
+        except BracketCommandInputError as error:
+            raise ValidationError({"Idempotency-Key": str(error)}) from error
+        except BracketCommandIdempotencyConflict as error:
+            raise BracketRequestError(error) from error
+        except Tournament.DoesNotExist as error:
+            raise NotFound("Турнир не найден.") from error
+        except (RosterMutationError, BracketPersistenceError) as error:
+            raise BracketRequestError(error) from error
+
+        response = Response(payload, status=status.HTTP_200_OK)
         response["Cache-Control"] = "no-store"
         return response
 
