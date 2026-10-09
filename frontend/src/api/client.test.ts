@@ -140,4 +140,49 @@ describe('auth API client', () => {
     expect(new Headers(acceptInit?.headers).get('X-CSRFToken')).toBe('csrf-admin')
     expect(acceptInit?.body).toBeUndefined()
   })
+
+  it('sends bracket and match commands as CSRF-protected idempotent v1 requests', async () => {
+    const fetchMock = vi.mocked(fetch)
+    const bracket = { tournamentId: 'tournament-1', bracketSize: 2, rosterFrozenAt: '2026-10-09T17:00:00Z', matches: [] }
+    const match = { matchId: 'match-1', status: 'READY' }
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(bracket))
+      .mockResolvedValueOnce(jsonResponse({ csrfToken: 'csrf-match' }))
+      .mockResolvedValueOnce(jsonResponse(bracket))
+      .mockResolvedValueOnce(jsonResponse(bracket))
+      .mockResolvedValueOnce(jsonResponse(match))
+      .mockResolvedValueOnce(jsonResponse(match))
+      .mockResolvedValueOnce(jsonResponse(match))
+
+    await api.bracket('tournament-1')
+    await api.generateBracket('tournament-1', 'command-generate-1')
+    await api.saveFirstRoundPairings('tournament-1', [{ position: 0, leftUserId: 'player-1', rightUserId: 'player-2' }], 'Ручная жеребьёвка', 'command-pairs-1')
+    await api.match('match-1')
+    await api.readyMatch('match-1', 'command-ready-1')
+    await api.matchAction('match-1', { name: 'pause', reason: 'Технический перерыв' }, 'command-pause-1')
+
+    expect(fetchMock).toHaveBeenCalledTimes(7)
+    const [generateUrl, generateInit] = fetchMock.mock.calls[2]
+    expect(generateUrl).toBe('/api/v1/tournaments/tournament-1/bracket/generate')
+    expect(generateInit?.method).toBe('POST')
+    expect(new Headers(generateInit?.headers).get('X-CSRFToken')).toBe('csrf-match')
+    expect(new Headers(generateInit?.headers).get('Idempotency-Key')).toBe('command-generate-1')
+    expect(JSON.parse(String(generateInit?.body))).toEqual({ seedingMode: 'manual' })
+
+    const [pairingsUrl, pairingsInit] = fetchMock.mock.calls[3]
+    expect(pairingsUrl).toBe('/api/v1/tournaments/tournament-1/bracket/pairings')
+    expect(pairingsInit?.method).toBe('PUT')
+    expect(new Headers(pairingsInit?.headers).get('Idempotency-Key')).toBe('command-pairs-1')
+    expect(JSON.parse(String(pairingsInit?.body))).toEqual({
+      pairings: [{ position: 0, leftUserId: 'player-1', rightUserId: 'player-2' }],
+      reason: 'Ручная жеребьёвка',
+    })
+
+    const [, readyInit] = fetchMock.mock.calls[5]
+    expect(new Headers(readyInit?.headers).get('Idempotency-Key')).toBe('command-ready-1')
+    const [pauseUrl, pauseInit] = fetchMock.mock.calls[6]
+    expect(pauseUrl).toBe('/api/v1/matches/match-1/pause')
+    expect(new Headers(pauseInit?.headers).get('Idempotency-Key')).toBe('command-pause-1')
+    expect(JSON.parse(String(pauseInit?.body))).toEqual({ reason: 'Технический перерыв' })
+  })
 })

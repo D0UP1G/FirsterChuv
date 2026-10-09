@@ -256,7 +256,10 @@ export function AdminTournamentPage() {
       <nav className="breadcrumbs" aria-label="Навигационная цепочка"><Link to="/admin">Турниры</Link><span aria-hidden="true">/</span><span>{tournament.title}</span></nav>
       <div className="management-heading">
         <div><p className="eyebrow">Управление турниром · {tournament.status}</p><h1>{tournament.title}</h1><p>{activeCount} из {tournament.participantLimit} участников · {tournament.rosterFrozenAt ? 'состав заморожен' : 'состав открыт'}</p></div>
-        <button className="button button-quiet button-small" type="button" onClick={() => { setLoading(true); setPageError(null); void load() }}>Обновить</button>
+        <div className="management-actions">
+          <Link className="button button-outline button-small" to={`/admin/tournaments/${encodeURIComponent(tournament.id)}/matches`}>Сетка и матчи</Link>
+          <button className="button button-quiet button-small" type="button" onClick={() => { setLoading(true); setPageError(null); void load() }}>Обновить</button>
+        </div>
       </div>
 
       {actionError && <div className="state-card state-card-error" role="alert">{actionError}</div>}

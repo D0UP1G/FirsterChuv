@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { AdminTournamentsPage } from './pages/AdminTournamentsPage'
 import { AdminTournamentPage } from './pages/AdminTournamentPage'
+import { AdminMatchPage } from './pages/AdminMatchPage'
 import { InvitePage } from './pages/InvitePage'
 import './App.css'
 
@@ -31,6 +32,7 @@ function AppFrame() {
           <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
           <Route path="/admin" element={<RequireRole role="admin"><AdminTournamentsPage /></RequireRole>} />
           <Route path="/admin/tournaments/:tournamentId" element={<RequireRole role="admin"><AdminTournamentPage /></RequireRole>} />
+          <Route path="/admin/tournaments/:tournamentId/matches" element={<RequireRole role="admin"><AdminMatchPage /></RequireRole>} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
