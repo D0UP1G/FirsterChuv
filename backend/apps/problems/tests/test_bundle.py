@@ -44,6 +44,22 @@ class NormalizedBundleTests(SimpleTestCase):
         )
         self.assertFalse(bundle.has_complete_judge_data)
 
+    def test_rejects_non_string_private_artifact_language_ids(self) -> None:
+        artifact_fields = (
+            ("checkerPath", "checkerLanguageId", "private/checkers/checker.cpp"),
+            ("validatorPath", "validatorLanguageId", "private/validators/validator.cpp"),
+            ("referenceSolutionPath", "referenceSolutionLanguageId", "private/references/reference.cpp"),
+        )
+        for path_field, language_field, artifact_path in artifact_fields:
+            for language_id in ([], {}):
+                with self.subTest(field=language_field, value_type=type(language_id).__name__):
+                    manifest = normalized_manifest()
+                    manifest["private"][path_field] = artifact_path
+                    manifest["private"][language_field] = language_id
+                    files = {artifact_path: b"// synthetic artifact"}
+                    with self.assertRaises(ProblemBundleError):
+                        parse_problem_bundle(make_bundle_archive(manifest=manifest, files=files))
+
     def test_checksum_is_stable_across_zip_entry_order_and_covers_private_files(self) -> None:
         first = parse_problem_bundle(make_bundle_archive())
         reverse_order = tuple(reversed((
