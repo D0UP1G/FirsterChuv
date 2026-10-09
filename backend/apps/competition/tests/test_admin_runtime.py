@@ -8,7 +8,7 @@ from backend.apps.competition.admin_runtime import (
     AdminCommandPersistenceError,
     execute_match_admin_command,
 )
-from backend.apps.competition.models import Match, MatchAdminCommandReceipt, MatchRun
+from backend.apps.competition.models import Match, MatchAdminCommandReceipt, MatchRun, MatchSlot
 from backend.apps.competition.runtime import configure_match_run, start_match_run
 from backend.apps.competition.services import generate_bracket
 from backend.apps.tournaments.models import Tournament
@@ -59,7 +59,7 @@ class PersistedAdminClockCommandsTests(TestCase):
         )
         start_match_run(self.run.pk, now=START)
 
-    def command(self, *, key, action, reason=None, seconds=None, actor=None, now=None):
+    def command(self, *, key, action, reason=None, seconds=None, winner_user_id=None, actor=None, now=None):
         return execute_match_admin_command(
             actor_user_id=(actor or self.admin).pk,
             match_id=self.match.pk,
@@ -67,6 +67,7 @@ class PersistedAdminClockCommandsTests(TestCase):
             action=action,
             reason=reason,
             seconds=seconds,
+            winner_user_id=winner_user_id,
             now=now,
         )
 
@@ -112,4 +113,104 @@ class PersistedAdminClockCommandsTests(TestCase):
         player = User.objects.get(pk=self.players[0].pk)
         with self.assertRaises(AdminCommandPersistenceError):
             self.command(key="pause-player", action="pause", reason="Reason", actor=player, now=START + timedelta(seconds=1))
+
+    def test_technical_result_records_winner_and_exact_retry(self):
+        winner_id = self.players[0].pk
+        result = self.command(
+            key="technical-result-1",
+            action="technical_result",
+            reason="Opponent withdrew",
+            winner_user_id=winner_id,
+            now=START + timedelta(seconds=30),
+        )
+        replay = self.command(
+            key="technical-result-1",
+            action="technical_result",
+            reason="Opponent withdrew",
+            winner_user_id=winner_id,
+            now=START + timedelta(seconds=31),
+        )
+
+        run = MatchRun.objects.get(pk=self.run.pk)
+        match = Match.objects.get(pk=self.match.pk)
+        self.assertEqual(result, replay)
+        self.assertEqual(run.status, MatchRun.Status.FINISHED)
+        self.assertEqual(run.winner.user_id, winner_id)
+        self.assertEqual(run.technical_reason, "Opponent withdrew")
+        self.assertEqual(match.winner_id, run.winner_id)
+
+    def test_rematch_supersedes_history_and_starts_clean_run(self):
+        self.run.score_snapshot = {"old": "score"}
+        self.run.save(update_fields=("score_snapshot",))
+
+        response = self.command(
+            key="rematch-1",
+            action="rematch",
+            reason="Final was tied",
+            now=START + timedelta(seconds=60),
+        )
+
+        self.run.refresh_from_db()
+        match = Match.objects.get(pk=self.match.pk)
+        new_run = match.current_run
+        self.assertEqual(self.run.status, MatchRun.Status.SUPERSEDED)
+        self.assertEqual(new_run.sequence, self.run.sequence + 1)
+        self.assertEqual(new_run.status, MatchRun.Status.READY)
+        self.assertEqual(new_run.score_snapshot, {})
+        self.assertEqual(new_run.problem_versions, self.run.problem_versions)
+        self.assertEqual(response["runId"], str(new_run.pk))
+        receipt = MatchAdminCommandReceipt.objects.get(command_id="rematch-1")
+        self.assertEqual(receipt.run_id, self.run.pk)
+
+    def test_technical_winner_advances_into_the_reserved_downstream_slot(self):
+        tournament = Tournament.objects.create(
+            title="Four player actions",
+            starts_at=START,
+            ends_at=START + timedelta(hours=1),
+            participant_limit=4,
+            created_by=self.admin,
+        )
+        extra_players = [
+            User.objects.create_user(
+                email=f"actions-extra-{index}@example.test",
+                display_name=f"Extra {index}",
+                password="test-password-123456",
+            )
+            for index in range(2)
+        ]
+        for index, player in enumerate((*self.players, *extra_players), start=1):
+            assign_participant(tournament.pk, player.pk, seed=index)
+        matches = generate_bracket(tournament.pk)
+        opening = next(
+            match for match in matches
+            if match.kind == Match.Kind.PLAYED and match.round_index == 0
+        )
+        problem_id = uuid4()
+        run = configure_match_run(
+            opening.pk,
+            problem_ids=[problem_id],
+            allowed_duration_ms=600_000,
+            start_mode="manual",
+            scoring_rule=None,
+            catalog=TestCatalog(problem_id),
+        )
+        start_match_run(run.pk, now=START)
+        winner_id = opening.slots.get(slot_index=0).participant.user_id
+
+        execute_match_admin_command(
+            actor_user_id=self.admin.pk,
+            match_id=opening.pk,
+            command_id="technical-advance-1",
+            action="technical_result",
+            reason="Opponent withdrew",
+            winner_user_id=winner_id,
+            now=START + timedelta(seconds=20),
+        )
+
+        downstream_slot = MatchSlot.objects.get(
+            match_id=opening.next_match_id,
+            slot_index=opening.next_slot,
+        )
+        self.assertEqual(downstream_slot.participant.user_id, winner_id)
+        self.assertEqual(downstream_slot.resolution, MatchSlot.Resolution.PLAYER)
 
