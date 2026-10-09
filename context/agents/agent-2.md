@@ -13,5 +13,7 @@
 - Пути общей интеграции менять только при необходимости, сохраняя все app registrations, CI и чужие audits. Runtime без реального catalog/access provider отказывает.
 - Источники: `ROADMAP.md` P2-06, `docs/architecture/realtime.md`, `docs/architecture/parallel-contracts.md`, `contracts/mvp-v1/score-event.json`, `contracts/mvp-v1/public-match.json`; V01–03, S02, T16/T17/T20.
 - Audit исходного event store: [P2-06.1](../audits/2026-10-09T173634+0300-agent-2-P2-06-1-event-store.md). Новый аудит фиксирует этот corrective slice.
+- Локальная проверка correction: event app 11 tests, весь backend 117 tests, domain suites 36 tests, 9 контрактных fixtures и migration drift check прошли; PR #16 publication ещё pending.
+- Audit correction: [SOLVED/lastVerdict roundtrip](../audits/2026-10-09T225633+0300-agent-2-P2-06-1-solved-verdict-roundtrip.md).
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).

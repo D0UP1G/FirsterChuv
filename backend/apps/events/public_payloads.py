@@ -134,8 +134,10 @@ def validate_score_changed_payload(payload: object) -> dict:
             ):
                 raise PublicEventInputError("ATTEMPTED tasks require a non-OK verdict")
             if status == "SOLVED":
-                if attempts == 0 or verdict != "OK":
-                    raise PublicEventInputError("SOLVED tasks require an OK verdict")
+                if attempts == 0 or verdict is None:
+                    raise PublicEventInputError(
+                        "SOLVED tasks require an attempt verdict"
+                    )
                 solved_tasks += 1
 
             tasks.append(

@@ -1,9 +1,16 @@
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
+from backend.apps.competition.domain.scoring import (
+    ScoreRules,
+    ScoredAttempt,
+    Verdict,
+    calculate_match_score,
+)
 from backend.apps.events.models import MatchEvent
 from backend.apps.events.public_payloads import PublicEventInputError
 from backend.apps.events.services import (
@@ -84,6 +91,52 @@ class PublicEventStoreTests(TestCase):
             public_payload=payload if payload is not None else self.score_payload(),
         )
 
+    def payload_from_scoring_result(self, attempts):
+        match_score = calculate_match_score(
+            run_id=str(self.run_id),
+            participant_user_ids=tuple(str(user_id) for user_id in self.users),
+            problem_ids=tuple(str(problem_id) for problem_id in self.problems),
+            results=attempts,
+            rules=ScoreRules(wrong_attempt_penalty_ms=1_000),
+        )
+        labels = {
+            str(problem_id): label
+            for problem_id, label in zip(self.problems, ("A", "B"))
+        }
+        payload = {
+            "leaderUserId": match_score.winner_user_id,
+            "players": [],
+        }
+        for participant in match_score.participants:
+            payload["players"].append(
+                {
+                    "userId": participant.user_id,
+                    "displayName": (
+                        "Игрок A"
+                        if participant.user_id == str(self.users[0])
+                        else "Игрок B"
+                    ),
+                    "solvedCount": participant.solved_count,
+                    "penaltyMs": participant.penalty_ms,
+                    "lastAcceptedElapsedMs": participant.last_accepted_elapsed_ms,
+                    "tasks": [
+                        {
+                            "problemId": problem.problem_id,
+                            "label": labels[problem.problem_id],
+                            "status": problem.outcome.value,
+                            "attempts": problem.attempts,
+                            "lastVerdict": (
+                                problem.last_verdict.value
+                                if problem.last_verdict is not None
+                                else None
+                            ),
+                        }
+                        for problem in participant.problems
+                    ],
+                }
+            )
+        return match_score, payload
+
     def test_public_envelope_matches_score_event_v1(self):
         event_id = self.append_score()
 
@@ -95,6 +148,72 @@ class PublicEventStoreTests(TestCase):
         self.assertEqual(event["runId"], str(self.run_id))
         self.assertEqual(event["payload"], self.score_payload())
         self.assertEqual(current_event_cursor(tournament_id=self.tournament_id), event_id)
+
+    def test_score_to_event_roundtrip_keeps_solved_after_later_wa_and_ce(self):
+        started_at = datetime(2026, 10, 9, tzinfo=timezone.utc)
+        attempts = [
+            ScoredAttempt(
+                submission_id="wa-before-first-ok",
+                run_id=str(self.run_id),
+                user_id=str(self.users[0]),
+                problem_id=str(self.problems[0]),
+                received_at=started_at + timedelta(milliseconds=10_000),
+                elapsed_ms=10_000,
+                verdict=Verdict.WA,
+            ),
+            ScoredAttempt(
+                submission_id="first-ok-a",
+                run_id=str(self.run_id),
+                user_id=str(self.users[0]),
+                problem_id=str(self.problems[0]),
+                received_at=started_at + timedelta(milliseconds=30_000),
+                elapsed_ms=30_000,
+                verdict=Verdict.OK,
+            ),
+            ScoredAttempt(
+                submission_id="wa-after-first-ok",
+                run_id=str(self.run_id),
+                user_id=str(self.users[0]),
+                problem_id=str(self.problems[0]),
+                received_at=started_at + timedelta(milliseconds=40_000),
+                elapsed_ms=40_000,
+                verdict=Verdict.WA,
+            ),
+            ScoredAttempt(
+                submission_id="first-ok-b",
+                run_id=str(self.run_id),
+                user_id=str(self.users[0]),
+                problem_id=str(self.problems[1]),
+                received_at=started_at + timedelta(milliseconds=50_000),
+                elapsed_ms=50_000,
+                verdict=Verdict.OK,
+            ),
+            ScoredAttempt(
+                submission_id="ce-after-first-ok",
+                run_id=str(self.run_id),
+                user_id=str(self.users[0]),
+                problem_id=str(self.problems[1]),
+                received_at=started_at + timedelta(milliseconds=60_000),
+                elapsed_ms=60_000,
+                verdict=Verdict.CE,
+            ),
+        ]
+        match_score, payload = self.payload_from_scoring_result(attempts)
+
+        self.append_score(payload=payload)
+        [event] = read_events_after(tournament_id=self.tournament_id)
+
+        player = event["payload"]["players"][0]
+        self.assertEqual(event["payload"], payload)
+        self.assertEqual(event["payload"]["leaderUserId"], str(self.users[0]))
+        self.assertEqual(player["solvedCount"], 2)
+        self.assertEqual(player["penaltyMs"], 81_000)
+        self.assertEqual(player["lastAcceptedElapsedMs"], 50_000)
+        self.assertEqual(
+            [(task["status"], task["lastVerdict"]) for task in player["tasks"]],
+            [("SOLVED", "WA"), ("SOLVED", "CE")],
+        )
+        self.assertEqual(match_score.participants[0].solved_count, 2)
 
     def test_event_ids_are_monotonic_and_cursor_read_is_tournament_scoped(self):
         first = self.append_score()
@@ -187,6 +306,18 @@ class PublicEventStoreTests(TestCase):
         payload = self.score_payload()
         payload["players"][0]["solvedCount"] = 0
         with self.assertRaisesRegex(PublicEventInputError, "solvedCount"):
+            self.append_score(payload=payload)
+
+        payload = self.score_payload()
+        payload["players"][0]["tasks"][0]["lastVerdict"] = "PRIVATE"
+        with self.assertRaisesRegex(PublicEventInputError, "not normalized"):
+            self.append_score(payload=payload)
+
+        payload = self.score_payload()
+        payload["players"][0]["tasks"][0]["lastVerdict"] = None
+        with self.assertRaisesRegex(
+            PublicEventInputError, "require an attempt verdict"
+        ):
             self.append_score(payload=payload)
 
         payload = self.score_payload()
