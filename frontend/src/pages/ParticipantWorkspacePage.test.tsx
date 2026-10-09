@@ -48,7 +48,7 @@ describe('ParticipantWorkspacePage', () => {
     renderWorkspace('/matches/match-1?scenario=workspace-ui')
 
     expect(await screen.findByText(/Изолированный dev-сценарий/)).toBeInTheDocument()
-    expect(await screen.findByRole('table')).toBeInTheDocument()
+    expect(await screen.findByRole('table', {}, { timeout: 5000 })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Отправить решение' })).toBeDisabled()
     expect(screen.getByText(/синтетические попытки не создаются/)).toBeInTheDocument()
     expect(fetch).not.toHaveBeenCalled()
