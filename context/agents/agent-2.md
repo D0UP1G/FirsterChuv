@@ -1,15 +1,18 @@
 # Агент 2: сетка и live backend
 
-Перепланировано координатором 2026-10-09 по опубликованному PR #7; собственные прежние аудиты владельца не переписаны.
+Перепланировано координатором 2026-10-09 по ROADMAP v2; старые A-ID — только исторические ссылки.
 
-- Реализация: algorithm/ORM/atomic generate/reset/pairing services готовы в feature/bracket-runtime, HEAD a89b8fc, PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7) OPEN draft; пока не integrated.
-- Проверки: координатор повторил 58 tests с test-only app/URL registration, no migration drift. Package import F03 исправлен; full T06/clock/played history ещё нет. F08 archived reset воспроизведён.
-- Старый BLOCKED по A1-03 снят планом: roster/models/freeze интегрированы PR #8/#9. Новый статус задания **P2-01 READY**, не утверждение, что владелец уже возобновил сессию.
-- Первое действие: сохранить a89b8fc и merge актуального develop; минимальные CompetitionConfig/URL добавления явно разрешены владельцу в этом же PR. Не ждать ответ A1. Прочитать обновлённый bracket/pairings DTO v1, ordinary suite/migration check; остальной clock/score писать без ожидания A3.
-- Пути: backend/apps/competition, events; свои migrations/tests, fixtures match/public-match/score-event.
-- Очередь: P2-01 PR slice → P2-02 persistence → P2-03 clock/start → P2-04 score/ledger → P2-05 admin actions → P2-06 snapshots/SSE. Pure clock/score/event store доступны без judge/importer/UI.
-- Во время ожидания CONNECT: продолжить свои pure/domain tests или event store. Не блокировать всю роль из-за очереди посылок A3.
-- История аудитов feature: [round invariant](https://github.com/D0UP1G/FirsterChuv/blob/feature/bracket-runtime/context/audits/2026-10-09T154602+0300-agent-2-A2-01-round-invariant.md), [coordination](https://github.com/D0UP1G/FirsterChuv/blob/feature/bracket-runtime/context/audits/2026-10-09T153228+0300-agent-2-A2-01-coordination.md).
-- Следующий шаг: обновить свой branch/base/status и stale PR body; штатно зарегистрировать app, исправить F08, сделать HTTP pairing/reset по v1. Сохранить уже выполненные rank/persistence/import изменения, full T05/T06 не объявлять пройденными.
+- Статус: `IN_PROGRESS` — P2-03.1 pure clock core; persisted lifecycle/start/clock command и MatchPort ещё впереди.
+- Исполнитель: Codex в роли агента 2.
+- Текущая задача/ветка/база: `P2-03.1` / `feature/match-clock-start` / актуальная `origin/develop` `d9488e3`. Срез опубликован в PR [#11](https://github.com/D0UP1G/FirsterChuv/pull/11), OPEN и ready for review; проверяемая remote ветка обновлена документирующим аудитом.
+- Рабочий checkout: `work/FirsterChuv-agent2-clock`.
+- Пути текущего среза: `backend/apps/competition/domain/clock.py`, `backend/apps/competition/tests/test_clock.py`, эта карточка и аудит.
+- P2-01: bracket algorithm/ORM/generation/read slice опубликован в PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7), HEAD `1952244`, OPEN/ready/CLEAN; штатная suite 58 passed, migration check чистый.
+- Выполнено в P2-03.1: aware UTC timestamps, elapsed ms без учёта pause intervals, READY→RUNNING, pause/resume arithmetic, строгий `< deadline` admission, idempotent RUNNING→FINALIZING, validation времени/параметров; 12 pure unit tests прошли до sync.
+- Дорожка: P2-02 persistence/lifecycle HTTP, P2-03 clock/start, P2-04 scoring/ledger, P2-05 admin actions, P2-06 events/SSE. Pure clock/score/event store разрешены без ожидания judge/importer/UI.
+- Следующий шаг: завершить merge актуальной develop и публикацию проверяемого P2-03.1 slice; затем расширить clock/start state machine по `match.json` с immutable task/rule config и `manual`/`both_ready`. DB MatchRun wiring требует merge P2-01 и отсутствующие MatchRun lifecycle fields.
+- Порты: использовать `ProblemCatalogV1.describe_ready`, `CompetitionGatewayV1.authorize_submission/register_accepted/apply_result`, `EventWriter` только по v1. Отсутствующий runtime provider должен fail closed; test catalog допустим только в tests.
+- Владеет: `backend/apps/competition/`, `backend/apps/events/`, собственными migrations/tests; общие настройки и другие apps не менять без разрешённого узкого wiring.
+- Последние аудиты: [P2-03.1 review handoff](../audits/2026-10-09T170351+0300-agent-2-P2-03-clock-ready.md), [P2-03.1 publication](../audits/2026-10-09T170300+0300-agent-2-P2-03-clock-publication.md), [clock core sync](../audits/2026-10-09T170108+0300-agent-2-P2-03-clock-core.md), исходный [clock core audit](../audits/2026-10-09T164411+0300-agent-2-A2-02-clock-domain.md). Следующее действие — расширить pure lifecycle/startMode по P2-03, сохраняя PR #11 отдельным.
 
-План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
+Разделять implementation, integration и full acceptance. Общий `context/STATE.md` обновляет координатор после merge.
