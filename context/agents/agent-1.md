@@ -5,7 +5,7 @@
 - Текущая задача/ветка/база: `A1-02` / `feature/account-roles` / `be0323c` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-02.4 T02/T20 cross-check](../audits/2026-10-09T150954+0300-agent-1-A1-02-4-security-cross-check.md); [A1-02.3 admin bootstrap audit](../audits/2026-10-09T150813+0300-agent-1-A1-02-3-bootstrap.md); PR #2 merged at `2484d86`, state-sync PR #4 at `be0323c`.
+- Последний аудит/PR/проверки: [A1-02.4 T02/T20 cross-check](../audits/2026-10-09T150954+0300-agent-1-A1-02-4-security-cross-check.md); [A1-02.3 admin bootstrap audit](../audits/2026-10-09T150813+0300-agent-1-A1-02-3-bootstrap.md); [PR #5](https://github.com/D0UP1G/FirsterChuv/pull/5) открыт в `develop`; PR #2 merged at `2484d86`, state-sync PR #4 at `be0323c`.
 
 ## Разбивка задач на малые шаги
 
@@ -62,4 +62,4 @@
 - Владею: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/` (включая invites/participants), root tooling, Compose/CI, общей цепочкой миграций, интеграцией и релизом.
 - Не менять пути агентов 2–4 без согласованной передачи. Общие контракты и миграции сверять с потребителями до изменения.
 - Передача агентам 2–4: стабильные пути, auth dependency, ID-модели, конфигурация, миграционная база и локальный запуск.
-- Следующий шаг: проверить свежий `origin/develop`, повторить feature acceptance, открыть единый PR `feature/account-roles` → `develop`; после подтверждённого merge синхронизировать `context/STATE.md` отдельным GitFlow PR.
+- Следующий шаг: завершить review/check gate PR #5, влить merge commit’ом при отсутствии новых дефектов; проверить remote merge и повторить checks на интегрированном SHA, затем обновить `context/STATE.md` отдельным GitFlow PR.

@@ -59,3 +59,7 @@
 ## Следующий шаг
 
 Обновить/проверить feature against the latest `origin/develop`, выполнить финальный diff/secret review и открыть один PR `feature/account-roles` → `develop` с audits A1-02.1–A1-02.4. Полный T02/T20 и STATE status менять только после реальной интеграции и сценарных проверок; A1-03 остаётся отдельной feature задачей.
+
+## Последующее изменение
+
+После этого аудита PR #5 создан: [feat(auth): add account roles and secure admin bootstrap](https://github.com/D0UP1G/FirsterChuv/pull/5), target `develop`. GitHub сообщает `mergeStateStatus=CLEAN`; configured checks отсутствуют, `reviewDecision` пустой. Финальная ручная проверка, merge commit и подтверждение интеграции остаются следующими шагами.
