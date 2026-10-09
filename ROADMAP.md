@@ -4,7 +4,7 @@
 
 ## На каком этапе проект
 
-Есть платформа/auth/роли/CRUD/roster/invites и CI. В feature/mvp-integration-review-2 объединены проверенные #3 sandbox, #11 pure clock, #13 pure score, #14 normalized catalog; они доступны всем только после MERGED интеграционного PR. Состояние merge — GitHub и [STATE](context/STATE.md), до merge не подменять его словом DONE.
+Есть платформа/auth/роли/CRUD/roster/invites и CI. В feature/mvp-integration-review-2 объединены проверенные #3 sandbox, #11 pure clock, #13 pure score, #14 normalized catalog и admin guards 8f5b762; они доступны всем только после MERGED интеграционного PR. Состояние merge — GitHub и [STATE](context/STATE.md), до merge не подменять его словом DONE.
 
 Пока это набор backend-компонентов, не работающий сквозной MVP: frontend не опубликован, матч не имеет рабочего runtime/API, нет LocalJudge/worker/drafts/SSE. #7/#15/#16 требуют исправлений, перечисленных ниже. Official package/README не получены. Процент готовности по количеству helper-файлов не рассчитывается.
 
@@ -24,7 +24,7 @@
 | Агент | Первое действие | Пока CONNECT/review ждёт | Владение |
 |---|---|---|---|
 | 1 | P1-03 public/share access + proxy/logging | P1-04 Compose/readiness; P1-02 additive failure port | accounts/tournaments/common/config/deploy/scripts |
-| 2 | P2-02.1 fix #7; P2-06.1 fix #16 | P2-03 persisted run/API; P2-04 ledger; P2-05 guards PR | competition/events, свои migrations |
+| 2 | P2-02.1 fix #7; P2-06.1 fix #16 | P2-03 persisted run/API; P2-04 ledger; P2-05 command store/effects | competition/events, свои migrations |
 | 3 | P3-04.1 fix #15; P3-03 real LocalJudge | P3-05 drafts; P3-02 import/workspace assets/registry | sandbox/problems/submissions/drafts/judge |
 | 4 | P4-01 React + реальный auth | P4-02 real CRUD/invites, editor/local drafts, map reducer | frontend и browser tests |
 
@@ -38,7 +38,7 @@ PR #12 merged: create/list/revoke/preview/accept, hashed token/use/cap/freeze/id
 
 ### P1-02 · CI/common contracts · DONE исходный срез, READY additive handoff
 
-PR #17 и docs #18/#19 merged; 4 GitHub jobs, strict schemas/common ports/import isolation. Не повторять bootstrap CI. **P1-02.5:** материализовать отдельные additive InfrastructureFailureReceipt/Sink по runtime-handoffs, не менять существующий ResultReceipt/verdicts. У A2/A3 до merge допустимы локальные compatible Protocol в tests/core. После P2-05 PR добавить admin guard suite в CI, если она ещё не integrated. Branch protection recommendation не объявлять включённой: сейчас правил нет. D02/S01/S02; T20 partial.
+PR #17 и docs #18/#19 merged; 4 GitHub jobs, strict schemas/common ports/import isolation. Не повторять bootstrap CI. **P1-02.5:** материализовать отдельные additive InfrastructureFailureReceipt/Sink по runtime-handoffs, не менять существующий ResultReceipt/verdicts. У A2/A3 до merge допустимы локальные compatible Protocol в tests/core. Admin guard suite уже включена в integration CI runner. Branch protection recommendation не объявлять включённой: сейчас правил нет. D02/S01/S02; T20 partial.
 
 ### P1-03 · feature/platform-security-access · READY
 
@@ -82,7 +82,7 @@ Winner/downstream/event одной transaction либо согласованны
 
 ### P2-05 · feature/match-admin-actions · READY для завершения уже начатого среза
 
-Ветка 8f5b762 имеет pure guards, 12 tests, PR ещё не создан. Сохранить эту работу, sync develop, опубликовать малый guards PR с аудитом/CI, затем persisted pause/resume/extend/technical/rematch/replacement. Trusted actor/reason/command receipts, idempotency, history/no-score-carry, atomic запрет изменения после started downstream. Пока runtime ждёт — guards/command store/tests. M08; T11/T20.
+Pure guards из 8f5b762, 12 tests и suite runner включены в общий integration PR. Не создавать повторный helper PR; после sync develop делать persisted pause/resume/extend/technical/rematch/replacement. Trusted actor/reason/command receipts, idempotency, history/no-score-carry, atomic запрет изменения после started downstream. Пока runtime ждёт — guards/command store/tests. M08; T11/T20.
 
 ### P2-06 · feature/public-events-sse · READY
 

@@ -1,6 +1,6 @@
 # Приёмка MVP
 
-Статус всех полных сценариев: **NOT_RUN**. Платформа/auth/roster/invites/CI integrated; новый integration feature содержит проверенные sandbox/pure clock/score/catalog. Совместно 93 Django tests, 24 domain/12 sandbox unit, 5 actual Docker smoke pass; это core checks, не полные T01–21. F01/F07 закрыты на 6950f10, #7/#15/#16 имеют новые/остающиеся blockers. Команды/границы — [повторная ревизия](../reviews/2026-10-09-integration-review.md). ROADMAP v3 сохраняет T01–21 и требует production/browser/official/recovery приёмку.
+Статус всех полных сценариев: **NOT_RUN**. Платформа/auth/roster/invites/CI integrated; новый integration feature содержит проверенные sandbox/pure clock/score/catalog. Совместно 105 Django tests, 36 domain/12 sandbox unit, 5 actual Docker smoke pass; это core checks, не полные T01–21. F01/F07 закрыты на 6950f10, #7/#15/#16 имеют новые/остающиеся blockers. Команды/границы — [повторная ревизия](../reviews/2026-10-09-integration-review.md). ROADMAP v3 сохраняет T01–21 и требует production/browser/official/recovery приёмку.
 
 Готовность по кейсу требует блоки 1–3; команда также включает базовую визуализацию. Первый working slice — промежуточный результат, не повод пропускать обязательные строки.
 

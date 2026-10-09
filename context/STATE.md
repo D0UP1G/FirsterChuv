@@ -1,6 +1,6 @@
 # Состояние проекта после повторной ревизии
 
-Снимок 2026-10-09, Europe/Moscow. Исходный develop `dd80c933083eea8ac234a17593a6a54a09ded53d` (#19), main `e9fc0ef` bootstrap. Проверенный состав текущего coordinator feature/mvp-integration-review-2 включает четыре готовых heads #3/#11/#13/#14. Факт общей интеграции определяется MERGED общего PR/remote refs, публикация записана в новом coordinator audit. Документация внутри feature не объявляет будущий merge выполненным.
+Снимок 2026-10-09, Europe/Moscow. Исходный develop `dd80c933083eea8ac234a17593a6a54a09ded53d` (#19), main `e9fc0ef` bootstrap. Проверенный состав текущего coordinator feature/mvp-integration-review-2 включает пять готовых heads #3/#11/#13/#14 и admin guards 8f5b762. Факт общей интеграции определяется MERGED общего PR/remote refs, публикация записана в новом coordinator audit. Документация внутри feature не объявляет будущий merge выполненным.
 
 ## Что есть и чего нет
 
@@ -16,12 +16,12 @@
 | Bracket ORM/API | #7 1952244 не включён: lifecycle B01/F08 | Fix draft/scheduled guard, потом full reset/pairing HTTP |
 | Queue core | #15 7d76d0b не включён: concurrent admission B02 | Fix busy→503/retry/race, worker/provider/production adapters |
 | Event store | #16 8340014 не включён: SOLVED.lastVerdict B03 | Fix OK→WA, producers/access/snapshots/SSE |
-| Admin guards | feature/match-admin-actions 8f5b762 опубликована, PR ещё не было | Pure guards; настоящие command store/effects/HTTP отсутствуют |
+| Admin guards | feature/match-admin-actions 8f5b762 включена в общий integration feature | Pure guards; настоящие command store/effects/HTTP отсутствуют |
 | Frontend | Опубликованных refs/PR нет | React build/auth/admin/editor/map и CONNECT |
 | Official package/README | Не получены | Только adapter/final official acceptance WAITING_EXTERNAL |
 | Full one-command demo/release | Не готовы | R1→R2→R3; main не релиз |
 
-Совместная интеграционная сборка: 93 Django tests passed, migration drift нет, 24 clock/score и 12 sandbox unit pass, standard image rebuilt/5 actual smoke pass. Bounded Docker probes подтверждают F01/F07 fixes и isolation/cleanup/recovery на exact #3 HEAD, не всю безопасность официального judge. Полные T01–21 остаются NOT_RUN.
+Совместная интеграционная сборка: 105 Django tests passed, migration drift нет, 36 clock/score/admin и 12 sandbox unit pass, standard image rebuilt/5 actual smoke pass. Bounded Docker probes подтверждают F01/F07 fixes и isolation/cleanup/recovery на exact #3 HEAD, не всю безопасность официального judge. Полные T01–21 остаются NOT_RUN.
 
 ## Следующая работа одновременно
 

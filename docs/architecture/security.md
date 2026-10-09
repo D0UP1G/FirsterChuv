@@ -102,4 +102,4 @@ T20: SQL/XSS/CSRF/SSRF/archive/command injection и обход ролей/UUID. 
 
 ## Повторная ревизия 2026-10-09
 
-На совместном feature прошли 93 backend tests, 24 pure domain и 12 sandbox units; standard image rebuilt и 5 actual smoke pass. Bounded probes подтверждают F01/F07 fixes, ограничения/cleanup/normal job recovery, не все экспертные inputs или private-data browser paths. Queue SQLite race и bracket lifecycle/public score-event mismatch требуют fixes #15/#7/#16; [отчёт](../reviews/2026-10-09-integration-review.md). P1-03 proxy/share/log redaction и полный T18/T20 остаются обязательными.
+На совместном feature прошли 105 backend tests, 36 pure domain и 12 sandbox units; standard image rebuilt и 5 actual smoke pass. Bounded probes подтверждают F01/F07 fixes, ограничения/cleanup/normal job recovery, не все экспертные inputs или private-data browser paths. Queue SQLite race и bracket lifecycle/public score-event mismatch требуют fixes #15/#7/#16; [отчёт](../reviews/2026-10-09-integration-review.md). P1-03 proxy/share/log redaction и полный T18/T20 остаются обязательными.

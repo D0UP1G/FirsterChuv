@@ -8,7 +8,7 @@
 
 Обновлены независимые review auth/invites/common CI, bracket/clock/scoring/events, catalog/queue и весь sandbox. Использованы три read-only reviewers, изолированные copies и временные SQLite; исходные feature refs и чужие незакоммиченные checkout не изменялись. Неопубликованная работа/фактический будущий demo-host этим не подтверждаются.
 
-На исходном снимке 12 PR merged и 7 open. Четыре среза прошли review: #3 harness, #11 pure clock, #13 pure scoring, #14 normalized catalog. Они объединены merge commits в coordinator-owned feature/mvp-integration-review-2; общий PR в develop проходит CI на совместном коде. Их исходные commits сохранены в ancestry. #7/#15/#16 не включены из-за воспроизведённых дефектов ниже. Полный MVP ещё не работает: нет frontend, persisted match runtime/gateway, LocalJudge/worker/drafts/production SSE.
+На исходном снимке 12 PR merged и 7 open. Четыре среза прошли review: #3 harness, #11 pure clock, #13 pure scoring, #14 normalized catalog. В ту же сборку добавлен проверенный pure admin guards slice 8f5b762. Они объединены merge commits в coordinator-owned feature/mvp-integration-review-2; общий PR в develop проходит CI на совместном коде. Их исходные commits сохранены в ancestry. #7/#15/#16 не включены из-за воспроизведённых дефектов ниже. Полный MVP ещё не работает: нет frontend, persisted match runtime/gateway, LocalJudge/worker/drafts/production SSE.
 
 ## Все PR на исходном снимке
 
@@ -36,7 +36,7 @@
 
 У исходных PR formal reviews отсутствуют. #17/#18/#19 имеют четыре SUCCESS jobs, старые открытые heads без checks. Проверено API: develop protected=false, rulesets=[]; не заявлять обязательный gate включённым. Manual real-smoke workflow находится в develop, default main не содержит его; в этой ревизии выполнен локальный real build/smoke. Обходить GitFlow ради workflow_dispatch не нужно.
 
-Дополнительная опубликованная feature/match-admin-actions 8f5b762 имеет pure guards и 12 passed tests, но PR нет; напрямую не слита. Не приписывать ей HTTP/ORM/idempotency/effects. Веток/PR с frontend не обнаружено.
+Дополнительная опубликованная feature/match-admin-actions 8f5b762 прошла полный guards review и 12 tests; включена в общий coordinator-owned integration feature/PR, не напрямую в develop. Не приписывать ей HTTP/ORM/idempotency/effects. Веток/PR с frontend не обнаружено.
 
 ## Блокирующие замечания
 
@@ -78,15 +78,15 @@ P2-06.1: SOLVED требует attempts>0/non-null normalized verdict, не об
 | #14 9234951 suite | 68 passed, check/drift clean | В его старой базе; current joint suite ниже |
 | #15 7d76d0b suite | 66 passed, check/drift clean | B02 отдельный bounded two-thread probe, code source не исполнялся |
 | Собранный integration feature #3/#11/#13/#14 | 93 Django tests passed / 32.121s; check чист, no migration drift | Actual совместный код, core scope |
-| Integration standalone clock/score + sandbox units | 24 + 12 passed | Не суммировать как уникальное покрытие Django suite |
+| Final integration с admin guards 8f5b762 | 105 Django tests / 32.085s; 36 domain и 12 sandbox units pass, no migration drift | Все пять heads вместе, не full runtime |
 | Rebuilt sandbox image на #3 | 01612130490586197d5f03f834dd590042d6ac6f17eababbea11f4053dfd5fbc | Старый образ 994c240 не использован для proof |
 | Exact #3 real smoke/isolation/recovery | 5 smoke pass, UID65534/NNP1/seccomp2/caps0, no host/env/socket, fd0/1/2 EACCES, net ENETUNREACH, bounded PID/memory/compile/output/watchdog cleanup + next OK | Full official hostile/expert acceptance не выполнена; ML без OOM не заявлена |
 
-Root дополнительно собрал стандартный image tag из объединённого checkout и выполнил existing real smoke; результат/CI итогового PR фиксируются в coordinator audit при публикации. Solution code никогда не исполнялся на host; bounded probes не являлись бесконечным flood, real secrets не использовались. Новые production tests не добавлялись к четырём принятным branches, выполнены существующие suites и временные reproductions.
+Root дополнительно собрал стандартный image tag из объединённого checkout и выполнил existing real smoke; результат 5 actual smoke PASS, CI итогового PR фиксируется в coordinator audit при публикации. Solution code никогда не исполнялся на host; bounded probes не являлись бесконечным flood, real secrets не использовались. Новые production tests не добавлялись к пяти принятым branches, выполнены существующие suites и временные reproductions.
 
 ## GitFlow и передача
 
-Интеграционный feature основан на актуальном develop dd80c93. Четыре source heads объединены обычными --no-ff merge commits; только conflicts карточек A2/A3 разрешены consolidated status. CI/common ports/dev lock/P1 audits сохранены; application code принят без изменения алгоритмов. После MERGED общего PR проверить develop remote/ancestry и state исходных PR; только тогда эти cores считаются integrated. Source refs не переписываются, force push не используется.
+Интеграционный feature основан на актуальном develop dd80c93. Пять source heads объединены обычными --no-ff merge commits; только conflicts карточек A2/A3 разрешены consolidated status. CI/common ports/dev lock/P1 audits сохранены; application code принят без изменения алгоритмов. После MERGED общего PR проверить develop remote/ancestry и state исходных PR; только тогда эти cores считаются integrated. Source refs не переписываются, force push не используется.
 
 [ROADMAP v3](../../ROADMAP.md) сохраняет 24 P-ID и вводит конкретные runtime subtasks/резервные очереди: A1 access/proxy/Compose/additive common, A2 lifecycle fixes/persisted gateway/ledger/actions/SSE, A3 queue fix/LocalJudge/worker/drafts/import, A4 реальный React/auth/invites/editor/map. На зависимости роль не заканчивает сессию, продолжает другой доступный подпункт; явный user stop имеет приоритет.
 

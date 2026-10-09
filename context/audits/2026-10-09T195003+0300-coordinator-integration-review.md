@@ -28,3 +28,11 @@ Merge commits в этой coordinator-owned feature уже сохраняют ex
 ROADMAP v3 сохраняет 24 P-ID, фиксирует готовые cores и priority runtime subtasks; назначение дорожки требует продолжать доступную работу при WAITING подпункте. Старый v2 сохранён docs/history. Новые report/STATE/cards/README/API/security/requirements/acceptance/handoffs синхронизируются с реальным code scope. Additive failure sink принят как спецификация, не реализованный provider; старый v1 ResultReceipt/verdict не изменён. Явный стоп пользователя отдельной сессии сохраняет приоритет.
 
 Далее: включить guards slice, повторить combined suite/docs checks, опубликовать integration PR→develop, дождаться 4 CI jobs, merge commit и проверить ancestry/ref/source PR states. Фактические результаты и URL будут дописаны перед merge. Полные T01–21/browser/official import/LocalJudge/worker/frontend/demo/release не выполнены и не объявлены PASS.
+
+## Финальная локальная сборка
+
+Включён пятый source head `8f5b762148993197bf4fa715ee768c9840ef885f` (pure admin guards + suite runner) обычным merge commit. Исходная ветка не менялась. Код всех пяти принятых срезов совпадает с их exact HEAD; их commits находятся в ancestry текущей feature. После этого повторены **105 Django tests / 32.085s**, **36 standalone clock/score/admin tests**, migration drift none, schemas/common imports pass. **12 sandbox units/5 actual smoke** остаются результатом той же неизменённой sandbox реализации.
+
+Doc checker: 82 Markdown, 147 local links, 24 P-задачи, 37 requirements, 21 acceptance; 53 historical audits сверены, 39 из них находятся в текущей интеграционной ветке и побайтно сохранены, остальные живут в несмерженных owner refs. 36 accepted code files совпали с исходными source heads; errors=[] и ancestry all pass. Relative links нового historical ROADMAP перенесены из его нового расположения, назначения исходного текста не изменены. git diff --check без замечаний.
+
+Следующий шаг: publication/CI/merge общего PR, затем реальные runtime задачи ROADMAP v3. Дополнительный read-only review нового плана выполняется перед публикацией; отсутствие всеобщего browser/official/runtime PASS явно сохранено.

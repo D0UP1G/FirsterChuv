@@ -4,7 +4,7 @@
 
 ## Текущее состояние
 
-Повторная ревизия 2026-10-09: в develop уже есть платформа/auth/roles/CRUD/roster/invites и CI. В текущий интеграционный feature объединены проверенные sandbox, pure clock/scoring и normalized catalog (#3/#11/#13/#14); после MERGED общего PR они доступны всем. Совместно прошли 93 Django tests, 24 standalone domain и 12 sandbox unit tests, реальный Docker smoke. Полного рабочего MVP пока нет: frontend, persisted match/gateway/ledger, LocalJudge/worker/drafts и public SSE остаются задачами.
+Повторная ревизия 2026-10-09: в develop уже есть платформа/auth/roles/CRUD/roster/invites и CI. В текущий интеграционный feature объединены проверенные sandbox, pure clock/scoring/admin guards и normalized catalog (#3/#11/#13/#14 + 8f5b762); после MERGED общего PR они доступны всем. Совместно прошли 105 Django tests, 36 standalone domain и 12 sandbox unit tests, реальный Docker smoke. Полного рабочего MVP пока нет: frontend, persisted match/gateway/ledger, LocalJudge/worker/drafts и public SSE остаются задачами.
 
 Точный снимок и факт merge: [STATE](context/STATE.md). Все 19 исходных PR/53 аудита/замечания: [повторная ревизия](docs/reviews/2026-10-09-integration-review.md). [ROADMAP v3](ROADMAP.md) даёт очереди четырёх агентов до рабочего сценария; [контракты v1](docs/architecture/parallel-contracts.md) и [runtime handoffs](docs/architecture/runtime-handoffs.md) задают границы. #7/#15/#16 требуют коротких fixes, старые дефекты запуска sandbox уже исправлены и перепроверены.
 
