@@ -1,6 +1,6 @@
 # Состояние проекта: новая ревизия и frontend handoff
 
-Снимок 2026-10-10T01:15:16+03:00, Europe/Moscow. База develop cc204e6 включает code integrations#20/#32/#44/#46 и A4 docs#48/#49. Main e9fc0ef bootstrap. Проверенные новые#21/#50/#51/#52/#54/#55 объединены ordinary merge commits в coordinator feature/mvp-readiness-handoff; до MERGED integration PR статусIN_REVIEW, после фактического MERGED доступны из fresh develop. Отдельный STATE PR не prerequisite. [Report](../docs/reviews/2026-10-10-mvp-readiness.md), [outcome audit](audits/2026-10-10T011516+0300-coordinator-mvp-readiness-review.md), [ROADMAP v4](../ROADMAP.md).
+Снимок 2026-10-10T01:15:16+03:00, Europe/Moscow. База develop cc204e6 включает code integrations#20/#32/#44/#46 и A4 docs#48/#49. Main e9fc0ef bootstrap. Проверенные новые#21/#50/#51/#52/#54/#55/#56 объединены ordinary merge commits в coordinator feature/mvp-readiness-handoff; до MERGED integration PR статусIN_REVIEW, после фактического MERGED доступны из fresh develop. Отдельный STATE PR не prerequisite. [Report](../docs/reviews/2026-10-10-mvp-readiness.md), [outcome audit](audits/2026-10-10T011516+0300-coordinator-mvp-readiness-review.md), [ROADMAP v4](../ROADMAP.md).
 
 ## Что изменилось
 
@@ -8,6 +8,8 @@
 - #50 даёт настоящий admin pairings/reset HTTP с User UUID mapping, CSRF/reason/idempotency/lifecycle/SQLite first-write. Match/config/start/ready/clock/ledger/promotion пока не runtime.
 - #52 добавляет frontend CI вместе с существующими4 jobs; combined feature ограничивает worker1.
 - #54 брендбук BLITZ_ARENA:13 HTML screens/tokens и собственный inert auth preview fix. React styling переносит новый A5, production UI ещё не branded этим PR.
+- #56 Markdown brandbook доступен как reference; #54 latest86208d5 сохраняет grid/text rhythm и inert auth correction.
+- #57/#58/#59 не включены: реальные file-backed configure/admission/result/admin lock errors; historical participants в #58 mutable. 16 tests latest #59 PASS, probes FAIL; первое READY A2 — исправления и PR base develop.
 - #53fd79038 не включён: concurrent snapshot SQLite500/cursor loss и same-cursor different run overwrite. FixA4P4-07 READY, source PR остаётсяOPEN.
 - A5 создан и active в отдельной Codex задаче; frontend/P4-01–06 переданы ему. A4 владеет events/SSE/system acceptance. A1 common/access/build, A2 competition/run/ledger, A3 real judge/worker/workspace.
 
@@ -19,7 +21,7 @@ R1 critical: persisted configured run/gateway → immutable accepted version/che
 
 ## Следующая работа параллельно
 
-A1 — P1-02.5 common failure/snapshot typing, затем PublicAccess/build. A2 — P2-03 configured run/start/ready/gateway, reserve durable ledger/actions. A3 — real worker executor/factory+programmatic bundle, reserve import/drafts/fencing. A4 — snapshotfix#53, reserve public transport/system harness. A5 — branded shared UI+доступныеauth/invite/bracket, reserve responsive/editor/real CONNECT по одному endpoint. WAITING у конкретного adapter не завершает всю роль.
+A1 — P1-02.5 common failure/snapshot typing, затем PublicAccess/build. A2 — fix #57–59 SQLite/frozen participants и base develop, затем P2-03 HTTP/gateway; reserve failure/finalization/admin API. A3 — real worker executor/factory+programmatic bundle, reserve import/drafts/fencing. A4 — snapshotfix#53, reserve public transport/system harness. A5 — branded shared UI+доступныеauth/invite/bracket, reserve responsive/editor/real CONNECT по одному endpoint. WAITING у конкретного adapter не завершает всю роль.
 
 ## Предыдущие датированные snapshots
 

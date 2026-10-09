@@ -1,5 +1,13 @@
 # Координатор: ревизия и параллельный план
 
+## Проверенные результаты перед публикацией, 2026-10-10T01:24:06+03:00
+
+- Статус IN_REVIEW, feature/mvp-readiness-handoff от cc204e6. #21/#50/#51/#52/#54 latest86208d5/#55/#56 сохранены ordinary merge commits; #53/#57/#58/#59 latest7465a9c исключены с воспроизведёнными correctness findings.
+- Backend255/4skips, drafts18 и bracket24 file-backed, frontend82/typecheck/lint/build, schema/common/domain/sandbox/check/drift PASS. Runtime source #57–59 tests16 PASS, реальные race/history probes FAIL; ни один failed head не merged.
+- ROADMAP v4: A1 contracts/access/build, A2 reviewed persistence fixes→run/gateway/ledger, A3 actual judge/worker, A4 public events/SSE/system acceptance, A5 весь frontend. Новая задача A5 active в изолированном clone.
+- Все148 audits текущей base сохранены byte-for-byte; source-only audits сохранены. Более старый blob одного audit в #51 отличается от current develop уже до этой ревизии; выбран current base, старый source blob сохранён в ancestry.
+- [Полная ревизия](../../docs/reviews/2026-10-10-mvp-readiness.md), [late audit](../audits/2026-10-10T012406+0300-coordinator-late-pr-review.md). Следующее: feature push/PR→develop, combined exact-head CI, merge commit и remote/source verification. main bootstrap.
+
 ## Новая ревизия и передача frontend, 2026-10-10T01:01:49+03:00
 
 - Статус: IN_PROGRESS. Прямой запрос команды: проверить исправленные/новые PR, сверить кейс и roadmap, создать нового владельца frontend и распределить остаток MVP.

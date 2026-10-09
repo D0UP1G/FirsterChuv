@@ -117,3 +117,5 @@
 ## Безопасный просмотр форм
 
 Поля login/register в статическом preview отключены, кнопки не отправляют native GET. Данные аккаунтов в макеты не вводятся. При переносе в React использовать существующий session/CSRF HTTP client и обработчик формы; preview `disabled` не переносить в рабочую форму.
+
+Исходный [брендбук в Markdown](../../docs/source/brandbook.md) доступен в репозитории. Рабочий scope, права и private-code policy задают PROJECT/ROADMAP; дополнительные идеи reference не расширяют MVP. Внедрение React выполняет Agent 5 по передаче координатора 2026-10-10.

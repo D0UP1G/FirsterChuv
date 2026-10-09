@@ -1,12 +1,14 @@
+<!-- Датированный снимок ROADMAP из корня репозитория. Только относительные ссылки адаптированы к docs/history. -->
+
 # ROADMAP v3: четыре агента до рабочего MVP
 
-Перепланировано координатором 2026-10-09 по новому поручению команды. Основание — [повторная ревизия](docs/reviews/2026-10-09-integration-review.md), исходный код/PR и 53 уникальных исторических аудита. Кейс/подтверждённые роли/DRF + React + SQLite/own sandbox не изменены. P-ID v2 сохранены; выполненные cores не писать заново. [Предыдущий план](docs/history/ROADMAP-2026-10-09-before-integration-review.md).
+Перепланировано координатором 2026-10-09 по новому поручению команды. Основание — [повторная ревизия](../../docs/reviews/2026-10-09-integration-review.md), исходный код/PR и 53 уникальных исторических аудита. Кейс/подтверждённые роли/DRF + React + SQLite/own sandbox не изменены. P-ID v2 сохранены; выполненные cores не писать заново. [Предыдущий план](../../docs/history/ROADMAP-2026-10-09-before-integration-review.md).
 
 ## На каком этапе проект
 
-Актуализация 2026-10-09T23:54+03:00: #20/#25/#32 MERGED; sandbox/clock/score/catalog/admin guards/queue/LocalJudge доступны в develop. Frontend slices и regression PR до #42 MERGED. В новой coordinator feature проверены и объединены #7 bracket/lifecycle, #16 events/SOLVED fix, #34 readiness, #37 worker/outboxes/adapters, #38 ledger core, #41 command receipts. Доступность — после MERGED integration PR, затем брать свежий develop без отдельного STATE prerequisite. [STATE](context/STATE.md), [новый аудит](context/audits/2026-10-09T235434+0300-coordinator-new-pr-review.md).
+Актуализация 2026-10-09T23:54+03:00: #20/#25/#32 MERGED; sandbox/clock/score/catalog/admin guards/queue/LocalJudge доступны в develop. Frontend slices и regression PR до #42 MERGED. В новой coordinator feature проверены и объединены #7 bracket/lifecycle, #16 events/SOLVED fix, #34 readiness, #37 worker/outboxes/adapters, #38 ledger core, #41 command receipts. Доступность — после MERGED integration PR, затем брать свежий develop без отдельного STATE prerequisite. [STATE](../../context/STATE.md), [новый аудит](../../context/audits/2026-10-09T235434+0300-coordinator-new-pr-review.md).
 
-Обновление 2026-10-10T00:10:11+03:00: [#44](https://github.com/D0UP1G/FirsterChuv/pull/44) MERGED после 4 SUCCESS, все указанные code slices уже в develop; A4 #45 сохранён, frontend 82/build PASS. Source #7 обновился до `f300150` с поздним sync/audit; closeout сохраняет его без изменения production/tests. Сетка/MatchRun foundation доступна сейчас, этот docs merge не prerequisite. [Merge audit](context/audits/2026-10-10T001011+0300-coordinator-merge-closeout.md).
+Обновление 2026-10-10T00:10:11+03:00: [#44](https://github.com/D0UP1G/FirsterChuv/pull/44) MERGED после 4 SUCCESS, все указанные code slices уже в develop; A4 #45 сохранён, frontend 82/build PASS. Source #7 обновился до `f300150` с поздним sync/audit; closeout сохраняет его без изменения production/tests. Сетка/MatchRun foundation доступна сейчас, этот docs merge не prerequisite. [Merge audit](../../context/audits/2026-10-10T001011+0300-coordinator-merge-closeout.md).
 
 Сквозной MVP ещё не готов: нужны persisted configured run/gateway/ledger/effects, production worker executor/providers/version snapshot, HTTP/SSE CONNECT. Исправления #7 `1a2b54a` и #16 `a0b1dcc` в develop; повторять их не требуется. У #21 `1706ecf` сохраняется SQLite CAS race, P3-05.1 READY. Official package/README не получены.
 
@@ -30,7 +32,7 @@
 | 3 | P3-02.2 normalized import management; P3-05.1 CAS race #21 | P3-04 snapshot/executor/failure CONNECT; own lease/container recovery | sandbox/problems/submissions/drafts/judge |
 | 4 | Продолжать текущий P4-06 browser/API CONNECT | По одному endpoint после merge; UI slices P4-01–05 уже интегрированы | frontend и browser tests |
 
-Контракты: [v1](docs/architecture/parallel-contracts.md), [runtime handoffs](docs/architecture/runtime-handoffs.md). Реальные register/login/CRUD/invites доступны уже сейчас. A4 не ждёт A2/A3. A2 не ждёт judge для clock/ledger/HTTP и tests. A3 не ждёт clock для реального исполнения bundle. A1 не ждёт UI для access/proxy/infrastructure.
+Контракты: [v1](../../docs/architecture/parallel-contracts.md), [runtime handoffs](../../docs/architecture/runtime-handoffs.md). Реальные register/login/CRUD/invites доступны уже сейчас. A4 не ждёт A2/A3. A2 не ждёт judge для clock/ledger/HTTP и tests. A3 не ждёт clock для реального исполнения bundle. A1 не ждёт UI для access/proxy/infrastructure.
 
 ## Агент 1: платформа, безопасность, запуск
 
@@ -177,4 +179,4 @@ Anonymous bracket/match route map, две дорожки, все задачи/at
 | R2: обязательные функции | Manual pairs, both_ready, все admin interventions, code persistence, failure/restart/privacy, базовая public map/SSE | Все четыре |
 | R3: сдача по кейсу | Official package/checkers, T01–21, hostile checks, одна команда, demo/видео, release/tag | Все четыре |
 
-R1 не отменяет R2/R3. Пакет не блокирует R0/разработку R1, но без official package финальная приёмка не закрыта. История A-ID и P-ID сохранена в docs/history и аудитах. Все задачи сверены с [37 требованиями](docs/requirements.md) и [21 сценарием](docs/quality/mvp-acceptance.md).
+R1 не отменяет R2/R3. Пакет не блокирует R0/разработку R1, но без official package финальная приёмка не закрыта. История A-ID и P-ID сохранена в docs/history и аудитах. Все задачи сверены с [37 требованиями](../../docs/requirements.md) и [21 сценарием](../../docs/quality/mvp-acceptance.md).

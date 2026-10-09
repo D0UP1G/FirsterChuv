@@ -4,8 +4,8 @@
 
 - Источник: прямое поручение команды перераспределить оставшийся MVP и создать нового frontend owner. Это текущее назначение; прежние author checkpoints ниже сохранены как история.
 - Статус назначения: READY; фактический IN_PROGRESS выставляет владелец при начале edits в своём изолированном checkout.
-- Первое действие: P2-03.1 persisted configured run/get/config/start/ready + production gateway/snapshot; публиковать по одному endpoint.
-- Независимый резерв: P2-04 durable accepted/result/failure ledger→promotion; P2-05 effects/history.
+- Первое действие: исправить проверенные #57–59 (0073fbd/1f3fae5/7465a9c): SQLite read→write/full bounded retry, frozen participants original run, exact-command replay; file-backed tests. PR только в develop, после #50 база доступна без переписывания веток. Persistence cores уже написаны, не повторять. Затем P2-03 get/config/start/ready + production gateway/snapshot, по одному endpoint.
+- Независимый резерв: HTTP serializers/permissions для config/start/ready, P2-04 durable failure sink/finalization/promotion, P2-05 API/replacement. #58 accepted/result и #59 actions исправлять по конкретным замечаниям [review](../../docs/reviews/2026-10-10-mvp-readiness.md), не реализовывать повторно.
 - Владение: competition/models/services/migrations/tests; events переданы A4.
 - Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
 - [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.

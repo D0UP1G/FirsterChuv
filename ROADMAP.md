@@ -6,7 +6,7 @@
 
 R0 — интеграционная база и проверенные отдельные модули. R1 — полный рабочий путь — ещё не принят. Auth/roles/CRUD/roster/invites, bracket ORM, clock/score/readiness/ledger/admin cores, queue/worker/outboxes, LocalJudge и React UI в develop. Нормализованный catalog имеется; compiler registry ещё не подтверждён runtime readiness. Брендбук — static reference, не готовая React интеграция.
 
-Новая coordinator feature включает проверенные #21 (CAS исправлен), #50 (pairings/reset HTTP), #51 (коррекция SHA), #52 (frontend CI), #54 (дизайн с inert auth preview correction), #55 (publication docs). До MERGED integration PR — IN_REVIEW; после подтверждённого MERGED/ancestry доступны из fresh develop без отдельного STATE PR. #53 fd79038 не включён: concurrent snapshot write может потерять cursor/дать database is locked; equal cursor допускает другой run/payload. Исправление — первое самостоятельное задание A4.
+Новая coordinator feature включает проверенные #21 (CAS исправлен), #50 (pairings/reset HTTP), #51 (коррекция SHA), #52 (frontend CI), #54 (дизайн с inert auth preview correction), #55 (publication docs), #56 (Markdown brandbook). До MERGED integration PR — IN_REVIEW; после подтверждённого MERGED/ancestry доступны из fresh develop без отдельного STATE PR. #53 fd79038 не включён: concurrent snapshot write может потерять cursor/дать database is locked; equal cursor допускает другой run/payload. Исправление — первое самостоятельное задание A4. #57–59 проверены, но не включены: SQLite read→write races, old-run participants не frozen (#58), feature-base вместо develop. Их исправление — первый READY A2; 16 happy-path tests не закрывают эти дефекты.
 
 ## Ближайший результат, который показываем
 
@@ -17,7 +17,7 @@ R0 — интеграционная база и проверенные отде�
 | Владелец | Первое READY действие | Следующее независимое действие | Пути |
 |---|---|---|---|
 | A1 | P1-02.5 failure DTO + run problem snapshot port, маленький совместимый PR | P1-03 PublicAccess/share/security; P1-04 build/Compose/readiness | common/config/accounts/tournaments/deploy/Compose/start scripts/CI |
-| A2 | P2-03.1 persisted configured MatchRun + get/config/start/ready + gateways | P2-04 persistent accepted/result/failure ledger, promotion; P2-05 durable actions | competition и свои migrations |
+| A2 | Исправить #57–59: full SQLite retry/immutable run participants/GitFlow base | P2-03 get/config/start/ready + gateways; P2-04 failure sink/finalization; P2-05 API | competition и свои migrations |
 | A3 | P3-04.2 real LocalJudge worker executor/factory и smoke импорт без HTTP | P3-02.2 import management/workspace; P3-05 real provider CONNECT; cleanup fencing | problems/submissions/drafts/judge/sandbox |
 | A4 | P4-07 snapshot correctness fix #53 на file-backed SQLite | P2-06.2/3 typed producers/public HTTP/SSE; P4-08 system acceptance harness | events и свои migrations/tests; scripts/acceptance; docs/quality/evidence |
 | A5, новый | P5-01 tokens/layouts из frontend/design + реальный auth/invite/bracket UI | P4-03–06 CONNECT по одному готовому API; P5-02 responsive/accessibility | весь frontend/src/styles/client/editor/map/frontend tests |
@@ -68,17 +68,17 @@ P2-02.1 lifecycle correction integrated. P2-02.2 #50 — admin PUT full pairs п
 
 ### P2-03 · persisted run / clock / gateway · первое READY, R1 critical
 
-P2-03.1 configured MatchRun/current_run/immutable run problem versions+checksum+rules; проверенные compiler только для READY/start. Реальные GET match/config/start/ready; manual/both_ready, two distinct players, idempotency, transaction/race, server active elapsed/deadline equality/paused semantics. Нужен durable run_match_clock/restart. Использовать готовые clock/readiness cores.
+P2-03.1 сначала fix #57 0073fbd: catalog ORM read внутри atomic до первого write даёт конкурентный lock error. Короткая безопасная transaction/retry, file-backed first config/update и rollback tests; PR→develop. Config/readiness persistence уже написана, не повторять. Затем configured MatchRun/current_run/immutable run participants/problem versions+checksum+rules; проверенные compiler только для READY/start. Реальные GET match/config/start/ready; manual/both_ready, two distinct players, idempotency, transaction/race, server active elapsed/deadline equality/paused semantics. Нужен durable run_match_clock/restart. Использовать готовые clock/readiness cores.
 
 P2-03.2 CompetitionGateway authorize_submission/authorize_workspace и отдельный run-scoped snapshot resolver; trusted actor/membership/run/problem/time/actions/condition_available. Adapter вызывается внутри admission transaction; старая посылка использует свой run, не current/latest. Публиковать минимальный start+gateway срез сразу, не ждать admin actions или judge/UI. При CONNECT ожидании — P2-04/05. M05/M06/P03; T07–09.
 
 ### P2-04 · durable ledger/finalization/promotion · READY, R1 critical
 
-Не повторять pure immutable ledger #38 и score #13. Unique accepted submission_id, original received/elapsed/rules; result/failure sink в DB, dup/out-of-order/SUPERSEDED. FINALIZING ждёт все принятые pending; infrastructure failure не становится WA/автопоражением. Winner/downstream/current score атомарны; full tie→новый run без переноса score. EventWriter producer A4 можно inject в tests. Typed receipt DB tests не требуют Docker/UI. M05/M07/J04; T09/T10/T19.
+Первое fix #58 1f3fae5: accepted/result reads до write claim дают lock errors; участники historical run восстанавливаются из mutable slots. Freeze participants на run и сохранять late historical results после replacement; full bounded transaction retry + file-backed admission/result/duplicate tests. Persistence slice уже написан, не повторять. Не повторять pure immutable ledger #38 и score #13. Unique accepted submission_id, original received/elapsed/rules; result/failure sink в DB, dup/out-of-order/SUPERSEDED. FINALIZING ждёт все принятые pending; infrastructure failure не становится WA/автопоражением. Winner/downstream/current score атомарны; full tie→новый run без переноса score. EventWriter producer A4 можно inject в tests. Typed receipt DB tests не требуют Docker/UI. M05/M07/J04; T09/T10/T19.
 
 ### P2-05 · durable admin effects/API · READY после/параллельно R1 persistence
 
-Core guards #20 и receipts #41 integrated. Persist pause/resume/extend/technical/rematch/replacement, reason/actor/history, repeat exact command возвращает исходный receipt, changed intent 409, old run immutable, downstream started запрещает пересмотр. Runtime/API tests на trusted snapshots доступны без judge. M08/T11/T20.
+Fix #59 7465a9c: same-key concurrency даёт uncaught lock error до exact replay; source base retarget develop. Pause/resume/extend/technical/rematch persistence уже написана, но не merged; test downstream guards/old-run history/replay на файле, затем API и replacement. Core guards #20 и receipts #41 integrated. Persist pause/resume/extend/technical/rematch/replacement, reason/actor/history, repeat exact command возвращает исходный receipt, changed intent 409, old run immutable, downstream started запрещает пересмотр. Runtime/API tests на trusted snapshots доступны без judge. M08/T11/T20.
 
 ### P2-06 · public events/SSE · TRANSFERRED → A4
 

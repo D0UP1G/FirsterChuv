@@ -21,8 +21,8 @@
 | T13 | Editor highlight/indent/brackets/hotkey, task switch/statuses, templates и не менее реально заявленного language list; language работает в sandbox | A3/A5 | E01, E02, P03 |
 | T14 | Реально получить OK/WA/TL/ML/RE/CE; CE author diagnostics, история и async update без reload; invalid checker infrastructure не WA | A3/A5 | J01, J02, E03 |
 | T15 | Draft survives reload/task/language/reconnect; local+server revision, user namespace, конфликт не теряет обе версии | A3/A5 | E04 |
-| T16 | Anonymous live bracket/map: leader, arbitrary solved tasks, attempts/verdict/time, projector readable; no login wall | A2/A5 | V01, V02, V04, TEAM02 |
-| T17 | SSE solve/overtake/win events; Last-Event-ID, snapshot resync, disconnect и duplicate frames не повторяют score/animations | A2/A5 | V03 |
+| T16 | Anonymous live bracket/map: leader, arbitrary solved tasks, attempts/verdict/time, projector readable; no login wall | A4/A2/A5 | V01, V02, V04, TEAM02 |
+| T17 | SSE solve/overtake/win events; Last-Event-ID, snapshot resync, disconnect и duplicate frames не повторяют score/animations | A4/A2/A5 | V03 |
 | T18 | Hostile runtime/compile: loop/memory/pids/net/host-read/secrets/output; limits/cleanup работают, следующий normal job successful | A3/A1 | J03, D06 |
 | T19 | Worker kill/restart, lease recovery, same idempotency key, temporary Docker/SQLite error, bounded queue/retry и сохранность accepted source | A3/A2 | J04 |
 | T20 | SQL/XSS/CSRF/command/SSRF/archive attacks, UUID/role bypass, secrets/source отсутствуют в public DTO/SSE/browser/logs/sandbox | Все | S01, S02, TEAM06 |
