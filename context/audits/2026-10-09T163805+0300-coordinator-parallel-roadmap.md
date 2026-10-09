@@ -44,4 +44,12 @@ TEAM05/TEAM06: GitFlow, общий контекст/аудит и безопас
 
 ## Передача
 
-Опубликовать docs PR → develop и интегрировать merge commit после проверки этого малого среза. Агенты fetch/merge актуального develop в собственные ветки, затем берут первые P-задачи. A2 сохраняет уже написанный a89b8fc, делает app registration/F08/HTTP pairing и далее clock/score без ожидания A3. A3 исправляет F01/F07 и выполняет реальные проверки, пока отсутствие package не блокирует storage/queue/drafts. A1 invites/CI/proxy/Compose и A4 real auth/roster + dev UI работают независимо. Publication URL/remote evidence добавляются отдельным завершающим commit в этот же docs PR.
+Агенты fetch/merge актуального develop в собственные ветки, затем берут первые P-задачи. A2 сохраняет уже написанный a89b8fc, делает app registration/F08/HTTP pairing и далее clock/score без ожидания A3. A3 исправляет F01/F07 и выполняет реальные проверки, пока отсутствие package не блокирует storage/queue/drafts. A1 invites/CI/proxy/Compose и A4 real auth/roster + dev UI работают независимо.
+
+## Публикация
+
+2026-10-09T16:44:37+03:00: опубликован [PR #10](https://github.com/D0UP1G/FirsterChuv/pull/10), feature/parallel-agent-roadmap → develop. Первый commit `80d286a363acd1f9076c0bf59b1622acffce9c09` подтверждён gh pr view и git ls-remote; база остаётся `146b2cb64a6273472c2de9cae04bfad21acd1782`. Состояние на этом checkpoint: OPEN, non-draft, MERGEABLE/CLEAN, checks отсутствуют. PR attached к текущей задаче.
+
+Финальный doc checker: 56 Markdown, 121 local links, 24 задачи, 37 требований, 21 acceptance, 9 JSON, errors=[]; staged diff --check без замечаний. Старые tracked audits и PDF отсутствуют в diff. Независимый read-only review завершён: других блокирующих противоречий после исправления readyUserIds не найдено.
+
+Этот publication checkpoint добавлен отдельным завершающим commit в тот же PR. Следующий шаг координатора — проверить новый опубликованный HEAD и интегрировать только docs PR #10 обычным merge commit. Факт интеграции и итоговый merge SHA определяются проверяемыми GitHub state/remote refs после операции; заранее DONE не записывается. PR #3/#7 не изменяются этой операцией.
