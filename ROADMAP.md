@@ -6,7 +6,9 @@
 
 Актуализация 2026-10-09T23:54+03:00: #20/#25/#32 MERGED; sandbox/clock/score/catalog/admin guards/queue/LocalJudge доступны в develop. Frontend slices и regression PR до #42 MERGED. В новой coordinator feature проверены и объединены #7 bracket/lifecycle, #16 events/SOLVED fix, #34 readiness, #37 worker/outboxes/adapters, #38 ledger core, #41 command receipts. Доступность — после MERGED integration PR, затем брать свежий develop без отдельного STATE prerequisite. [STATE](context/STATE.md), [новый аудит](context/audits/2026-10-09T235434+0300-coordinator-new-pr-review.md).
 
-Сквозной MVP ещё не готов: нужны persisted configured run/gateway/ledger/effects, production worker executor/providers/version snapshot, HTTP/SSE CONNECT. Исправления #7 `1a2b54a` и #16 `a0b1dcc` проверены; после integration merge повторять их не требуется. У #21 `1706ecf` сохраняется SQLite CAS race, P3-05.1 READY. Official package/README не получены.
+Обновление 2026-10-10T00:10:11+03:00: [#44](https://github.com/D0UP1G/FirsterChuv/pull/44) MERGED после 4 SUCCESS, все указанные code slices уже в develop; A4 #45 сохранён, frontend 82/build PASS. Source #7 обновился до `f300150` с поздним sync/audit; closeout сохраняет его без изменения production/tests. Сетка/MatchRun foundation доступна сейчас, этот docs merge не prerequisite. [Merge audit](context/audits/2026-10-10T001011+0300-coordinator-merge-closeout.md).
+
+Сквозной MVP ещё не готов: нужны persisted configured run/gateway/ledger/effects, production worker executor/providers/version snapshot, HTTP/SSE CONNECT. Исправления #7 `1a2b54a` и #16 `a0b1dcc` в develop; повторять их не требуется. У #21 `1706ecf` сохраняется SQLite CAS race, P3-05.1 READY. Official package/README не получены.
 
 ## Как работать без остановки на зависимости
 
