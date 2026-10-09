@@ -12,6 +12,12 @@ from backend.apps.competition.domain.clock import (
     start_clock,
     submission_elapsed_ms,
 )
+from backend.apps.competition.domain.start_policy import (
+    MatchStartState,
+    StartMode,
+    StartPolicyError,
+    mark_player_ready,
+)
 
 
 START = datetime(2026, 10, 9, 10, 0, tzinfo=timezone.utc)
@@ -134,6 +140,100 @@ class MatchClockTests(unittest.TestCase):
                 started_at=START,
                 paused_at=START - timedelta(milliseconds=1),
             )
+
+
+class MatchStartPolicyTests(unittest.TestCase):
+    participants = ("user-a", "user-b")
+
+    def ready_state(
+        self,
+        *,
+        mode: StartMode = StartMode.BOTH_READY,
+        ready_user_ids: frozenset[str] = frozenset(),
+        status: ClockRunStatus = ClockRunStatus.READY,
+    ) -> MatchStartState:
+        return MatchStartState(
+            start_mode=mode,
+            participant_user_ids=self.participants,
+            ready_user_ids=ready_user_ids,
+            clock=ClockSnapshot(status=status, allowed_duration_ms=60_000),
+        )
+
+    def test_manual_mode_records_readiness_without_auto_start(self) -> None:
+        first_ready = mark_player_ready(
+            self.ready_state(mode=StartMode.MANUAL), "user-a", START
+        )
+        both_ready = mark_player_ready(first_ready, "user-b", START)
+
+        self.assertEqual(both_ready.ready_user_ids, frozenset(self.participants))
+        self.assertEqual(both_ready.clock.status, ClockRunStatus.READY)
+        self.assertIsNone(both_ready.clock.started_at)
+
+    def test_both_ready_starts_at_second_readiness_signal(self) -> None:
+        first_ready_at = START + timedelta(seconds=3)
+        second_ready_at = START + timedelta(seconds=7)
+        first_ready = mark_player_ready(
+            self.ready_state(), "user-a", first_ready_at
+        )
+        retried = mark_player_ready(
+            first_ready, "user-a", first_ready_at + timedelta(seconds=1)
+        )
+
+        self.assertIs(retried, first_ready)
+        self.assertEqual(first_ready.clock.status, ClockRunStatus.READY)
+        self.assertIsNone(first_ready.clock.started_at)
+
+        running = mark_player_ready(first_ready, "user-b", second_ready_at)
+
+        self.assertEqual(running.clock.status, ClockRunStatus.RUNNING)
+        self.assertEqual(running.clock.started_at, second_ready_at)
+        self.assertEqual(running.ready_user_ids, frozenset(self.participants))
+
+    def test_repeated_ready_command_is_idempotent_after_auto_start(self) -> None:
+        first_ready = mark_player_ready(self.ready_state(), "user-a", START)
+        running = mark_player_ready(
+            first_ready, "user-b", START + timedelta(seconds=2)
+        )
+
+        self.assertIs(
+            mark_player_ready(running, "user-a", START + timedelta(seconds=9)),
+            running,
+        )
+
+    def test_nonparticipant_cannot_signal_ready(self) -> None:
+        with self.assertRaisesRegex(StartPolicyError, "only match participants"):
+            mark_player_ready(self.ready_state(), "user-c", START)
+
+    def test_new_ready_signal_requires_ready_run(self) -> None:
+        waiting = self.ready_state(status=ClockRunStatus.WAITING)
+        running = self.ready_state(status=ClockRunStatus.RUNNING)
+
+        with self.assertRaisesRegex(StartPolicyError, "only for a READY run"):
+            mark_player_ready(waiting, "user-a", START)
+        with self.assertRaisesRegex(StartPolicyError, "only for a READY run"):
+            mark_player_ready(running, "user-a", START)
+
+    def test_ready_gate_rejects_invalid_participants_mode_and_ready_set(self) -> None:
+        with self.assertRaisesRegex(StartPolicyError, "exactly two unique"):
+            MatchStartState(
+                start_mode=StartMode.MANUAL,
+                participant_user_ids=("user-a", "user-a"),
+                ready_user_ids=frozenset(),
+                clock=ready_clock(),
+            )
+        with self.assertRaisesRegex(StartPolicyError, "unknown match start mode"):
+            MatchStartState(
+                start_mode="schedule",
+                participant_user_ids=self.participants,
+                ready_user_ids=frozenset(),
+                clock=ready_clock(),
+            )
+        with self.assertRaisesRegex(StartPolicyError, "only match participants"):
+            self.ready_state(ready_user_ids=frozenset(("user-c",)))
+
+    def test_ready_command_requires_aware_start_time(self) -> None:
+        with self.assertRaisesRegex(StartPolicyError, "timezone-aware"):
+            mark_player_ready(self.ready_state(), "user-a", datetime(2026, 10, 9))
 
 
 if __name__ == "__main__":

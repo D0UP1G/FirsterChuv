@@ -9,5 +9,6 @@ urlpatterns = [
     path("", include("backend.apps.tournaments.urls")),
     path("", include("backend.apps.problems.urls")),
     path("", include("backend.apps.submissions.urls")),
+    path("", include("backend.apps.competition.urls")),
     path("me", CurrentUserView.as_view(), name="current-user"),
 ]

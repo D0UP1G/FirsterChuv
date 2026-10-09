@@ -1,5 +1,14 @@
 from datetime import datetime, timedelta, timezone
 import unittest
+from uuid import UUID
+
+from backend.apps.common.contracts import AttemptReceipt, ResultReceipt
+from backend.apps.competition.domain.result_ledger import (
+    ResultLedger,
+    ResultLedgerError,
+    apply_result,
+    register_accepted,
+)
 
 from backend.apps.competition.domain.scoring import (
     FinalTiePolicy,
@@ -18,6 +27,53 @@ PLAYER_B = "user-b"
 PROBLEM_A = "problem-a"
 PROBLEM_B = "problem-b"
 START = datetime(2026, 10, 9, 10, 0, tzinfo=timezone.utc)
+LEDGER_RUN_ID = UUID(int=100)
+LEDGER_OTHER_RUN_ID = UUID(int=101)
+LEDGER_USER_A = UUID(int=1)
+LEDGER_USER_B = UUID(int=2)
+LEDGER_PROBLEM_A = UUID(int=20)
+
+
+def accepted_receipt(
+    submission_id: int,
+    elapsed_ms: int,
+    *,
+    user_id: UUID = LEDGER_USER_A,
+    problem_id: UUID = LEDGER_PROBLEM_A,
+    run_id: UUID = LEDGER_RUN_ID,
+) -> AttemptReceipt:
+    return AttemptReceipt(
+        submission_id=UUID(int=submission_id),
+        run_id=run_id,
+        user_id=user_id,
+        problem_id=problem_id,
+        received_at=START + timedelta(milliseconds=elapsed_ms),
+        elapsed_ms=elapsed_ms,
+        scoring_version="score-v1",
+    )
+
+
+def final_receipt(accepted: AttemptReceipt, verdict: Verdict) -> ResultReceipt:
+    return ResultReceipt(
+        submission_id=accepted.submission_id,
+        run_id=accepted.run_id,
+        user_id=accepted.user_id,
+        problem_id=accepted.problem_id,
+        received_at=accepted.received_at,
+        elapsed_ms=accepted.elapsed_ms,
+        scoring_version=accepted.scoring_version,
+        verdict=verdict,
+    )
+
+
+def empty_ledger(*, run_id: UUID = LEDGER_RUN_ID) -> ResultLedger:
+    return ResultLedger(
+        run_id=run_id,
+        participant_user_ids=(LEDGER_USER_A, LEDGER_USER_B),
+        problem_ids=(LEDGER_PROBLEM_A,),
+        scoring_version="score-v1",
+        rules=ScoreRules(),
+    )
 
 
 def result(
@@ -232,6 +288,130 @@ class CalculateMatchScoreTests(unittest.TestCase):
                 received_at=datetime(2026, 10, 9, 10, 0),
                 elapsed_ms=0,
                 verdict=Verdict.OK,
+            )
+
+
+class ResultLedgerTests(unittest.TestCase):
+    def test_register_accepted_is_immutable_and_idempotent(self) -> None:
+        ledger = empty_ledger()
+        accepted = accepted_receipt(200, 10_000)
+
+        registered = register_accepted(ledger, accepted)
+
+        self.assertEqual(registered.pending_submission_ids, (accepted.submission_id,))
+        self.assertIs(register_accepted(registered, accepted), registered)
+        self.assertEqual(ledger.attempts, ())
+
+    def test_conflicting_duplicate_acceptance_is_rejected(self) -> None:
+        ledger = register_accepted(empty_ledger(), accepted_receipt(201, 10_000))
+
+        with self.assertRaisesRegex(ResultLedgerError, "different accepted receipt"):
+            register_accepted(ledger, accepted_receipt(201, 11_000))
+
+    def test_out_of_order_results_recalculate_from_server_timeline(self) -> None:
+        earlier_wa = accepted_receipt(202, 10_000)
+        later_ok = accepted_receipt(203, 30_000)
+        ledger = register_accepted(empty_ledger(), earlier_wa)
+        ledger = register_accepted(ledger, later_ok)
+
+        first_delivery = apply_result(
+            ledger,
+            final_receipt(later_ok, Verdict.OK),
+            current_run_id=LEDGER_RUN_ID,
+        )
+        self.assertFalse(first_delivery.can_finalize)
+        self.assertEqual(first_delivery.ledger.pending_submission_ids, (earlier_wa.submission_id,))
+        self.assertEqual(first_delivery.score.participants[0].penalty_ms, 30_000)
+
+        second_delivery = apply_result(
+            first_delivery.ledger,
+            final_receipt(earlier_wa, Verdict.WA),
+            current_run_id=LEDGER_RUN_ID,
+        )
+
+        self.assertTrue(second_delivery.can_finalize)
+        self.assertTrue(second_delivery.application.applied)
+        self.assertEqual(second_delivery.score.participants[0].penalty_ms, 90_000)
+        self.assertEqual(
+            second_delivery.score.participants[0].problems[0].last_verdict,
+            Verdict.OK,
+        )
+
+    def test_identical_result_retry_is_idempotent(self) -> None:
+        accepted = accepted_receipt(204, 10_000)
+        ledger = register_accepted(empty_ledger(), accepted)
+        receipt = final_receipt(accepted, Verdict.OK)
+        first = apply_result(ledger, receipt, current_run_id=LEDGER_RUN_ID)
+        retry = apply_result(first.ledger, receipt, current_run_id=LEDGER_RUN_ID)
+
+        self.assertTrue(first.application.applied)
+        self.assertFalse(retry.application.applied)
+        self.assertIs(retry.ledger, first.ledger)
+        self.assertEqual(retry.score, first.score)
+
+    def test_conflicting_duplicate_result_is_rejected(self) -> None:
+        accepted = accepted_receipt(205, 10_000)
+        ledger = register_accepted(empty_ledger(), accepted)
+        ledger = apply_result(
+            ledger,
+            final_receipt(accepted, Verdict.WA),
+            current_run_id=LEDGER_RUN_ID,
+        ).ledger
+
+        with self.assertRaisesRegex(ResultLedgerError, "conflicting result"):
+            apply_result(
+                ledger,
+                final_receipt(accepted, Verdict.OK),
+                current_run_id=LEDGER_RUN_ID,
+            )
+
+    def test_result_must_match_the_immutable_accepted_timing(self) -> None:
+        accepted = accepted_receipt(206, 10_000)
+        ledger = register_accepted(empty_ledger(), accepted)
+        forged = ResultReceipt(
+            submission_id=accepted.submission_id,
+            run_id=accepted.run_id,
+            user_id=accepted.user_id,
+            problem_id=accepted.problem_id,
+            received_at=accepted.received_at + timedelta(milliseconds=1),
+            elapsed_ms=accepted.elapsed_ms,
+            scoring_version=accepted.scoring_version,
+            verdict=Verdict.OK,
+        )
+
+        with self.assertRaisesRegex(ResultLedgerError, "differs from accepted"):
+            apply_result(ledger, forged, current_run_id=LEDGER_RUN_ID)
+
+    def test_unknown_result_cannot_create_an_accepted_attempt(self) -> None:
+        accepted = accepted_receipt(207, 10_000)
+
+        with self.assertRaisesRegex(ResultLedgerError, "no accepted ledger"):
+            apply_result(
+                empty_ledger(),
+                final_receipt(accepted, Verdict.OK),
+                current_run_id=LEDGER_RUN_ID,
+            )
+
+    def test_superseded_run_result_is_recorded_but_not_scored(self) -> None:
+        accepted = accepted_receipt(208, 10_000)
+        ledger = register_accepted(empty_ledger(), accepted)
+
+        stale = apply_result(
+            ledger,
+            final_receipt(accepted, Verdict.OK),
+            current_run_id=LEDGER_OTHER_RUN_ID,
+        )
+
+        self.assertFalse(stale.application.applied)
+        self.assertIsNone(stale.score)
+        self.assertFalse(stale.can_finalize)
+        self.assertEqual(stale.ledger.pending_submission_ids, ())
+
+    def test_acceptance_receipt_must_match_run_snapshot(self) -> None:
+        with self.assertRaisesRegex(ResultLedgerError, "another run"):
+            register_accepted(
+                empty_ledger(),
+                accepted_receipt(209, 10_000, run_id=LEDGER_OTHER_RUN_ID),
             )
 
 
