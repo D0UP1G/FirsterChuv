@@ -45,6 +45,7 @@
 - `docs/quality/mvp-acceptance.md`: сохранён статус полного T02/T20 `NOT_RUN`, разъяснена разница с частичными feature tests.
 - `context/agents/agent-1.md`: A1-02.4 отмечена выполненной; следующий шаг — PR после проверки актуальной базы.
 - `context/STATE.md` не менялся: A1-02 не интегрирована в `develop`.
+- Финальный PR diff review выявил устаревшую feature-only правку integrated STATE из раннего A1-02.1 commit; файл восстановлен до `origin/develop` без переписывания истории, чтобы в итоговом PR не менять integrated STATE.
 
 ## Проверки
 

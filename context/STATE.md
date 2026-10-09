@@ -12,7 +12,7 @@ GitFlow начат пустым корневым commit `e9fc0ef` на `main`; �
 | PDF кейса | В `develop` | `docs/source/Кейс_Платформа_соревнований.pdf`; SHA-256 записан в `docs/source/README.md` |
 | Django/DRF backend bootstrap | В `develop` | PR #2, merge SHA `2484d86`; миграция custom User, общие contracts, health/error handling |
 | Backend smoke | Проверен, но только как bootstrap | Audit A1-01; health, миграции, SQLite WAL, Compose API. Полная T01 не пройдена |
-| Auth, register/login/CSRF, bootstrap admin | Не интегрированы в `develop` | A1-02.1 реализована и тестируется в `feature/account-roles`; admin permissions/command ещё в работе |
+| Auth, register/login/CSRF, bootstrap admin | Не реализованы | Следующая задача A1-02 |
 | Tournament/roster/invites API | Не реализованы | A1-03/A1-04 после auth |
 | Сетка, match-clock, score/advancement | Не интегрированы | Реализация относится к агенту 2 |
 | Sandbox/judge runtime | Не интегрирован | PR #3 агента 3 открыт; интеграцию и продуктовую приёмку не утверждать |
@@ -35,9 +35,9 @@ GitFlow начат пустым корневым commit `e9fc0ef` на `main`; �
 
 ## Следующие действия
 
-1. Завершить A1-02.2–A1-02.4 в `feature/account-roles`, открыть PR в `develop` и обновить STATE только после подтверждённого merge.
-2. Проверить auth/CSRF/глобальные роли и защищённый bootstrap admin; не закрывать T02/T20 до сценарных security проверок.
-3. Начать A1-03/A1-04 после интеграции A1-02; согласовать roster freeze с агентом 2 до API изменений.
+1. Завершить этот отдельный feature PR со сверкой STATE и начать A1-02 от актуального `origin/develop` в `feature/account-roles`.
+2. Реализовать и проверить auth/CSRF/глобальные роли и защищённый bootstrap admin; не закрывать T02/T20 до сценарных security проверок.
+3. Продолжать A1-03/A1-04 после зависимостей; согласовать roster freeze с агентом 2 до API изменений.
 4. Интегрировать изменения агентов только после их PR/review и проверки миграций/contracts. Сквозной полуфинал → финал пока не выполнялся.
 5. Закрыть требования кейса, приёмку и demo gate до создания `release/0.1.0` и тега `v0.1.0`.
 
