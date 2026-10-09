@@ -10,6 +10,7 @@ import { AdminTournamentPage } from './pages/AdminTournamentPage'
 import { AdminMatchPage } from './pages/AdminMatchPage'
 import { InvitePage } from './pages/InvitePage'
 import './App.css'
+import './responsive.css'
 
 const ParticipantWorkspacePage = lazy(() => import('./pages/ParticipantWorkspacePage').then((module) => ({ default: module.ParticipantWorkspacePage })))
 const SpectatorMapPage = lazy(() => import('./spectator/SpectatorMapPage').then((module) => ({ default: module.SpectatorMapPage })))
