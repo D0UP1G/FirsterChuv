@@ -2,6 +2,8 @@
 
 Снимок 2026-10-09, Europe/Moscow. Исходный develop `dd80c933083eea8ac234a17593a6a54a09ded53d` (#19), main `e9fc0ef` bootstrap. Проверенный состав текущего coordinator feature/mvp-integration-review-2 включает пять готовых heads #3/#11/#13/#14 и admin guards 8f5b762. Факт общей интеграции определяется MERGED общего PR/remote refs, публикация записана в новом coordinator audit. Документация внутри feature не объявляет будущий merge выполненным.
 
+Общий [PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20) опубликован и проверен 2026-10-09T19:55:37+03:00: первый HEAD 5194baca, base dd80c93; четыре CI jobs IN_PROGRESS. После MERGED #20 состав ниже доступен в develop; перед началом следующего среза fetch/merge актуального develop, не ждать отдельный STATE PR.
+
 ## Что есть и чего нет
 
 | Компонент | Реализация / интеграция | Остаток до working MVP |

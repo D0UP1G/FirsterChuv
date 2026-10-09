@@ -2,11 +2,13 @@
 
 ## Повторная ревизия 2026-10-09
 
-- Статус: `IN_PROGRESS`, checkpoint 2026-10-09T19:31:45+03:00.
+- Статус: `IN_REVIEW`, publication checkpoint 2026-10-09T19:55:37+03:00; старт ревизии 19:31:45.
 - Поручение команды: проверить текущее состояние, все PR/аудиты/документацию; слить готовые ветки через GitFlow; обновить план MVP для четырёх агентов и обязать переключаться на доступную задачу при зависимости.
 - Ветка: `feature/mvp-integration-review-2`, база origin/develop `dd80c93` (PR #19).
 - Пути: ROADMAP/context/docs/контракты при необходимости согласования. Код PR проверяется в изолированных копиях, чужие незакоммиченные checkout не изменяются.
 - Параллельные review: competition #7/#11/#13/#16, sandbox #3, catalog/queue #14/#15. Координатор проверяет integrated platform/CI/invites/кейс и принимает решение о merge каждого PR по фактическому HEAD и scope.
+- Результат: #3/#11/#13/#14 + admin guards 8f5b762 сохранены в ancestry integration feature, 105 Django/36 domain/12 sandbox/5 actual smoke pass. #7/#15/#16 оставлены с fix tasks; 24 P-ID/37 requirements/21 acceptance сохранены.
+- Публикация: [PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20), первый remote HEAD 5194baca подтверждён gh/git ls-remote, CI IN_PROGRESS. [Новый audit](../audits/2026-10-09T195003+0300-coordinator-integration-review.md); после MERGED итог определяется GitHub и remote refs, IN_REVIEW выше — snapshot до операции.
 - Следующий шаг: опубликовать общий integration PR с проверенными срезами и актуальным планом, дождаться CI, merge commit и проверить remote/ancestry. Отдельный повторный docs PR не нужен.
 
 ## Предыдущая ревизия

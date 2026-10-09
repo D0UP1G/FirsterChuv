@@ -2,6 +2,8 @@
 
 Дата: 2026-10-09, Europe/Moscow. Начальная проверенная база develop `dd80c933083eea8ac234a17593a6a54a09ded53d` (PR #19), main `e9fc0ef` bootstrap. Репозиторий [D0UP1G/FirsterChuv](https://github.com/D0UP1G/FirsterChuv). Это датированный отчёт, не live PR dashboard.
 
+Результат собран в [integration PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20), опубликованном 2026-10-09T19:55:37+03:00. Первоначальный HEAD 5194baca и base dd80c93 сверены GitHub/remote; CI начался. Итоговый CI/merge проверяется в этом PR и coordinator audit, заранее MERGED не приписывается.
+
 ## Объём и итог
 
 Повторно получены все 19 PR (files/commits/body/comments/reviews/checks/base/head/merge status), опубликованные refs, CI и 53 уникальных исторических аудита из develop и восьми рабочих веток. Одинаковых audit filenames с разным содержимым не найдено. Старые аудиты не переписываются. Кейс сверён по всем 8 страницам и checksum `8d0d0a843b00ac4d35845fabf02963f793ee3115870fa5f3b108176f809bd008`; копия в репозитории совпадает с исходной Downloads.

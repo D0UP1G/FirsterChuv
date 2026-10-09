@@ -38,3 +38,9 @@ Doc checker: 82 Markdown, 147 local links, 24 P-задачи, 37 requirements, 2
 Следующий шаг: publication/CI/merge общего PR, затем реальные runtime задачи ROADMAP v3. Дополнительный read-only review нового плана выполняется перед публикацией; отсутствие всеобщего browser/official/runtime PASS явно сохранено.
 
 Независимый завершающий review документации завершён. Уточнено, что worker берёт immutable version/checksum из run принятой посылки, не из нового current run после rematch; убраны повторный docs PR и преждевременная фраза о remote CI. Предыдущие абзацы аудита — исторические checkpoint до включения guards; финальный следующий шаг теперь только publication/CI/merge общего integration PR. Повторный helper/guards PR не назначается.
+
+## Publication checkpoint
+
+2026-10-09T19:55:37+03:00: опубликован [PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20), feature/mvp-integration-review-2 → develop. gh pr view и git ls-remote подтвердили первый HEAD `5194baca132ba5516ee569b5b905322ebee29046`, base `dd80c933083eea8ac234a17593a6a54a09ded53d`, OPEN/MERGEABLE. Четыре jobs contracts-and-common-imports/backend/domain/sandbox-unit IN_PROGRESS, pass пока не заявлен. PR #20 и все рассматриваемые PR attached к задаче.
+
+Этот завершающий doc checkpoint дополняет тот же integration PR. До merge нужно подтвердить итоговый HEAD и 4 SUCCESS jobs; после операции проверить actual MERGED/merge SHA/develop remote/ancestry и state исходных PR #3/#11/#13/#14. Отдельный docs closeout PR не является prerequisite. Прошедшие commands/checks описаны выше; real provider/MVP/browser/official acceptance не подменяются CI.
