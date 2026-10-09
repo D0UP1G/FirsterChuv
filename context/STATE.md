@@ -1,8 +1,8 @@
 # Состояние интеграции
 
-Снимок ревизии 2026-10-09, Europe/Moscow. Интегрированная база приложения: PR #17 merge commit `1f60aa9ad93a818d12c0b04b94cacec3f25b8d4e`; последующий docs-only sync не меняет application code. Ответственный за дальнейшие снимки — координатор интеграции, агент 1 по умолчанию; отдельный STATE PR не блокирует работу после подтверждённого code merge.
+Снимок ревизии 2026-10-09, Europe/Moscow, подготовлен после docs-only P1-02 sync PR #18 (`b56adf945ef0531c58f68011a0267ea6759e8634`). Интегрированная база приложения — code PR #17 merge commit `1f60aa9ad93a818d12c0b04b94cacec3f25b8d4e`; docs-only merges не меняют её. Ответственный за дальнейшие снимки — координатор интеграции, агент 1 по умолчанию; отдельный STATE PR не блокирует работу после подтверждённого code merge.
 
-Документационная ревизия [PR #10](https://github.com/D0UP1G/FirsterChuv/pull/10), invite backend P1-01 [PR #12](https://github.com/D0UP1G/FirsterChuv/pull/12) и CI/contracts P1-02 [PR #17](https://github.com/D0UP1G/FirsterChuv/pull/17) merged. PR #12 интегрирован `2026-10-09T14:15:55Z`, merge SHA `cad34ea4ddf1171779dc22139f2e1533160b5015`; PR #17 интегрирован `2026-10-09T14:54:02Z`, merge SHA `1f60aa9ad93a818d12c0b04b94cacec3f25b8d4e`. Перед каждым следующим срезом проверять свежие refs; исторические аудиты сохраняют свой исходный SHA.
+Документационная ревизия [PR #10](https://github.com/D0UP1G/FirsterChuv/pull/10), invite backend P1-01 [PR #12](https://github.com/D0UP1G/FirsterChuv/pull/12), CI/contracts P1-02 [PR #17](https://github.com/D0UP1G/FirsterChuv/pull/17) и последующий STATE sync P1-02 [PR #18](https://github.com/D0UP1G/FirsterChuv/pull/18) merged. PR #12 интегрирован `2026-10-09T14:15:55Z`, merge SHA `cad34ea4ddf1171779dc22139f2e1533160b5015`; PR #17 интегрирован `2026-10-09T14:54:02Z`, merge SHA `1f60aa9ad93a818d12c0b04b94cacec3f25b8d4e`; docs-only PR #18 интегрирован `2026-10-09T14:59:13Z`, merge SHA `b56adf945ef0531c58f68011a0267ea6759e8634`. Перед каждым следующим срезом проверять свежие refs; исторические аудиты сохраняют свой исходный SHA.
 
 ## Компоненты
 
@@ -28,7 +28,8 @@
 ## Git / PR
 
 - main `e9fc0ef97dcb83d2beffa41f42cb873ebcde71bc`: пустой bootstrap, не релиз.
-- develop `1f60aa9ad93a818d12c0b04b94cacec3f25b8d4e`: PR #1/#2/#4/#5/#6/#8/#9/#10/#12/#17 merged.
+- develop application-code baseline `1f60aa9ad93a818d12c0b04b94cacec3f25b8d4e`: PR #1/#2/#4/#5/#6/#8/#9/#10/#12/#17 merged.
+- P1-02 docs-only STATE sync PR #18 merged at `b56adf945ef0531c58f68011a0267ea6759e8634`; application code did not change.
 - Open #3 `feature/sandbox-proof`: `6950f10464ad6a0849accea12ed959a6c2d1ee60`.
 - Open #7 `feature/bracket-runtime`: `1952244df7c60fecabaea7f3829054017a0efb19`.
 - Open #11 `feature/match-clock-start`: live PR; consumers/tests остаются в owner branch до merge.
