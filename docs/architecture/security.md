@@ -4,7 +4,7 @@
 
 Текущая документация не означает, что защита уже реализована. Каждый контроль подтверждается в T18/T20 и аудите владельца.
 
-Текущий feature slice A1-02 проверяет явный CSRF на account mutations, HttpOnly session/CSRF cookies, server-assigned participant role и scoped auth throttling. Это не закрывает T02/T20 целиком. DRF throttle cache пока process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
+Текущий feature slice A1-02 проверяет явный CSRF на account mutations, HttpOnly session/CSRF cookies, server-assigned participant role, scoped auth throttling и базовые permission classes по активной глобальной роли приложения. `IsApplicationAdmin` не доверяет Django `is_staff`/`is_superuser`; `IsParticipant` также проверяет активную роль. В feature slice пока нет admin mutation endpoints и object/ownership policy для турниров и матчей: их нужно подключать вместе с соответствующими endpoint в A1-03/A2. Это не закрывает T02/T20 целиком. DRF throttle cache пока process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
 
 ## Границы доверия
 

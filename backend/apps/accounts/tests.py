@@ -4,10 +4,27 @@ from django.conf import settings
 from django.core.cache import cache
 from django.test import TestCase
 
+from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
+from rest_framework.views import APIView
 
 from backend.apps.accounts.models import User
+from backend.apps.accounts.permissions import IsApplicationAdmin, IsParticipant
+
+
+class _AdminMutationProbe(APIView):
+    permission_classes = [IsApplicationAdmin]
+
+    def post(self, request):
+        return Response({"changed": True})
+
+
+class _ParticipantAccessProbe(APIView):
+    permission_classes = [IsParticipant]
+
+    def post(self, request):
+        return Response({"allowed": True})
 
 
 class AccountAuthenticationTests(TestCase):
@@ -162,3 +179,47 @@ class AccountAuthenticationTests(TestCase):
         self.assertEqual(first.status_code, 401)
         self.assertEqual(second.status_code, 429)
         self.assertEqual(second.json()["error"]["code"], "throttled")
+
+    def test_admin_permission_uses_application_role_and_active_state(self):
+        participant = User.objects.create_user(
+            email="participant@example.test",
+            display_name="Participant",
+            password="unused",
+        )
+        django_privileged_participant = User.objects.create_user(
+            email="staff@example.test",
+            display_name="Staff Participant",
+            password="unused",
+            is_staff=True,
+            is_superuser=True,
+        )
+        admin = User.objects.create_user(
+            email="admin@example.test",
+            display_name="Application Admin",
+            password="unused",
+            role=User.Roles.ADMIN,
+        )
+        inactive_admin = User.objects.create_user(
+            email="inactive-admin@example.test",
+            display_name="Inactive Admin",
+            password="unused",
+            role=User.Roles.ADMIN,
+            is_active=False,
+        )
+
+        def post_as(view, user=None):
+            request = APIRequestFactory().post("/api/v1/admin/probe", {}, format="json")
+            if user is not None:
+                force_authenticate(request, user=user)
+            return view.as_view()(request)
+
+        self.assertEqual(post_as(_AdminMutationProbe).status_code, 401)
+        self.assertEqual(post_as(_AdminMutationProbe, participant).status_code, 403)
+        self.assertEqual(post_as(_AdminMutationProbe, django_privileged_participant).status_code, 403)
+        self.assertEqual(post_as(_AdminMutationProbe, inactive_admin).status_code, 403)
+        allowed = post_as(_AdminMutationProbe, admin)
+        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(allowed.data, {"changed": True})
+        self.assertEqual(post_as(_ParticipantAccessProbe, participant).status_code, 200)
+        self.assertEqual(post_as(_ParticipantAccessProbe, django_privileged_participant).status_code, 200)
+        self.assertEqual(post_as(_ParticipantAccessProbe, admin).status_code, 403)
