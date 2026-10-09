@@ -47,3 +47,10 @@
 - Publication audit: [PR #41](../audits/2026-10-09T234419+0300-agent-2-P2-05-command-publication.md).
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
+
+## Авторский checkpoint синхронизации #7, 2026-10-10
+
+- Source head f3001505fb70e9e810cd5da774a9a6dda996240f: обычный merge develop fb9edb3 в feature/bracket-runtime; 25 bracket/175 backend (2 skips), check/drift PASS у автора.
+- [Оригинальный sync audit](../audits/2026-10-10T000400+0300-agent-2-P2-02-1-develop-sync.md) сохранён без изменений. Исторический source card доступен в ancestry f300150.
+- Автор продолжает независимый P2-06.2 в собственной event feature во время review #7. Прежние readiness/ledger/command checkpoints этой карточки сохранены.
+- Код P2-01/P2-02.1 уже в develop через MERGED #44 (03a4636); текущий coordinator closeout объединяет поздний source sync и audit. После его MERGED обновить свою ветку из fresh develop и продолжить готовый подпункт.
