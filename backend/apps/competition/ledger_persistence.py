@@ -201,7 +201,7 @@ def reconcile_match_run_deadline(
     Match.objects.filter(pk=run.match_id).update(updated_at=models.F("updated_at"))
     match = Match.objects.get(pk=run.match_id)
     if match.current_run_id != run.pk:
-        raise LedgerPersistenceError("only the current run can reconcile its deadline")
+        return run
     instant = now or timezone.now()
     try:
         clock = reconcile_deadline(
