@@ -54,6 +54,21 @@ describe('ParticipantWorkspacePage', () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  it('keeps a language response and template when no local syntax mode exists', async () => {
+    renderWorkspace('/matches/match-1?scenario=workspace-ui&compiler=rust-fixture')
+
+    const languagePicker = await screen.findByRole('combobox', { name: 'Язык программирования' })
+    expect(languagePicker).toHaveValue('rust2024')
+    expect(languagePicker).toHaveTextContent('Rust 2024')
+
+    const editor = await screen.findByRole('textbox', { name: 'Исходный код, задача A, Rust 2024' })
+    await waitFor(() => expect(editor).toHaveTextContent('println!("Hello, world!");'))
+    expect(editor).toHaveAttribute('contenteditable', 'true')
+    expect(screen.getByText(/нет локального режима подсветки/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Отправить решение' })).toBeDisabled()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('does not fall back to fixtures when the production match API is unavailable', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ error: { code: 'not_found', message: 'Матч не найден.' } }, 404))
     renderWorkspace('/matches/match-1')
