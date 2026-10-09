@@ -1,5 +1,17 @@
 # Координатор: ревизия и параллельный план
 
+## Разблокирование агента 3, 2026-10-09
+
+- Статус: `IN_REVIEW`; поручение команды — проверить, какие слияния нужны агенту 3, и выполнить безопасные слияния, сохранив работу активного агента 4.
+- Ветка: `feature/agent-3-merge-unblock`, база `origin/develop` `13cd2d4` (PR #29).
+- Проверяемые PR: #25 parser hardening, #26 admin catalog; дополнительно #15 queue, #21 private drafts, #23 LocalJudge по фактическому коду и проверкам.
+- Пути: собственная карточка/новый аудит/актуальный STATE; изменения исходных PR только обычными merge commits. Рабочие ветки и checkout других исполнителей не меняются.
+- Конкретный блокер из аудита A3 P3-02.2: импорт management ждёт parser fix #25. Workspace version/checksum и production providers — отдельные CONNECT зависимости; слияние core не доказывает готовность MVP.
+- #25 MERGED отдельно, remote develop `ed14416`; #26/#15/#23 source heads объединены в текущей feature. #21 оставлен с воспроизведённым CAS race и новой независимой P3-05.1. 70 исходных аудитов сохранены byte-for-byte; frontend/A4 карточка идентичны свежему develop. [Аудит](../audits/2026-10-09T224851+0300-coordinator-agent-3-unblock.md).
+- Проверки: 29 file-backed queue, 36 domain, 15 sandbox unit, 63 frontend tests/build после sync #30, 5 actual Docker smoke + task limit + 1 real LocalJudge smoke PASS. Первая полная backend suite: P1 invite-concurrency FAIL; повтор PASS 150 tests/2 ожидаемых skips. Fresh develop `8c6836b` с новым A4 #30 включён перед публикацией. Registry и production image не переключались.
+- Следующий шаг: завершить full backend/CI, опубликовать integration PR → develop, merge только проверенный HEAD и проверить remote/ancestry. После MERGED A3 продолжает READY import/worker/CAS fix; отдельный STATE PR не нужен.
+- Публикация: [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32); первый remote head `19b925a` получил 4/4 CI PASS. Перед merge сохранён новый A4 #31 из fresh develop `b9c25cb`: frontend 64 tests/build PASS, 73 source audits неизменны. [Publication checkpoint](../audits/2026-10-09T230104+0300-coordinator-agent-3-publication.md); после sync финальный CI повторяется на новом head.
+
 ## Повторная ревизия 2026-10-09
 
 - Статус: `IN_REVIEW`, publication checkpoint 2026-10-09T19:55:37+03:00; старт ревизии 19:31:45.

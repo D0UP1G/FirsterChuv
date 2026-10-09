@@ -1,6 +1,6 @@
 # A3-01: изолированный smoke-runner
 
-Это исследовательский минимальный исполнитель для проверки границы sandbox. Он не заменяет будущий LocalJudge, package importer, API или durable worker.
+Это собственный Docker исполнитель для P3-01 и sandbox backend LocalJudge. Он не заменяет package importer, API или durable worker.
 
 ## Текущая поддержка
 
@@ -18,9 +18,9 @@
 - `--network=none`, PID namespace Docker по умолчанию и Docker default seccomp profile; PID-флаг намеренно не передаётся, поскольку используемый Docker CLI не принимает `--pid=private`;
 - read-only root filesystem и одним исполняемым tmpfs `/work` размером 64 MiB;
 - UID/GID `65534:65534`, `cap-drop=ALL`, `no-new-privileges`;
-- 512 MiB memory без swap, один CPU и 64 процесса;
-- compile wall cap 15 секунд, runtime wall cap 2 секунды;
-- source cap 32 KiB, test input cap 64 KiB, stdout/stderr file cap 32 KiB.
+- compile контейнер: 512 MiB memory без swap, один CPU и 64 процесса; compile wall cap 15 секунд;
+- run контейнер: task time/memory limits из trusted normalized bundle, строго в диапазонах 1–120 000 ms и 32–512 MiB; memory ограничивается Docker cgroup без swap, один CPU и 64 процесса остаются service caps;
+- внешний run watchdog добавляет не более 5 секунд к task time limit; service caps: source 32 KiB, test input 8 MiB, stdout/stderr file 32 KiB.
 
 Команда создания контейнера не монтирует каталоги host, пакет тестов, Docker socket или переменные окружения хоста. Решение видит только собственный исходник и текущий ввод; эталонный ответ и остальные тесты остаются снаружи. `docker rm --force` получает только ID/name, созданный текущим запуском; глобальная очистка не используется. Ошибка Docker/протокола возвращается как инфраструктурный отказ, а не как verdict.
 
@@ -41,6 +41,6 @@ python3 sandbox/smoke.py --case all
 
 ## Граница доказательства и угрозы
 
-Здесь проверяются реальные compile/run smoke cases, включая ограниченный доступ к управляющему stdout, и видимые параметры запуска Docker. Unit tests проверяют ограничение потоков на host runner-е отдельными доверенными дочерними процессами; они не подменяют Docker. Компилятор и каждая тестовая попытка находятся в отдельных контейнерах; host runner передаёт артефакт между ними, но не запускает его на хосте. Фактическую PID-настройку контейнера, CPU/RAM/PID, отсутствие сети и host/secret доступа нужно подтвердить hostile checks и Engine inspect на доступном Docker Engine. Эти проверки в текущем checkout-хосте не выполнены: daemon/socket недоступны. `KILLED_UNKNOWN` намеренно не превращается в ML: потребуются проверенные cgroup/Docker OOM данные.
+Здесь проверяются реальные compile/run smoke cases, включая ограниченный доступ к управляющему stdout, и видимые параметры запуска Docker. Unit tests проверяют ограничение потоков на host runner-е отдельными доверенными дочерними процессами; они не подменяют Docker. Компилятор и каждая тестовая попытка находятся в отдельных контейнерах; host runner передаёт артефакт между ними, но не запускает его на хосте. Фактическую PID-настройку контейнера, CPU/RAM/PID, отсутствие сети и host/secret доступа нужно подтвердить hostile checks и Engine inspect на доступном Docker Engine. Эти проверки в текущем checkout-хосте не выполнены: daemon/socket недоступны. `KILLED_UNKNOWN` становится ML только при `Docker inspect .State.OOMKilled=true`; необъяснённый kill остаётся infrastructure error.
 
-Официальный пакет не найден в репозитории. До получения README формат импорта, checkers, tests, package commands и необходимые языки не предполагаются и не обрабатываются. Следующая часть A3-01 — выполнить harness на Docker Engine и повторить успешную проверку на официальной задаче; затем начинать A3-02 по фактическому README.
+LocalJudge повторно использует runner для реального compile/run и передаёт лимиты конкретной нормализованной версии задачи. Docker proof не запускался в этом checkout: daemon/socket недоступны; перед runtime readiness нужно собрать образ и выполнить smoke плюс gated judge integration test. Официальный пакет не найден в репозитории. До получения его README формат импорта, checker protocol, verdict codes и package commands не предполагаются. Синтетический smoke не закрывает official T12/T14/T21 и hostile T18/T20.

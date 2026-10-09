@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     "backend.apps.common.apps.CommonConfig",
     "backend.apps.accounts.apps.AccountsConfig",
     "backend.apps.tournaments.apps.TournamentsConfig",
+    "backend.apps.submissions.apps.SubmissionsConfig",
     "backend.apps.problems.apps.ProblemsConfig",
+    "backend.apps.judge.apps.JudgeConfig",
 ]
 
 MIDDLEWARE = [
@@ -143,6 +145,7 @@ REST_FRAMEWORK = {
         "auth_login": "10/minute",
         "auth_register": "20/hour",
         "invite_preview": "30/minute",
+        "submission": "30/minute",
     },
     "DATETIME_FORMAT": "iso-8601",
 }

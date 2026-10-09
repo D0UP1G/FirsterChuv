@@ -24,11 +24,11 @@ namespace {
 
 constexpr std::size_t kMaxSourceBytes = 32 * 1024;
 constexpr std::size_t kMaxArtifactBytes = 8 * 1024 * 1024;
-constexpr std::size_t kMaxInputBytes = 64 * 1024;
+constexpr std::size_t kMaxInputBytes = 8 * 1024 * 1024;
 constexpr std::size_t kMaxOutputBytes = 32 * 1024;
 constexpr std::size_t kMaxDiagnosticsBytes = 8 * 1024;
-constexpr auto kCompileTimeout = std::chrono::seconds(15);
-constexpr auto kRunTimeout = std::chrono::seconds(2);
+constexpr auto kCompileTimeout = std::chrono::milliseconds(15'000);
+constexpr std::size_t kMaxRunTimeoutMs = 120'000;
 
 struct ChildResult {
   bool timed_out = false;
@@ -197,7 +197,7 @@ void child_exec(const std::vector<std::string>& arguments, const char* input_pat
 
 bool run_child(const std::vector<std::string>& arguments, const char* input_path,
                const char* stdout_path, const char* stderr_path,
-               std::chrono::seconds timeout, bool limit_output, ChildResult& result) {
+               std::chrono::milliseconds timeout, bool limit_output, ChildResult& result) {
   const pid_t child = ::fork();
   if (child < 0) return false;
   if (child == 0) child_exec(arguments, input_path, stdout_path, stderr_path, limit_output);
@@ -222,7 +222,7 @@ bool run_child(const std::vector<std::string>& arguments, const char* input_path
       }
       return true;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
 
@@ -302,7 +302,8 @@ void compile_source(const std::string& source) {
   emit_result("COMPILED", 0, std::nullopt, "", "", artifact);
 }
 
-void run_program(const std::string& artifact, const std::string& input) {
+void run_program(const std::string& artifact, const std::string& input,
+                 std::chrono::milliseconds time_limit) {
   if (!write_file("/work/program", artifact) || ::chmod("/work/program", 0500) != 0 ||
       !write_file("/work/input", input) || !write_file("/work/program.stdout", "") ||
       !write_file("/work/program.stderr", "")) {
@@ -312,7 +313,7 @@ void run_program(const std::string& artifact, const std::string& input) {
   ChildResult run_result;
   const std::vector<std::string> program = {"/work/program"};
   if (!run_child(program, "/work/input", "/work/program.stdout", "/work/program.stderr",
-                 kRunTimeout, true, run_result)) {
+                 time_limit, true, run_result)) {
     emit_infrastructure_error();
     return;
   }
@@ -358,13 +359,20 @@ int main(int argc, char* argv[]) {
     emit_infrastructure_error();
     return 0;
   }
-  if (argc != 2 || (std::string_view(argv[1]) != "compile" &&
-                    std::string_view(argv[1]) != "run") ||
+  if (argc < 2 || (std::string_view(argv[1]) != "compile" &&
+                   std::string_view(argv[1]) != "run") ||
       !make_directory("/work/tmp")) {
     emit_infrastructure_error();
     return 0;
   }
   const std::string_view mode(argv[1]);
+  std::size_t run_timeout_ms = 0;
+  if ((mode == "compile" && argc != 2) ||
+      (mode == "run" && (argc != 3 || !parse_size(argv[2], run_timeout_ms) ||
+                          run_timeout_ms == 0 || run_timeout_ms > kMaxRunTimeoutMs))) {
+    emit_infrastructure_error();
+    return 0;
+  }
   std::string first;
   std::string input;
   const auto max_first_bytes = mode == "compile" ? kMaxSourceBytes : kMaxArtifactBytes;
@@ -374,6 +382,6 @@ int main(int argc, char* argv[]) {
     return 0;
   }
   if (mode == "compile") compile_source(first);
-  else run_program(first, input);
+  else run_program(first, input, std::chrono::milliseconds(run_timeout_ms));
   return 0;
 }
