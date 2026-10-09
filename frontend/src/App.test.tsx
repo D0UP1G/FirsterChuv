@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { resetCsrfToken } from './api/client'
@@ -37,6 +38,20 @@ describe('public and private routes', () => {
     expect(await screen.findByRole('heading', { name: 'Публичные турниры' })).toBeInTheDocument()
     expect(window.location.pathname).toBe('/watch')
     expect(screen.getByText('Зрительский просмотр доступен без аккаунта. Код участников здесь не показывается.')).toBeInTheDocument()
+  })
+
+  it('opens an anonymous match map and keeps projector mode free of site navigation', async () => {
+    const tournamentId = '00000000-0000-4000-8000-000000000010'
+    const matchId = '00000000-0000-4000-8000-000000000020'
+    window.history.replaceState({}, '', `/watch/${tournamentId}/matches/${matchId}?scenario=public-map`)
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Демонстрационный блиц · данные разработки' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Основная навигация' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Войти в аккаунт' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('link', { name: 'Режим проектора' }))
+    expect(await screen.findByRole('link', { name: 'Обычный вид' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Основная навигация' })).not.toBeInTheDocument()
   })
 
   it('redirects only a private dashboard route to login', async () => {
