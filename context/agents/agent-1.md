@@ -5,7 +5,7 @@
 - Текущая задача/ветка/база: `A1-03` / `feature/tournament-roster` / `3b2b0ad` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-03.1 tournament CRUD](../audits/2026-10-09T152726+0300-agent-1-A1-03-1-tournament-crud.md) — локальный feature-only срез; [PR #6](https://github.com/D0UP1G/FirsterChuv/pull/6) merged at `3b2b0ad`; предыдущий A1-02 integration/state-sync audit — [файл](../audits/2026-10-09T151339+0300-agent-1-A1-02-integration-state-sync.md).
+- Последний аудит/PR/проверки: [A1-03.2 roster API](../audits/2026-10-09T153601+0300-agent-1-A1-03-2-roster-api.md) — локальный feature-only срез; [A1-03.1 CRUD audit](../audits/2026-10-09T152726+0300-agent-1-A1-03-1-tournament-crud.md); [PR #6](https://github.com/D0UP1G/FirsterChuv/pull/6) merged at `3b2b0ad`.
 
 ## Разбивка задач на малые шаги
 
@@ -32,7 +32,7 @@
 ### A1-03 · `feature/tournament-roster` · `IN_PROGRESS`
 
 - [x] A1-03.1 Модель и admin-only CRUD турнира: поля M01, strict input, config, даты/status, безопасный delete/archive; API contract и миграции. Feature-only, audit attached to implementation; not merged.
-- [ ] A1-03.2 Participant directory и roster: список active accounts, назначение, список, числовой seed, удаление/логическое снятие.
+- [x] A1-03.2 Participant directory и roster: список active accounts, назначение, список, числовой seed, удаление/логическое снятие. Feature-only; audit при implementation.
 - [ ] A1-03.3 Capacity/uniqueness: транзакционный условный счётчик, ограничения БД, inactive/admin/duplicate guards; `freeze_roster(tournament_id)` вызывается при создании bracket в той же внешней atomic transaction согласно `docs/architecture/match-engine.md` и API contract. Решение пользователя: следовать docs; ответ получен 2026-10-09.
 - [ ] A1-03.4 Сверить M01/M03 и T03/T05 с PDF, проверить историю played entrants, записать аудит с фактическими ограничениями сценариев.
 
@@ -64,4 +64,4 @@
 - Владею: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/` (включая invites/participants), root tooling, Compose/CI, общей цепочкой миграций, интеграцией и релизом.
 - Не менять пути агентов 2–4 без согласованной передачи. Общие контракты и миграции сверять с потребителями до изменения.
 - Передача агентам 2–4: стабильные пути, auth dependency, ID-модели, конфигурация, миграционная база и локальный запуск.
-- Следующий шаг: A1-03.2 — active participant directory, participant model и admin roster API; затем .3 implement the agreed `freeze_roster` service without editing Agent 2 paths.
+- Следующий шаг: A1-03.3 — провалидировать concurrent capacity behavior, добавить идемпотентный `freeze_roster(tournament_id)` hook в ownership Agent 1, покрыть atomic boundary и сохранить отсутствие правок Agent 2 paths.

@@ -3,7 +3,7 @@
 from uuid import uuid4
 
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import F, Q
 from django.utils.text import slugify
@@ -92,3 +92,54 @@ class Tournament(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+class TournamentParticipant(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Активен"
+        REMOVED = "REMOVED", "Снят"
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tournament = models.ForeignKey(
+        Tournament,
+        on_delete=models.CASCADE,
+        related_name="participants",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="tournament_entries",
+    )
+    seed = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(2147483647)],
+    )
+    status = models.CharField(
+        max_length=12,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    added_at = models.DateTimeField(auto_now_add=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("status", "seed", "user__display_name", "user_id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("tournament", "user"),
+                name="unique_tournament_user_entry",
+            ),
+            models.UniqueConstraint(
+                fields=("tournament", "seed"),
+                condition=Q(status="ACTIVE", seed__isnull=False),
+                name="unique_active_tournament_seed",
+            ),
+            models.CheckConstraint(
+                condition=Q(seed__isnull=True) | Q(seed__gte=1),
+                name="tournament_seed_positive_or_null",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user} — {self.tournament}"

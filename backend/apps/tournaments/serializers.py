@@ -4,7 +4,12 @@ from collections.abc import Mapping
 
 from rest_framework import serializers
 
-from backend.apps.tournaments.models import Tournament, default_match_config
+from backend.apps.accounts.models import User
+from backend.apps.tournaments.models import (
+    Tournament,
+    TournamentParticipant,
+    default_match_config,
+)
 
 
 class StrictInputSerializer(serializers.Serializer):
@@ -192,3 +197,46 @@ class TournamentSerializer(StrictInputSerializer, serializers.ModelSerializer):
             }
         )
         return data
+
+
+class AssignParticipantSerializer(StrictInputSerializer):
+    user_id = serializers.UUIDField()
+    seed = serializers.IntegerField(
+        min_value=1,
+        max_value=2147483647,
+        required=False,
+        allow_null=True,
+    )
+
+
+class ParticipantSeedSerializer(StrictInputSerializer):
+    seed = serializers.IntegerField(
+        min_value=1,
+        max_value=2147483647,
+        required=True,
+        allow_null=True,
+    )
+
+
+class TournamentParticipantSerializer(serializers.ModelSerializer):
+    user_id = serializers.UUIDField(read_only=True)
+    display_name = serializers.CharField(source="user.display_name", read_only=True)
+
+    class Meta:
+        model = TournamentParticipant
+        fields = (
+            "user_id",
+            "display_name",
+            "seed",
+            "status",
+            "added_at",
+            "removed_at",
+        )
+        read_only_fields = fields
+
+
+class AdminUserOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "display_name")
+        read_only_fields = fields

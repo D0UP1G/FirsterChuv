@@ -22,7 +22,7 @@ erDiagram
 |---|---|
 | User | id, displayName, normalizedEmail unique, passwordHash, role participant/admin, isActive. Custom Django User с первой миграции. |
 | Tournament | id, slug unique, title, description, startsAt/endsAt, format single_elimination, participantLimit, visibility public/unlisted, будущий `shareTokenHash` для unlisted-доступа, status, createdBy, defaultMatchConfig, activeParticipantCount, rosterFrozenAt, createdAt/updatedAt. A1-03.1 сохраняет остальные перечисленные поля; выдача share token ещё не реализована. `activeParticipantCount` обновляется атомарно вместе с roster mutations; `rosterFrozenAt` выставляется во внешней транзакции bracket generation. |
-| TournamentParticipant | id, tournamentId, userId, seed nullable, status ACTIVE/REMOVED, addedAt/removedAt. Unique tournament/user. Removal after play is logical and match references preserve the entrant. |
+| TournamentParticipant | UUID id, tournamentId, userId, seed nullable positive integer, status ACTIVE/REMOVED, addedAt/removedAt. Unique tournament/user; active non-null seeds are unique within the tournament. Removal is logical and match references preserve the entrant. |
 | Invite | id, tournamentId, tokenHash unique, expiresAt или maxUses (минимум одно), usedCount, revokedAt, createdBy. Plain token отдаётся при создании, не хранится. |
 | InviteAcceptance | inviteId/userId unique, acceptedAt. Идемпотентный accept, повтор не расходует use. |
 | ProblemPackage | id, checksum, formatVersion, importedAt/by, validationStatus, privateStorageRef. Формат берётся из фактического README пакета. |

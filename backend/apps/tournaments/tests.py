@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 from django.test import TestCase
 
 from backend.apps.accounts.models import User
-from backend.apps.tournaments.models import Tournament
+from backend.apps.tournaments.models import Tournament, TournamentParticipant
 
 
 def tournament_payload(**overrides):
@@ -56,6 +56,26 @@ class TournamentAPITests(TestCase):
         token_response = self.client.get("/api/v1/auth/csrf")
         self.assertEqual(token_response.status_code, 200)
         self.client.credentials(HTTP_X_CSRFTOKEN=token_response.json()["csrfToken"])
+
+    def create_tournament(self, *, participant_limit=4, frozen=False):
+        now = timezone.now()
+        return Tournament.objects.create(
+            title="Roster Tournament",
+            description="",
+            starts_at=now,
+            ends_at=now + timedelta(hours=2),
+            participant_limit=participant_limit,
+            created_by=self.admin,
+            roster_frozen_at=now if frozen else None,
+        )
+
+    def add_user(self, email, display_name, **fields):
+        return User.objects.create_user(
+            email=email,
+            display_name=display_name,
+            password="valid-test-password-123",
+            **fields,
+        )
 
     def test_admin_can_create_list_read_and_patch_a_tournament(self):
         self.authenticate(self.admin)
@@ -230,3 +250,208 @@ class TournamentAPITests(TestCase):
         frozen.refresh_from_db()
         self.assertEqual(archived.status_code, 204)
         self.assertEqual(frozen.status, Tournament.Status.ARCHIVED)
+
+    def test_assign_is_idempotent_remove_is_logical_and_reassignment_reuses_entry(self):
+        tournament = self.create_tournament()
+        second = self.add_user("second@example.test", "Second Player")
+        self.authenticate(self.admin)
+        collection_url = f"{self.list_url}/{tournament.id}/participants"
+
+        assigned = self.client.post(
+            collection_url,
+            {"userId": str(self.participant.id), "seed": 1},
+            format="json",
+        )
+        repeated = self.client.post(
+            collection_url,
+            {"userId": str(self.participant.id), "seed": 1},
+            format="json",
+        )
+        other_added = self.client.post(
+            collection_url,
+            {"userId": str(second.id), "seed": 3},
+            format="json",
+        )
+        self.assertEqual(assigned.status_code, 201, assigned.content)
+        self.assertEqual(repeated.status_code, 200, repeated.content)
+        self.assertEqual(other_added.status_code, 201, other_added.content)
+        self.assertEqual(assigned.json()["userId"], str(self.participant.id))
+        self.assertEqual(tournament.participants.count(), 2)
+        tournament.refresh_from_db()
+        self.assertEqual(tournament.active_participant_count, 2)
+
+        remove_url = f"{collection_url}/{self.participant.id}"
+        removed = self.client.delete(remove_url)
+        repeated_remove = self.client.delete(remove_url)
+        entry = TournamentParticipant.objects.get(tournament=tournament, user=self.participant)
+        self.assertEqual(removed.status_code, 204)
+        self.assertEqual(repeated_remove.status_code, 204)
+        self.assertEqual(entry.status, TournamentParticipant.Status.REMOVED)
+        self.assertIsNotNone(entry.removed_at)
+        tournament.refresh_from_db()
+        self.assertEqual(tournament.active_participant_count, 1)
+
+        reassigned = self.client.post(
+            collection_url,
+            {"userId": str(self.participant.id), "seed": 2},
+            format="json",
+        )
+        entry.refresh_from_db()
+        tournament.refresh_from_db()
+        self.assertEqual(reassigned.status_code, 201, reassigned.content)
+        self.assertEqual(tournament.participants.count(), 2)
+        self.assertEqual(entry.status, TournamentParticipant.Status.ACTIVE)
+        self.assertEqual(entry.seed, 2)
+        self.assertIsNone(entry.removed_at)
+        self.assertEqual(tournament.active_participant_count, 2)
+
+    def test_capacity_seed_uniqueness_and_active_participant_role_are_enforced(self):
+        tournament = self.create_tournament(participant_limit=2)
+        second = self.add_user("second@example.test", "Second Player")
+        third = self.add_user("third@example.test", "Third Player")
+        inactive = self.add_user(
+            "inactive@example.test",
+            "Inactive Player",
+            is_active=False,
+        )
+        self.authenticate(self.admin)
+        collection_url = f"{self.list_url}/{tournament.id}/participants"
+
+        first_added = self.client.post(
+            collection_url,
+            {"userId": str(self.participant.id), "seed": 1},
+            format="json",
+        )
+        duplicate_seed = self.client.post(
+            collection_url,
+            {"userId": str(second.id), "seed": 1},
+            format="json",
+        )
+        second_added = self.client.post(
+            collection_url,
+            {"userId": str(second.id), "seed": 2},
+            format="json",
+        )
+        over_capacity = self.client.post(
+            collection_url,
+            {"userId": str(third.id), "seed": 3},
+            format="json",
+        )
+        admin_as_player = self.client.post(
+            collection_url,
+            {"userId": str(self.admin.id)},
+            format="json",
+        )
+        inactive_as_player = self.client.post(
+            collection_url,
+            {"userId": str(inactive.id)},
+            format="json",
+        )
+        invalid_seed = self.client.post(
+            collection_url,
+            {"userId": str(third.id), "seed": 2147483648},
+            format="json",
+        )
+
+        self.assertEqual(first_added.status_code, 201, first_added.content)
+        self.assertEqual(duplicate_seed.status_code, 409)
+        self.assertEqual(second_added.status_code, 201, second_added.content)
+        self.assertEqual(over_capacity.status_code, 409)
+        self.assertEqual(admin_as_player.status_code, 400)
+        self.assertEqual(inactive_as_player.status_code, 400)
+        self.assertEqual(invalid_seed.status_code, 400)
+        duplicate_at_capacity = self.client.post(
+            collection_url,
+            {"userId": str(self.participant.id), "seed": 1},
+            format="json",
+        )
+        self.assertEqual(duplicate_at_capacity.status_code, 200)
+        tournament.refresh_from_db()
+        self.assertEqual(tournament.active_participant_count, 2)
+        self.assertEqual(
+            tournament.participants.filter(status=TournamentParticipant.Status.ACTIVE).count(),
+            2,
+        )
+
+    def test_seed_patch_rejects_duplicate_and_can_clear_seed(self):
+        tournament = self.create_tournament()
+        second = self.add_user("second@example.test", "Second Player")
+        TournamentParticipant.objects.create(
+            tournament=tournament,
+            user=self.participant,
+            seed=1,
+        )
+        TournamentParticipant.objects.create(
+            tournament=tournament,
+            user=second,
+            seed=2,
+        )
+        tournament.active_participant_count = 2
+        tournament.save(update_fields=("active_participant_count",))
+        self.authenticate(self.admin)
+        participant_url = f"{self.list_url}/{tournament.id}/participants/{self.participant.id}"
+
+        duplicate = self.client.patch(participant_url, {"seed": 2}, format="json")
+        clear = self.client.patch(participant_url, {"seed": None}, format="json")
+
+        self.assertEqual(duplicate.status_code, 409)
+        self.assertEqual(clear.status_code, 200, clear.content)
+        self.assertIsNone(
+            TournamentParticipant.objects.get(tournament=tournament, user=self.participant).seed
+        )
+
+    def test_participant_reads_only_joined_tournaments_and_safe_roster_fields(self):
+        joined = self.create_tournament()
+        private_to_other = self.create_tournament()
+        TournamentParticipant.objects.create(tournament=joined, user=self.participant, seed=1)
+        joined.active_participant_count = 1
+        joined.save(update_fields=("active_participant_count",))
+        self.authenticate(self.participant)
+
+        listing = self.client.get(self.list_url)
+        own = self.client.get(f"{self.list_url}/{joined.id}")
+        other = self.client.get(f"{self.list_url}/{private_to_other.id}")
+        participants = self.client.get(f"{self.list_url}/{joined.id}/participants")
+
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(listing.json()["count"], 1)
+        self.assertEqual(own.status_code, 200)
+        self.assertEqual(other.status_code, 404)
+        self.assertEqual(participants.status_code, 200)
+        self.assertEqual(participants.json()["count"], 1)
+        row = participants.json()["results"][0]
+        self.assertEqual(row["displayName"], self.participant.display_name)
+        self.assertNotIn("email", row)
+        self.assertEqual(row["status"], TournamentParticipant.Status.ACTIVE)
+
+    def test_roster_changes_are_rejected_after_freeze(self):
+        tournament = self.create_tournament(frozen=True)
+        self.authenticate(self.admin)
+        collection_url = f"{self.list_url}/{tournament.id}/participants"
+        assigned = self.client.post(
+            collection_url,
+            {"userId": str(self.participant.id), "seed": 1},
+            format="json",
+        )
+        tournament.refresh_from_db()
+        self.assertEqual(assigned.status_code, 409)
+        self.assertEqual(tournament.active_participant_count, 0)
+
+    def test_admin_user_directory_is_minimal_active_participant_only_and_bounded(self):
+        self.add_user("other@example.test", "Other Player")
+        self.add_user("inactive@example.test", "Inactive Player", is_active=False)
+        self.add_user("admin2@example.test", "Second Admin", role=User.Roles.ADMIN)
+        self.authenticate(self.admin)
+
+        response = self.client.get("/api/v1/admin/users", {"q": "player", "limit": 1})
+        invalid_role = self.client.get("/api/v1/admin/users", {"role": "admin"})
+        long_search = self.client.get("/api/v1/admin/users", {"q": "x" * 81})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertEqual(response.json()["count"], 2)
+        self.assertEqual(len(response.json()["results"]), 1)
+        self.assertEqual(set(response.json()["results"][0]), {"id", "displayName"})
+        self.assertNotIn("email", response.json()["results"][0])
+        self.assertEqual(invalid_role.status_code, 400)
+        self.assertEqual(long_search.status_code, 400)

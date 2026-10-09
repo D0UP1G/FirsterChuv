@@ -1,6 +1,6 @@
 # Документация FirsterChuv
 
-Документы задают контракты и критерии приёмки. В `develop` есть backend bootstrap и auth; в feature-ветке Agent 1 добавлен admin-only tournament CRUD A1-03.1. Ни один частичный срез сам по себе не означает готовность MVP: проверяйте `context/STATE.md`, карточки/аудиты и полный сценарий нужного требования. Подтверждённый стек: Django REST Framework + React, SQLite3, собственная песочница.
+Документы задают контракты и критерии приёмки. В `develop` есть backend bootstrap и auth; в feature-ветке Agent 1 добавлены tournament CRUD и roster assignment/list/remove A1-03.1/.2. Ни один частичный срез сам по себе не означает готовность MVP: проверяйте `context/STATE.md`, карточки/аудиты и полный сценарий нужного требования. Подтверждённый стек: Django REST Framework + React, SQLite3, собственная песочница.
 
 | Документ | Что в нём |
 |---|---|
