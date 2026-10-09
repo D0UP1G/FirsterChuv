@@ -15,11 +15,11 @@
 
 ## Текущий срез: P5-01 — перенос дизайн-системы в React
 
-- Статус: `IN_PROGRESS`; audit/card updated before implementation; reference mapping complete, CSS/brand implementation in progress.
+- Статус: `IN_PROGRESS`; implementation slice ready locally; fresh develop advanced when auth PR #62 merged and must be merged into this feature before its PR.
 - Ветка: `feature/agent-5-p5-01-design`, базовый SHA `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (`origin/develop` после merge #60).
 - Planned paths: `frontend/index.html`, `frontend/src/index.css`, `frontend/src/App.css`, `frontend/src/App.tsx`, `frontend/src/pages/Admin.css`, `context/audits/2026-10-10T014108+0300-agent-5-P5-01-design-system.md`, this card.
 - Цель: применить verified `frontend/design` / brandbook v2.0 tokens, type, grid, spacing and shared status/button/panel language to the existing React shell, auth, invite and bracket views; preserve current logic and HTTP states.
-- Integration: no PR yet and not in develop. P5-03 provider status is independent; no new endpoint is needed for this design slice.
+- Paths include audit `context/audits/2026-10-10T014600+0300-agent-5-P5-01-design-system.md`; current local source base is `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa`. Remote `develop` is now `85e0cd0d2b82fce9996106af3922171dcee17c76` after auth PR #62 merged; feature sync is next. This slice has no PR yet and is not in develop. P5-03 provider status is independent; no new endpoint is needed.
 - Later P5-02 remains a separate feature slice for responsive/projector/accessibility/error-state review.
 
 ## Наблюдение координатора 2026-10-10T01:29:46+03:00
