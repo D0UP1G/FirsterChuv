@@ -1,8 +1,60 @@
 """Allowlisted bracket DTOs; private account and submission fields stay hidden."""
 
+from collections.abc import Mapping
+
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from backend.apps.competition.models import Match, MatchSlot
+
+
+class StrictIntegerField(serializers.IntegerField):
+    def to_internal_value(self, data):
+        if type(data) is not int:
+            raise ValidationError("Значение должно быть целым числом.")
+        return super().to_internal_value(data)
+
+
+class StrictMatchConfigRequestSerializer(serializers.Serializer):
+    """The complete mutable configuration submitted before the first start."""
+
+    problem_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        allow_empty=False,
+    )
+    match_duration_sec = StrictIntegerField(min_value=60, max_value=7200)
+    start_mode = serializers.ChoiceField(choices=("manual", "both_ready"))
+
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping) or set(data) != {
+            "problem_ids",
+            "match_duration_sec",
+            "start_mode",
+        }:
+            raise ValidationError(
+                {
+                    "non_field_errors": (
+                        "Укажите только problemIds, matchDurationSec и startMode."
+                    )
+                }
+            )
+        return super().to_internal_value(data)
+
+    def validate_problem_ids(self, value):
+        if len(set(value)) != len(value):
+            raise ValidationError("problemIds не должны содержать повторов.")
+        return value
+
+
+class StrictEmptyObjectSerializer(serializers.Serializer):
+    """Reject command-body fields until the API explicitly adopts them."""
+
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping) or data:
+            raise ValidationError(
+                {"non_field_errors": "Команда не принимает поля в теле запроса."}
+            )
+        return super().to_internal_value(data)
 
 
 class MatchSlotSerializer(serializers.ModelSerializer):

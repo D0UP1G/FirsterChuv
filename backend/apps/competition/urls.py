@@ -2,13 +2,25 @@ from django.urls import path
 
 from backend.apps.competition.views import (
     GenerateBracketView,
+    MatchDetailView,
     ResetBracketView,
+    StartMatchView,
     SetFirstRoundPairingsView,
     TournamentBracketView,
 )
 
 
 urlpatterns = [
+    path(
+        "matches/<uuid:match_id>",
+        MatchDetailView.as_view(),
+        name="match-detail",
+    ),
+    path(
+        "matches/<uuid:match_id>/start",
+        StartMatchView.as_view(),
+        name="match-start",
+    ),
     path(
         "tournaments/<uuid:tournament_id>/bracket/generate",
         GenerateBracketView.as_view(),

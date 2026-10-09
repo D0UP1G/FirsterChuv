@@ -3,7 +3,7 @@
 > Актуальная передача 2026-10-10, ROADMAP v5: A4 (прежний A1) owns API/accounts/tournaments/competition/events/common contracts; A3 owns problems/submissions/drafts/judge/worker + config/Compose/CI/system acceptance; A5 весь frontend. A2 больше не активный producer. Старые датированные назначения ниже — история; поля v1 и принятые additive boundaries не меняются. Missing provider блокирует только CONNECT, не всю роль.
 # API и права доступа
 
-Целевой contract DRF API. Match/workspace/public/import endpoints ниже остаются целевыми: текущая ревизия не выдаёт pure cores/catalog за работающие HTTP routes. Их текущий статус — STATE и повторная ревизия. На `develop` интегрированы A1-01/02/03 и invite backend-срез P1-01 (PR #12): платформа, auth, tournament CRUD, directory, roster с capacity/freeze guards и invitations. Браузерный invite flow остаётся CONNECT для P4-02, полный T04 ещё не принят. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.
+Целевой contract DRF API. Реализацию конкретных маршрутов сверять с [STATE](../../context/STATE.md) и аудиторскими evidence: наличие pure core/catalog не означает, что его HTTP route готов. Feature A4 P2-03.2 добавляет реальные match read/config/start routes и это описание входит в тот же PR; до его merge в develop эти три маршрута там не доступны. На `develop` уже интегрированы auth, tournament CRUD, directory, roster, invitations и bracket команды. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; маршруты не имеют завершающего `/`.
 
 Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csrf` выдаёт `csrfToken` в JSON и HttpOnly CSRF cookie; frontend посылает `X-CSRFToken`. Register/login/logout имеют явную CSRF protection, не полагаются только на SessionAuthentication. Публичные GET не требуют login.
 
@@ -83,7 +83,7 @@ Participant `seed` принимает `null` или целое значение 
 | PUT `/tournaments/{id}/bracket/pairings` | A | Полный первый раунд `{pairings:[{position,leftUserId,rightUserId}],reason}`, atomic; v1 уточняет DTO |
 | POST `/tournaments/{id}/bracket/reset` | A | `{reason}`, idempotency key; только до первого start, тот же frozen roster |
 | GET `/tournaments/{id}/bracket` | A / joined P | Bracket DTO, без source |
-| PATCH `/matches/{id}` | A | Пары, готовые задачи, duration/startMode до start |
+| PATCH `/matches/{id}` | A | Готовые задачи, duration/startMode до start; пары меняются отдельной атомарной командой первого раунда |
 | GET `/matches/{id}/problems` | A / Own P | Meta до старта; condition только после start (admin может inspect) |
 | GET `/matches/{id}/problems/{problemId}` | A / Own P | Markdown/public asset IDs/limits/examples |
 | GET `/matches/{id}/problems/{problemId}/languages` | A / Own P | Только реально установленный compiler registry и templates |
@@ -95,9 +95,9 @@ Import не запускает package scripts на хосте. Формат pri
 
 | Метод и путь | Право | Содержание |
 |---|---|---|
-| GET `/matches/{id}` | A / Own P | Current run/state/clock/rules, own stats |
-| POST `/matches/{id}/ready` | Own P | Идемпотентная готовность; при both_ready запускает service |
-| POST `/matches/{id}/start` | A | READY → RUNNING |
+| GET `/matches/{id}` | A / Own P | Текущий настроенный run/state/clock/rules и v1 match projection; private source/CE исключены |
+| POST `/matches/{id}/ready` | Own P | Идемпотентная готовность; при both_ready запускает service; HTTP route остаётся следующим CONNECT |
+| POST `/matches/{id}/start` | A | Пустое тело, Idempotency-Key; READY/manual → RUNNING |
 | POST `/matches/{id}/pause` | A | `{reason}` |
 | POST `/matches/{id}/resume` | A | Возобновление часов |
 | POST `/matches/{id}/extend` | A | `{seconds, reason}`, bounded positive extension |
@@ -109,6 +109,13 @@ Import не запускает package scripts на хосте. Формат pri
 | GET `/submissions/{id}` | Автор P | Own detail, bounded diagnostics |
 | GET `/submissions/{id}/source` | Автор P | Только собственный source |
 | GET/PUT `/matches/{id}/problems/{problemId}/draft?languageId=...` | Own P | user/run/problem/language draft + revision |
+
+Match API slice P2-03.2:
+
+- `PATCH /matches/{id}` принимает строго `{problemIds, matchDurationSec, startMode}`; `problemIds` — непустой список уникальных UUID, duration — integer `60..7200`, startMode — `manual|both_ready`. Обязателен `Idempotency-Key` и session CSRF. Только `DjangoProblemCatalog` с реально READY задачей/verified compiler создаёт immutable version/checksum/rules snapshot. Tournament scoring defaults копируются в run. Точное повторение уже сохранённой конфигурации возвращает тот же run; другая конфигурация после создания run получает `409`. Сейчас повтор безопасен по состоянию run, но key→body receipt ещё не persisted и повторное использование ключа для другого запроса отдельно не обнаруживается. Поле пар не принимается: используется PUT `/tournaments/{id}/bracket/pairings` целым первым раундом.
+- `GET /matches/{id}` доступен admin или активному назначенному участнику. До настройки run возвращается `409 match_run_not_configured`; это ожидаемое состояние выбора матча, а не отсутствие route. Успех имеет форму `contracts/mvp-v1/match.json`, `Cache-Control: no-store`; projection включает только names/score/task statuses и не включает source, diagnostics, checksum или private artifacts. `conditionAvailable` для участника становится true только после старта; admin может просматривать до старта. В этой версии live score вычисляется из завершённых verdict rows текущего run; durable result ledger/finalization остаётся P2-04, поэтому leader не равен зафиксированному победителю до lifecycle update.
+- `POST /matches/{id}/start` принимает только `{}`, обязательный `Idempotency-Key` и manual run в READY. Повторный вызов для уже RUNNING run не сдвигает исходный `started_at`; durable key→body receipt остаётся отдельной задачей. `both_ready` закрыт от ручного запуска до появления participant ready route; ответ — безопасный `409`.
+- Успешные private responses устанавливают `Cache-Control: no-store`. Время сервера UTC, clock elapsed вычисляется по сохранённому run и server time; client не присылает старт, длительность, score, winner или task snapshot.
 
 Submission request требует `Idempotency-Key` header и `{runId, problemId, languageId, source}`. Server проверяет current run и разрешённый compiler; client не передаёт argv/image/timeouts/score. Один ключ с другим содержимым → 409, тот же запрос → тот же submission. Reply:
 
@@ -150,4 +157,4 @@ Role permission проверяется вместе с ownership/run state. За
 
 ## Уточнение и текущие маршруты после новой ревизии 2026-10-10
 
-#50 реализует admin PUT /tournaments/{id}/bracket/pairings и POST /tournaments/{id}/bracket/reset с reason и Idempotency-Key; прочие match/config/ready/start/admin effects routes остаются target до production implementation. #21 private draft CAS исправлен, endpoint требует real WorkspaceAccess: GET /matches/{id}/problems/{problemId}/draft?runId=...&languageId=...; missing record404, PUT body прежний. [Selector принят координатором](../../context/contracts/2026-10-10-mvp-boundaries.md). Объединённые code slices доступны только после MERGED integration PR; полная browser/system acceptance отдельно.
+#50 реализует admin PUT /tournaments/{id}/bracket/pairings и POST /tournaments/{id}/bracket/reset с reason и Idempotency-Key. A4 P2-03.2 реализует match GET/config/manual-start; ready, workspace/condition/language, submission lifecycle, admin effects и browser CONNECT остаются следующими отдельными срезами. #21 private draft CAS исправлен, endpoint требует real WorkspaceAccess: GET /matches/{id}/problems/{problemId}/draft?runId=...&languageId=...; missing record 404, PUT body прежний. [Selector принят координатором](../../context/contracts/2026-10-10-mvp-boundaries.md). До MERGED integration PR код живёт только в feature; полная browser/system acceptance отдельно.
