@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { ApiError, type RegisterInput } from '../api/client'
 import { useAuth } from '../auth/useAuth'
 import { AuthPageFrame } from '../components/AuthPageFrame'
 
 export function RegisterPage() {
   const { status, signUp } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -14,6 +15,8 @@ export function RegisterPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const next = safeNext(location.search)
+  const loginPath = next ? `/login?next=${encodeURIComponent(next)}` : '/login'
 
   if (status === 'authenticated') return <Navigate to="/dashboard" replace />
 
@@ -41,13 +44,13 @@ export function RegisterPage() {
         eyebrow="Готово"
         title="Аккаунт создан"
         description="Теперь войдите, чтобы открыть личный кабинет."
-        footer={<>Уже есть аккаунт? <Link to="/login">Войти</Link></>}
+        footer={<>Уже есть аккаунт? <Link to={loginPath}>Войти</Link></>}
       >
         <div className="success-panel" role="status">
           <span className="success-mark" aria-hidden="true">✓</span>
           <div><strong>Вы зарегистрированы как участник.</strong><p>Роль организатора выдаётся отдельно и не выбирается при регистрации.</p></div>
         </div>
-        <button className="button auth-submit" type="button" onClick={() => navigate('/login', { replace: true })}>Перейти ко входу <span aria-hidden="true">↗</span></button>
+        <button className="button auth-submit" type="button" onClick={() => navigate(loginPath, { replace: true })}>Перейти ко входу <span aria-hidden="true">↗</span></button>
       </AuthPageFrame>
     )
   }
@@ -57,7 +60,7 @@ export function RegisterPage() {
       eyebrow="Новый участник"
       title="Создать аккаунт"
       description="Зарегистрируйтесь, чтобы входить в турниры по приглашению."
-      footer={<>Уже есть аккаунт? <Link to="/login">Войти</Link></>}
+      footer={<>Уже есть аккаунт? <Link to={loginPath}>Войти</Link></>}
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {message && <div className="form-alert" role="alert">{message}</div>}
@@ -112,6 +115,18 @@ export function RegisterPage() {
       </form>
     </AuthPageFrame>
   )
+}
+
+function safeNext(search: string): string | null {
+  const candidate = new URLSearchParams(search).get('next')
+  if (!candidate || !candidate.startsWith('/') || candidate.startsWith('//')) return null
+  try {
+    const destination = new URL(candidate, window.location.origin)
+    if (destination.origin !== window.location.origin) return null
+    return `${destination.pathname}${destination.search}${destination.hash}`
+  } catch {
+    return null
+  }
 }
 
 function readFieldErrors(error: unknown): Record<string, string> {
