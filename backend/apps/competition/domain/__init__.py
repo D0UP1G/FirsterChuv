@@ -1,1 +1,1 @@
-"""Framework-independent competition rules."""
+"""Pure competition-domain helpers without framework dependencies."""

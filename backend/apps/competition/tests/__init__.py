@@ -1,1 +1,1 @@
-"""Tests for the competition domain."""
+"""Competition domain tests."""

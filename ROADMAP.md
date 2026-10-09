@@ -1,200 +1,170 @@
-# MVP: параллельный план четырёх агентов
+# ROADMAP v3: четыре агента до рабочего MVP
 
-Версия 2, 2026-10-09. База проверки: `develop` на `146b2cb`; DRF + React + SQLite3, собственный judge, вариант Б. [Ревизия PR и аудитов](docs/reviews/2026-10-09-repository-audit.md), [STATE](context/STATE.md), [контракты v1](docs/architecture/parallel-contracts.md), [кейс](docs/source/Кейс_Платформа_соревнований.pdf).
+Перепланировано координатором 2026-10-09 по новому поручению команды. Основание — [повторная ревизия](docs/reviews/2026-10-09-integration-review.md), исходный код/PR и 53 уникальных исторических аудита. Кейс/подтверждённые роли/DRF + React + SQLite/own sandbox не изменены. P-ID v2 сохранены; выполненные cores не писать заново. [Предыдущий план](docs/history/ROADMAP-2026-10-09-before-integration-review.md).
 
-## Уже сделано
+## На каком этапе проект
 
-PR #1: документация и PDF. PR #2/#5/#8: backend, аккаунты/CSRF/роли, CRUD турнира и roster с freeze. PR #4/#6/#9: состояние. Всё это в develop. PR #7 обновился во время ревизии до a89b8fc: алгоритм + ORM/persistence + service reset/pairings, draft; 58 tests с временной app registration прошли. Clock/score и штатное подключение ещё отсутствуют. PR #3: Docker harness и 8 unit-тестов; реальный запуск выявил ошибку `--pid=private`. Frontend, полноценный judge/worker, официальные задачи и сквозное demo отсутствуют в интегрированной версии. Полные T01–21 не закрыты.
+Есть платформа/auth/роли/CRUD/roster/invites и CI. В feature/mvp-integration-review-2 объединены проверенные #3 sandbox, #11 pure clock, #13 pure score, #14 normalized catalog и admin guards 8f5b762; они доступны всем только после MERGED интеграционного PR. Состояние merge — GitHub и [STATE](context/STATE.md), до merge не подменять его словом DONE.
 
-Старые A-задачи остаются историческими ссылками аудитов. [Предыдущий план](docs/history/ROADMAP-2026-10-09-before-review.md) сохранён; активные задания имеют новые P-ID. Не начинать bootstrap заново.
+Пока это набор backend-компонентов, не работающий сквозной MVP: frontend не опубликован, матч не имеет рабочего runtime/API, нет LocalJudge/worker/drafts/SSE. #7/#15/#16 требуют исправлений, перечисленных ниже. Official package/README не получены. Процент готовности по количеству helper-файлов не рассчитывается.
 
-## Правила без простоя
+## Как работать без остановки на зависимости
 
-Каждая дорожка реализуется без ожидания **несмерженного кода другого агента**, по контракту v1. Последовательность внутри своей дорожки допустима. Подключение настоящих модулей и финальная приёмка требуют реализаций; это отдельные короткие CONNECT-шаги, которые не останавливают другую разработку.
+1. Начать первое READY задание своей дорожки и выпустить небольшой проверяемый PR. При назначении всей дорожки завершение одного PR не означает завершение поручения: брать следующую доступную задачу.
+2. Если конкретный CONNECT ждёт соседний adapter, записать `WAITING_CONNECT` у него, требуемый port/DTO/SHA и принимающего владельца. В той же сессии перейти к резервной очереди ниже. Не заканчивать работу сообщением «жду агента» при наличии READY задачи.
+3. Писать tests/domain/UI по immutable common ports и fixtures; отсутствующие providers не мешают этой работе. Runtime без настоящего access/catalog/judge/ledger adapter отказывает; dev/test fixtures не попадают в demo.
+4. Минимальную AppConfig/URL регистрацию владелец app делает в своём PR. Общие настройки, Compose и тонкое wiring — короткие CONNECT-срезы; STATE sync не prerequisite.
+5. Перед блокером fetch и проверить code/PR. Не переписывать чужие активные ветки; обычный merge develop в собственной ветке, сохранить все app registrations, CI и аудиты.
+6. Остановиться при явном стопе пользователя либо когда все доступные подпункты своей зоны имеют конкретный внешний блокер. Ранее выданный стоп отдельной сессии не отменяется документом автоматически; эта роадмапа задаёт задания для следующего запуска четырёх агентов.
 
-1. Перед работой fetch, проверить GitHub PR и код. Не объявлять блокер по старой карточке/STATE/комментарию.
-2. Один PR — проверяемый срез: алгоритм, persistence, clock, queue, экран. Не держать готовый алгоритм в draft до реализации всего матча.
-3. Порты/DTO фиксирует v1. Test doubles допустимы в изолированных tests, UI fixtures — в dev entrypoint. Runtime/demo получает реальные данные; отсутствующий адаптер закрывает действие понятной ошибкой.
-4. Если ждёт CONNECT/review, блокируется только подпункт; взять следующую независимую задачу своей дорожки. Не ждать весь A1/A2/A3.
-5. Свои apps/миграции/тесты. FK только к уже интегрированной базе User/Tournament/roster; внешние domain references через UUID/version + проверку портом. UUID сам по себе не даёт права и не подтверждает существование объекта.
-6. Владелец новой app может в том же PR добавить свой AppConfig и URL include в общие settings/API root по готовому рецепту (ограниченная передача владения). Код app включается этим же PR, поэтому import не опережает его. Остальные shared config/Compose/wiring — маленькие P1-02/P1-04. До регистрации допустимы собственные test settings.
-7. Совместимый v1 не требует повторного разрешения соседнего автора. Несовместимое изменение оформить отдельным запросом контракта и продолжать незатронутые части.
-8. Audit + своя карточка + PR → develop. STATE обновляет координатор интеграции, которым может быть другой назначенный агент. Ожидание STATE PR не блокирует следующую задачу: фактический merge уже подтверждается Git и аудитом.
+Каждый audit/card/PR содержит implementation, integration и acceptance отдельно, следующий READY шаг, выполненные команды и фактический SHA. Ветки feature/*, PR → develop, merge commits, без force push. План обновляется после реального результата, а не после обещания.
 
-## Первые задания — можно начать одновременно
+## Следующий параллельный запуск
 
-| Агент | Сейчас | Пока ждёт review/CONNECT | Кого ждать для реализации |
+| Агент | Первое действие | Пока CONNECT/review ждёт | Владение |
 |---|---|---|---|
-| 1 | P1-01: приглашения на готовом roster | CI, proxy/access, Compose | Никого |
-| 2 | P2-01: подключить готовый PR #7 и проверить новый HEAD | Pure clock/scoring/event store | Никого: A1-03 уже merged |
-| 3 | P3-01: починить PR #3 и real execution | Storage/import safety, queue, drafts | Никого; пакет нужен только P3-06 |
-| 4 | P4-01: React и реальный auth | Все UI экраны по fixtures v1 | Никого |
+| 1 | P1-03 public/share access + proxy/logging | P1-04 Compose/readiness; P1-02 additive failure port | accounts/tournaments/common/config/deploy/scripts |
+| 2 | P2-02.1 fix #7; P2-06.1 fix #16 | P2-03 persisted run/API; P2-04 ledger; P2-05 command store/effects | competition/events, свои migrations |
+| 3 | P3-04.1 fix #15; P3-03 real LocalJudge | P3-05 drafts; P3-02 import/workspace assets/registry | sandbox/problems/submissions/drafts/judge |
+| 4 | P4-01 React + реальный auth | P4-02 real CRUD/invites, editor/local drafts, map reducer | frontend и browser tests |
 
-## Владение
+Контракты: [v1](docs/architecture/parallel-contracts.md), [runtime handoffs](docs/architecture/runtime-handoffs.md). Реальные register/login/CRUD/invites доступны уже сейчас. A4 не ждёт A2/A3. A2 не ждёт judge для clock/ledger/HTTP и tests. A3 не ждёт clock для реального исполнения bundle. A1 не ждёт UI для access/proxy/infrastructure.
 
-| Агент | Собственные пути | Примеры contracts/mvp-v1 |
-|---|---|---|
-| 1 | backend/config, common, accounts, tournaments, root tooling, CI, Compose, proxy | roster.json, invite.json; общая регистрация портов |
-| 2 | backend/apps/competition, backend/apps/events | bracket.json, match.json, public-match.json, score-event.json |
-| 3 | problems, submissions, drafts, judge, sandbox | problem.json, submission.json, draft.json |
-| 4 | frontend, UI/browser проверки | Потребляет fixtures; свои dev-сценарии |
+## Агент 1: платформа, безопасность, запуск
 
-Каждый владеет своими миграциями и tests. Агент 1 обслуживает короткие подключения, но не обязан быть автором каждого review/STATE/audit. Существующие PR #3/#7 продолжает владелец. Новые задачи — отдельные feature/* от актуального develop, merge commits, без force push и изменения чужих активных веток.
+### P1-01 · invitations · DONE backend, browser CONNECT открыт
 
-## Агент 1 — платформа и запуск
+PR #12 merged: create/list/revoke/preview/accept, hashed token/use/cap/freeze/idempotency. Не повторять backend. P4-02 проверяет register/invite browser flow, A1 помогает исправлять конкретные API дефекты. M02/S02; full T04 открыт.
 
-### P1-01 · feature/tournament-invites · READY
+### P1-02 · CI/common contracts · DONE исходный срез, READY additive handoff
 
-Продолжить уже занятый агентом 1 checkout, если он есть. Create/list/revoke, public preview и participant accept. Random token хранится как hash, raw token выдаётся при создании. Expiry/maxUses/cap/repeat/concurrent accept атомарны с roster; freeze и active-role gate не обходятся. Register всегда participant.
-
-Готово: API tests expired/revoked/limited/repeat/race; одно вступление расходует один use, retry не расходует. **Независимо:** готовая app tournaments, без сетки/judge/UI. **CONNECT:** invite browser flow P4-02. M02/S02; T04 backend.
-
-### P1-02 · feature/platform-ci-contracts · READY
-
-PR CI: текущая backend suite/check/migration drift, новые domain suites, package imports, fixture schema. Sandbox unit checks отдельно от real Docker smoke. Минимальную app/URL регистрацию делает владелец вместе с модулем в своём PR; P1-02 проверяет эти shared добавления и подключает остальные порты короткими срезами. Материализовать расширения common/contracts коротким срезом; до этого домен может определить локальный typing Protocol по v1. Подготовить branch protection рекомендации; не выдавать их за включённые правила.
-
-Готово: CI выполняет заявленные команды, consumer проверяется отдельно, отсутствующая app не ломает backend. **Не ждать:** всю дорожку соседей. D02/S01/S02; T20 частично.
+PR #17 и docs #18/#19 merged; 4 GitHub jobs, strict schemas/common ports/import isolation. Не повторять bootstrap CI. **P1-02.5:** материализовать отдельные additive InfrastructureFailureReceipt/Sink по runtime-handoffs, не менять существующий ResultReceipt/verdicts. У A2/A3 до merge допустимы локальные compatible Protocol в tests/core. Admin guard suite уже включена в integration CI runner. Branch protection recommendation не объявлять включённой: сейчас правил нет. D02/S01/S02; T20 partial.
 
 ### P1-03 · feature/platform-security-access · READY
 
-Proxy topology/rate limit: API также доступен на localhost:8000, NUM_PROXIES=1 не должен позволять обход подставленным X-Forwarded-For. Dev HTTP/demo HTTPS, cookies/CSRF. Hashed read-only share token для unlisted в tournaments, отдельно от invite; PublicAccessPort для A2. SQL-подобный search/role/UUID/CSRF проверки.
+PublicAccessV1: public read без login, unlisted только hashed read-only share token, revoke/expiry, отдельно от invite. Admin endpoint для выдачи ссылки и anonymous read adapter. Proxy topology: прямой localhost:8000 и NUM_PROXIES=1, X-Forwarded-For spoof/rate limit tests; один trusted proxy либо корректная direct policy. Access logs не содержат invite/share tokens; HttpOnly/session/CSRF/HTTPS settings согласованы с README. SQL-подобный search, role injection, UUID IDOR, no-store/no-referrer.
 
-Готово: anonymous/participant не меняют турниры; заявленный proxy path защищён; unlisted без share token закрыт. **Независимо:** от judge/UI. S01/S02/TEAM06; T02/T20 backend.
+Готово: backend/tests и порт, без judge/UI. CONNECT A2 public HTTP/SSE; пока он ждёт — инфраструктура P1-04. S01/S02/TEAM06; T02/T20 частично.
 
-### P1-04 · feature/mvp-compose-wiring · READY для инфраструктуры
+### P1-04 · feature/mvp-compose-wiring · READY, подключения по одному
 
-Одна команда старта, persistent SQLite WAL, migrations/readiness, frontend build, bootstrap admin, clock/worker/storage config. Docker authority только trusted worker, не API/solution. Отсутствующие management commands не объявлять runnable.
+Сейчас Compose запускает только API; web dist/clock/worker отсутствуют. Настроить persistent SQLite/WAL, readiness/migrations, frontend build, startup bootstrap, private storage и sandbox image build, trusted worker Docker authority. Docker socket не монтируется API или solution. Секреты не выводить в logs/README/audit.
 
-**CONNECT отдельно:** apps/URLs → clock → catalog → queue/result sink → frontend, каждый со своим SHA/проверкой. Если адаптер отсутствует — fail closed/readiness error. Готово: restart без data loss, README совпадает с реальными командами. D01/D03; T01/T19. Инфраструктуру писать сейчас, подключения делать по мере готовности одного модуля.
+P1-04.1 инфраструктура и script/config validation доступны сейчас. P1-04.2 подключить настоящий run_match_clock A2, run_judge_worker A3 и frontend A4 отдельно по готовому SHA. Пока command/provider отсутствует — readiness/integration error, не объявлять profile runnable. P1-04.3 restart сохраняет DB/source/drafts/results и убирает только свои orphan containers. Одна documented команда должна поднимать весь готовый сценарий. D01/D03; T01/T19.
 
-### P1-05 · feature/demo-readiness → release/0.1.0 · финальная приёмка
+### P1-05 · feature/demo-readiness → release/0.1.0 · финальная системная приёмка
 
-T01–21 с владельцами, официальный пакет, полуфинал → финал, hostile execution, видео ≤5 минут. Release → main + tag → обратно develop только после обязательной приёмки. Эта задача требует готовой системы; её ожидание не блокирует остальные P1 задачи. D04–06; T21.
+После рабочего среза провести T01–21 с владельцами, official package и hostile expert-style checks, полуфинал → финал, demo либо видео ≤5 минут. Release → main + tag → develop только после обязательной приёмки; main сейчас bootstrap. До этого выполнять P1-03/04/02.5, не ждать «весь backend». D04–06; T21.
 
-## Агент 2 — сетка и live backend
+## Агент 2: сетка, настоящий матч, результат, public stream
 
-### P2-01 · продолжить feature/bracket-runtime / PR #7 · READY
+### P2-01 · bracket registration · IN_REVIEW, #7 требует P2-02.1
 
-Последний проверенный HEAD PR #7 a89b8fc уже содержит transient rank adapter, ORM и persistence. Merge актуального origin/develop, сохранить эту работу. В рамках явно разрешённой минимальной передачи добавить свой CompetitionConfig и URL include в общие settings/API root в этой же ветке; не ждать отдельный ответ A1. Обычная suite без временных settings и migration check должны пройти.
-
-Package import уже исправлен в a89b8fc; повторить проверку в штатной конфигурации. Обновить stale PR body по фактическому scope. Принять algorithm/persistence срез отдельно от clock/judge/browser. **Не ждать A1/A3:** регистрация явно разрешена, remaining pairing DTO указан в v1. M03/M04; T06 backend, full scenario открыт.
+HEAD #7 1952244 уже имеет ORM/ordinary AppConfig/URL registration, BYE/WAITING/canonical rank и private generate/read. Старые seed/import/registration blockers закрыты. Не писать повторно и не ждать A1. После lifecycle fix обновить свою ветку из develop, сохранить clock/score/catalog registrations и CI, повторить suite/check/migration drift, опубликовать тот же PR. M03/M04; T05/T06 partial.
 
 ### P2-02 · feature/bracket-persistence · READY
 
-Match/Slot/Run, atomic freeze/save, repeat/reset и full first-round pairing service уже реализованы в a89b8fc — сохранить, не писать повторно. Осталось: HTTP reset/full pairing по v1, command idempotency/reason audit и lifecycle guards. Ревизия F08 воспроизвела reset ARCHIVED tournament: добавить guard и regression. BYE без played run, WAITING ждёт upstream, history защищена.
+**P2-02.1 приоритет:** #7 services generate/reset/full pairings допускают archived/running/completed. Единый guard draft/scheduled внутри transaction до existing-return/freeze, SQLite conditional write до reads для сериализации с archive/start. Regression всех трёх mutators и HTTP generate; отказ сохраняет matches/freeze/roster. После проверки merge #7.
 
-Готово: DB/API tests 2/3/4/5, nullable seed, rollback/repeat/reset/pair edit. **Независимо:** не нужны judge, importer, UI. Для настоящего start нужен READY catalog через порт; отсутствие каталога запрещает start. M03/M04; T05/T06 backend.
+P2-02.2 full first-round PUT pairings по v1 User UUID → frozen entrant UUID, POST reset, reason/actor/Idempotency-Key/409 rules. Сервисы уже написаны, добавить HTTP/idempotency/lifecycle/race tests. Не размораживать roster, BYE без played run, начавшаяся история не удаляется. Ничего не требует живого judge/UI. M03/M04; T05/T06.
 
-### P2-03 · feature/match-clock-start · READY
+### P2-03 · feature/match-clock-start-runtime · READY
 
-Pure clock/state machine, persisted READY/RUNNING/PAUSED/FINALIZING, immutable tasks/rules, manual/both_ready, run_match_clock/restart. Active elapsed без пауз; deadline equality закрыта. MatchPort проверяет participant/current run/membership/problem/time внутри общей submission transaction.
+Pure clock #11 проверен и включён в интеграционный срез; не писать заново. Сделать persisted current MatchRun/state/config, immutable problem versions/checksum/rules, READY/RUNNING/PAUSED/FINALIZING, manual/both_ready, реальные get/config/ready/start API и run_match_clock/restart. Catalog в #14 — готовый порт; verified compiler нужен только для настоящего READY/start, test catalog допустим в tests.
 
-Готово: deterministic time/state/DB tests с test catalog, без агента 3. Runtime требует настоящий каталог. **CONNECT:** P3-04 admission, P3-06 реальные tasks. M05/M06/P03; T07–09.
+CompetitionGatewayV1.authorize_submission/authorize_workspace: trusted actor/current run/membership/task/condition/time, strict deadline equality закрыта, active elapsed без пауз. Все DB решения в транзакции вызывающего submission service. До runtime adapter production fail closed. CONNECT A3 коротким срезом; если он ждёт — ledger и actions. M05/M06/P03; T07–09.
 
-### P2-04 · feature/match-scoring-results · READY
+### P2-04 · feature/match-ledger-results · READY
 
-Сначала pure score/tie: unique first OK, penalty, last accepted, full tie → rematch. Затем accepted-attempt ledger/ResultSink: duplicate/out-of-order/lease retry/delayed OK/SUPERSEDED/technical finish. FINALIZING ждёт все принятые pending submissions, infra failure не является поражением. Winner/downstream/event атомарны.
+Pure score #13 проверен, не повторять. Реальный accepted-attempt ledger с unique submission_id и immutable server received/elapsed; register_accepted/apply_result по common v1, idempotent duplicate/out-of-order/SUPERSEDED. FINALIZING ждёт accepted pending results; инфраструктурный сбой не превращать в RE/WA или поражение. Additive failure sink помечает техническую проблему и разрешает восстановление/ручное вмешательство без автоматического победителя.
 
-Готово: pure и DB tests на typed test receipts, без живого sandbox. **CONNECT:** P3-04 сохраняет accepted ledger и real result. M05/M07/J04; T09/T10/T19.
+Winner/downstream/event одной transaction либо согласованным durable outbox; full tie → новый run, старый score не переносится. Domain/DB tests с typed test receipts независимы от sandbox. CONNECT A3 queue/result/failure adapter. M05/M07/J04; T09/T10/T19.
 
-### P2-05 · feature/match-admin-actions · READY
+### P2-05 · feature/match-admin-actions · READY для завершения уже начатого среза
 
-Pause/resume/extend, technical result, rematch/new run, replacement. Reason/actor/command idempotency, запрет пересмотра при started downstream, старый score не переносится, история не удаляется. Pure guards писать независимо от persistence, затем свои models/services.
-
-Готово: все вмешательства кейса, повтор без дубля, role/UUID/state guards. M08; T11/T20.
+Pure guards из 8f5b762, 12 tests и suite runner включены в общий integration PR. Не создавать повторный helper PR; после sync develop делать persisted pause/resume/extend/technical/rematch/replacement. Trusted actor/reason/command receipts, idempotency, history/no-score-carry, atomic запрет изменения после started downstream. Пока runtime ждёт — guards/command store/tests. M08; T11/T20.
 
 ### P2-06 · feature/public-events-sse · READY
 
-Durable allowlisted events/public snapshots v1, async SSE/heartbeat/cursor/resync/connection caps. PublicAccessPort для public/unlisted; consistent snapshot/cursor. Начать с event store/projector и собственных domain events, затем подключить producers. Source/email/CE logs не попадают в public DTO.
+**P2-06.1 приоритет:** #16 8340014 validator ошибочно требует SOLVED.lastVerdict==OK. OK→WA/CE сохраняют SOLVED, lastVerdict отражает последнюю попытку. Исправить validator без ослабления whitelist/privacy; score→event roundtrip tests, затем merge store slice.
 
-Готово: dedupe/reconnect/slow client/whitelist tests без frontend. **CONNECT:** producers P2-03/04/P3-04, transport P4-05. V01–03/S02; T16/T17/T20.
+P2-06.2 EventWriter adapter/producers и durable snapshots с coherent lastEventId; P2-06.3 public HTTP/SSE/heartbeat/cursor/resync/connection caps/slow client. PublicAccessV1 A1 подключить отдельным CONNECT, event store/projector/transport tests писать сейчас. Если access adapter ещё отсутствует, public runtime не открывать. Source/email/CE никогда не public. V01–03/S02; T16/T17/T20.
 
-## Агент 3 — sandbox, задачи, посылки
+## Агент 3: реальные вердикты, надёжная очередь, workspace
 
-### P3-01 · продолжить feature/sandbox-proof / PR #3 · READY, P1-дефект
+### P3-01 · sandbox harness · исправления проверены, full isolation acceptance открыт
 
-Убрать неподдерживаемый --pid=private, подтвердить стандартное отдельное PID namespace inspect/runtime; --pid=host запрещён. Real build/smoke и проверка валидности Docker options. На исходном PR #3 запуск NOT_VERIFIED; диагностическая копия без флага прошла 4 smoke cases, это не исправление PR.
+#3 6950f10 включён в integration slice: F01 удалён, F07 PR_SET_DUMPABLE + bounded host pipe исправлены. Fresh Docker image, 12 unit/5 real smoke, bounded PID/memory/network/host/protocol/output/watchdog/compile/cleanup/recovery probes прошли. Обычный следующий job OK. Не повторять готовый harness.
 
-Затем bounded loop/output/memory/PID/network/host canary/secrets/cleanup + normal job после отказа. ML только по подтверждённым OOM данным; compiler также изолирован. Готово: исправление владельца committed, real checks/audit/PR обновлены. **Независимо:** от A1/A2 и official package. J01/J03/S01; T18 частично/T20.
+Осталось для LocalJudge: лимиты каждой задачи, compiler/checker в изоляции, ML только по подтверждённому OOM, private bounded diagnostics, restart/orphan cleanup собственных jobs. Fixed smoke limits не заменяют task limits. J01/J03/S01; full T18/T20/T21 открыт, official expert checks ещё нужны.
 
-Устранить F07 ревизии: solution сейчас может писать в supervisor stdout через /proc/1/fd/1; host PIPE собирается целиком до проверки cap. Защитить управляющий канал и ограничивать host capture во время чтения. Bounded regression, overflow/cleanup и следующий normal job, без опасного flood на host.
+### P3-02 · normalized problem storage/import core · PARTIAL, READY остаток
 
-### P3-02 · feature/problem-storage-import-core · READY
+#14 9234951 проверен и включён в integration slice: bounded ZIP/no extraction, immutable checksum/version, public/private split/catalog, verified compiler gate. Не писать повторно. Registry сейчас verified=false; подтвердить compiler/runtime перед READY, не ставить true из manifest.
 
-Problem versions/checksum/READY; public statement/assets/examples/limits отдельно от private tests/checker/validator/reference. Реальный compiler registry. Archive safety: traversal/absolute/symlink/hardlink/bomb/size/content-type caps, no host scripts. Internal normalized ProblemBundleV1 + synthetic fixtures явно помечены.
+P3-02.2 programmatic normalized import management/API, admin catalog/task selection, access-filtered problem/asset/language endpoints по CompetitionGateway, private artifacts не выдаются. P3-02.3 strict artifact language ID types: list/dict сейчас дают TypeError; typed invalid-manifest tests перед внешним importer. Safe Markdown/TeX rendering у A4. Official mapping отдельно P3-06. P01/P02/E02/S01; T12/T13/T20 partial.
 
-Готово: storage/catalog DTO/parser safety tests. **Не ждать README:** только внешний mapping вынесен P3-06, официальный формат не угадывать. P01/P02/E02/S01; T12 частично/T13/T20.
+### P3-03 · feature/local-judge · READY, главный execution шаг
 
-### P3-03 · feature/local-judge · READY по normalized bundle
+JudgeProvider.execute(TrustedJudgeJob) загружает immutable version/checksum из snapshot run, не active latest version. Из normalized bundle реальные compile/test/checker, time/memory/process/output caps, actual compiler allowlist. OK/WA/TL/ML/RE/CE и multiple-valid-output checker, CE author-only, infra failures отдельны. Test solution компилировать/запускать только sandbox; scripts package на host не запускать.
 
-JudgeProvider с trusted Job: compile/test/checker изолированно. На своей imported smoke-задаче real OK/WA/TL/ML/RE/CE, CE только автору, multiple-valid-output checker, infra failure отдельно. Лимиты берутся из задачи: fixed 512 MiB/2s harness не заменяет package limits. Official повтор в P3-06.
+Сначала программно импортированная синтетическая smoke-задача и настоящее исполнение, затем официальный повтор P3-06. Это проверяет рабочий pipeline и не выдаётся за official T12/T14/T21. Можно делать без HTTP match/frontend. J01/J02/E03; T14/T18 partial.
 
-Готово: реальный execution/cleanup/broken checker handling, без fake verdict. **Независимо:** от match engine/UI; ядро разрабатывать по bundle до готовности importer mapping. J01/J02/E03; T14/T18 частично.
+### P3-04 · feature/submission-queue-core → worker/connect · READY
 
-### P3-04 · feature/submission-queue · READY
+**P3-04.1 приоритет:** #15 7d76d0b concurrent admission даёт OperationalError/database locked → 500. Bounded retry всей transaction только busy/locked с неизменным received_at, либо согласованный write-first подход; исчерпание → понятный retryable 503. File-backed TransactionTestCase: два разных/одинаковых keys, cap/ledger/event rollback, без 500. После review интегрировать core.
 
-Core с injected ports: source до 202, idempotency/hash, claim/lease/retry/backoff/recovery, bounded queue, один worker. Core tests с fake ports только в tests. HTTP: одна SQLite transaction MatchPort → requested run check → submission/source + accepted ledger + event. Без настоящего порта/provider runtime не принимает решение и не выдаёт fake verdict.
+P3-04.2 actual run_judge_worker/loop/claim/lease/retry/outbox/restart/own orphan cleanup. P3-04.3 thin local MatchPort/AcceptedLedger/ResultSink adapters к CompetitionGatewayV1: extra local match_id остаётся на стороне queue, ResultApplication.applied преобразуется в bool; applied=false не означает delivery failure. LanguageRegistry совпадает. P3-04.4 trusted job version/checksum из immutable run snapshot; failure sink для exhausted infra jobs, чтобы pending ledger не висел навсегда без понятной технической причины. Никаких fake verdict.
 
-Worker сохраняет durable result и передаёт ResultSink receipt; дубликат не удваивает score, задержка не меняет received time. **CONNECT:** P2-03/04 коротким wiring; до merge продолжать core/recovery/P3-05. J04/E03; T09/T14/T19/T20.
+Core/recovery/adapter tests независимы от живого match provider; runtime CONNECT требует реальных A2 ports. Пока он ждёт — LocalJudge и drafts. J04/E03; T09/T14/T19/T20.
 
-### P3-05 · feature/private-drafts-history · READY
+### P3-05 · feature/private-drafts-history · READY независимо от judge
 
-Draft user/run/problem/language/revision, приватные source/history. Storage проверяется с authorized test context; реальные views используют AccessContext port. Author-only source/CE даже для admin, UUID IDOR/active-user/CSRF/no-store. Draft не ждёт live judge и не влияет на score.
-
-Готово: revision conflict сохраняет обе версии, чужие данные закрыты. **CONNECT:** autosave/history P4-04. E04/S02; T15/T20.
+Revisioned server drafts user/run/problem/language, author-only source/CE/history, active-user/UUID IDOR/CSRF/no-store. CompetitionGateway workspace allowed_actions/condition availability, test AccessContext до CONNECT; отсутствующий access provider отказывает. Revision conflict сохраняет обе версии, local editor draft sync A4, logout очищает private namespace. E04/S02; T15/T20.
 
 ### P3-06 · feature/official-package-adapter · WAITING_EXTERNAL только этот пункт
 
-Получить package/README, checksum/реальный формат → mapping в ProblemBundleV1. Программный import TeX/assets/tests/limits/checker/validator/reference; no host scripts. T12/T14/T21 на официальных задачах. Пока материалов нет — P3-01–05; synthetic не выдаётся за official. Внешняя зависимость — организаторы, не агент 1.
+Получить package/README/permission/checksum от организаторов, mapping к normalized bundle. Import statements/TeX/assets/tests/limits/checker/validator/reference без host scripts; закрытые материалы не коммитить. Official programmatic import и реальный judge/сценарий T12/T14/T21. Пока package нет — P3-02/03/04/05, не завершать всю роль.
 
 ### P3-07 · feature/yandex-problem-import · после обязательного MVP
 
-Проверить официальные read/export API/права; import statement/metadata/assets, SSRF guards, mapping к local tests. Source-only NOT_READY, решения в Яндекс не отправляются. Отсутствие API не блокирует local judge/MVP. TEAM04; T12/T20 в части адаптера.
+Только import statement/metadata/assets по проверенным официальным API/правам, SSRF guard. Source-only NOT_READY; решения в Яндекс не уходят. Не отнимать время у рабочего local pipeline. TEAM04.
 
-## Агент 4 — React и пользовательские сценарии
+## Агент 4: React и полный пользовательский путь
 
-### P4-01 · feature/frontend-shell-auth · READY
+### P4-01 · feature/frontend-shell-auth · READY, самый срочный UI шаг
 
-React/lockfile/build/routes, session API client/CSRF rotation, реальные register/login/logout/me. Participant/admin navigation, public без redirect, loading/error/retry/empty. Public/private types раздельны; fixtures только dev/test entrypoint.
+Frontend в опубликованных refs отсутствует; проверить свой checkout, не перезаписать неопубликованную работу. React/TS/lockfile/build/router/API client, реальные csrf/register/login/logout/me, role navigation, anonymous public без login redirect, loading/error/retry/empty. Auth доступен сейчас: не ждать A2/A3. Login CSRF rotation, logout чистит user/private cache. P4-01 завершает реальный build/auth, а не только макет. TEAM01/02/S02; T02.
 
-Готово: build/auth на существующем backend, регистрация без выбора admin, logout очищает private cache/user namespace. **Независимо:** от новых backend apps. TEAM01/02/S02; T02.
+### P4-02 · feature/admin-roster-invites-ui · READY на реальных API
 
-### P4-02 · feature/admin-roster-invites-ui · READY
-
-CRUD/directory/roster/seed/cap на уже слитом API. Invite create/copy/expiry/maxUses/revoke/accept/register flow по API v1 в dev transport, до P1-01. Frozen/errors понятны; финальный сценарий без SQL/manual requests.
-
-Готово: компоненты и real CRUD; **CONNECT:** real invite browser flow после одного API. M01–03; T03–05.
+CRUD/directory/roster/seed/cap/invite create/copy/revoke/preview/accept/register flow уже backend-integrated. Подключать настоящий transport сразу, не mock. Browser admin создаёт турнир/ссылку, два participant входят без SQL/manual requests; freeze/revoke/expiry/cap/role errors видимы. M01–03; T03–05.
 
 ### P4-03 · feature/admin-match-ui · READY
 
-Bracket/BYE/WAITING/manual pairs, tasks/rules/start mode; start/ready/pause/resume/extend/rematch/technical/replacement, reason/idempotency/state guards. Сейчас typed dev fixtures, затем замена transport без переписывания UI. **Не ждать:** всю A2 дорожку. M04–08; T06–11 UI часть.
+Bracket/BYE/WAITING/full first-round pairs/config/task selection/start/ready/actions/reason/idempotency, typed dev transport по v1, runtime без fixtures. До готовности endpoint строить компоненты, потом CONNECT по одному. Не ждать всю A2 дорожку. M04–08; T06–11 UI часть.
 
-### P4-04 · feature/participant-workspace · READY
+### P4-04 · feature/participant-workspace · READY независимо от queue
 
-Editor highlight/indent/brackets/hotkeys; safe Markdown/TeX/images/tables/examples, languages/templates/tasks/timer, async submit/history/CE. Local draft namespace user/run/problem/language, flush перед task switch/reload, server revision conflict без потери обеих версий. До start условия закрыты; paused/finalizing/infra retry видны.
+Editor highlight/indent/brackets/hotkeys/languages/templates, safe Markdown/TeX/images/tables/examples, tasks/status/timer, async submit/result/CE/history. Local draft namespace user/run/problem/language/revision, flush на task switch/reload, обе версии при server conflict. Source/CE private, XSS/опасные URL запрещены, diagnostics plain text. До старта условия закрыты.
 
-По match/problem/submission/draft v1 fixtures; XSS/опасные URL/diagnostics как text. **CONNECT:** endpoints по одному, fixtures не в demo. P01–03/E01–04; T07/T12–15/T20.
+UI/editor/local persistence доступны сейчас с отдельным dev transport; реальные problem/draft/submission APIs подключать по одному. In production отсутствующий API показывает error, mock verdict запрещён. P01–03/E01–04; T07/T12–15/T20.
 
 ### P4-05 · feature/spectator-map · READY
 
-Anonymous bracket/match map, две дорожки и все task statuses, solved/penalty/leader/time/attempts/verdict, projector. Решение C без A/B отображается правильно. Snapshot/event reducer/dedupe/resync/reconnect/анимации по v1, score authoritative.
+Anonymous bracket/match route map, две дорожки, все задачи/attempts/verdicts/leader/penalty/timer, независимое решение C без A/B, projector. Reducer/snapshot/event dedupe/resync/reconnect/animations можно писать сейчас по fixtures; реальный HTTP/SSE CONNECT P2-06 + PublicAccess A1. Private source/email/CE не запрашиваются. V01–04; T16/T17/T20.
 
-Готово: dev сценарии solve/overtake/tie/win/new run/disconnect; private data не загружается. **CONNECT:** real HTTP/SSE P2-06. V01–04; T16/T17/T20.
+### P4-06 · feature/browser-api-integration · CONNECT по одному, финал после runtime
 
-### P4-06 · feature/browser-api-integration · CONNECT по мере готовности
+Не ждать «backend полностью готов»: каждый новый endpoint проверить коротким browser scenario на exact SHA, отдельно admin/две participant sessions/anonymous. Первый реальный срез — create/invite/match start/editor/programmatic smoke bundle/real submission/verdict/score/promotion. Затем official package и полный T01–21, reconnect/reload/task switch/restart/hostile, demo/видео ≤5 минут. Не считать synthetic working slice полной case acceptance.
 
-Каждый готовый API сразу проверять коротким browser scenario на SHA; не копить всё до «backend готов». Раздельные admin/participant sessions, anonymous spectator, refresh/task switch/reconnect/projector, полный полуфинал → финал с real official submissions, видео ≤5 минут. Missing API показывает ошибку, runtime fixtures исключены. T01–21 UI часть; финальный T21 требует всю систему.
+## Приоритетные milestones
 
-## Завершение и история ID
+| Milestone | Критерий | Владельцы |
+|---|---|---|
+| R0: интеграционная база | #3/#11/#13/#14 + текущая платформа вместе, CI pass; #7/#15/#16 исправлены короткими PR | Координатор, A2/A3 |
+| R1: первый рабочий путь | React → real API/run → durable queue → LocalJudge → receipt/score → продвижение; programmatic smoke import, без mock runtime | A1 wiring, A2 gateway/ledger, A3 judge/worker, A4 UI |
+| R2: обязательные функции | Manual pairs, both_ready, все admin interventions, code persistence, failure/restart/privacy, базовая public map/SSE | Все четыре |
+| R3: сдача по кейсу | Official package/checkers, T01–21, hostile checks, одна команда, demo/видео, release/tag | Все четыре |
 
-READY — начать сейчас; IN_PROGRESS — исполнитель начал; IN_REVIEW — опубликован проверяемый срез; DONE — срез integrated и проверен. Полная приёмка требования отдельно: merge алгоритма не закрывает весь матч. WAITING_EXTERNAL/WAITING_CONNECT — только конкретный подпункт при наличии другой готовой работы.
-
-PR содержит P-ID/requirements, v1/version, paths/migrations, команды/среду/SHA, audit/card, CONNECT и владельца. No secrets/public source/runtime fake verdict. Release gate T01–21 с official package и real hostile execution, working slice не отменяет обязательные функции.
-
-| Старые задачи | Где продолжать |
-|---|---|
-| A1-01/02/03 | Backend срезы уже integrated; оставшаяся security/UI/history приёмка P1-02/03, P2-02, P4-01/02/06 |
-| A1-04/05/06 | P1-01 / P1-04 + CONNECT владельцев / P1-05 |
-| A2-01/02/03/04/05 | P2-01/02 / P2-03 / P2-04 / P2-05 / P2-06 |
-| A3-01/02/03/04/05/06/07 | P3-01 / P3-02/06 / P3-03 / P3-04 / P3-01 / P3-05 / P3-07 |
-| A4-01/02/03/04/05 | P4-01 / P4-02/03 / P4-04 / P4-05 / P4-06 |
+R1 не отменяет R2/R3. Пакет не блокирует R0/разработку R1, но без official package финальная приёмка не закрыта. История A-ID и P-ID сохранена в docs/history и аудитах. Все задачи сверены с [37 требованиями](docs/requirements.md) и [21 сценарием](docs/quality/mvp-acceptance.md).

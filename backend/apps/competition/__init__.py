@@ -1,1 +1,1 @@
-"""Competition domain owned by agent 2."""
+"""Competition domain, bracket, and live match logic."""

@@ -143,3 +143,74 @@ class TournamentParticipant(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} — {self.tournament}"
+
+
+class Invite(models.Model):
+    """A revocable, bounded link to join one tournament."""
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tournament = models.ForeignKey(
+        Tournament,
+        on_delete=models.CASCADE,
+        related_name="invites",
+    )
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    max_uses = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(2147483647)],
+    )
+    used_count = models.PositiveIntegerField(default=0, editable=False)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_tournament_invites",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at", "id")
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(expires_at__isnull=False) | Q(max_uses__isnull=False),
+                name="invite_has_expiry_or_use_limit",
+            ),
+            models.CheckConstraint(
+                condition=Q(max_uses__isnull=True) | Q(max_uses__gte=1),
+                name="invite_max_uses_positive_or_null",
+            ),
+            models.CheckConstraint(
+                condition=Q(max_uses__isnull=True) | Q(used_count__lte=F("max_uses")),
+                name="invite_uses_within_limit",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"Invite {self.id} — {self.tournament_id}"
+
+
+class InviteAcceptance(models.Model):
+    """One durable acceptance per account, used to make retry safe."""
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    invite = models.ForeignKey(
+        Invite,
+        on_delete=models.CASCADE,
+        related_name="acceptances",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="tournament_invite_acceptances",
+    )
+    accepted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("invite", "user"),
+                name="unique_invite_acceptance_per_user",
+            )
+        ]

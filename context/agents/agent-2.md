@@ -1,17 +1,20 @@
 # Агент 2: сетка и live backend
 
-Перепланировано координатором 2026-10-09; старые A-ID сохраняются только в истории и прежних аудитах.
+Перепланировано координатором по поручению команды 2026-10-09; audit history владельца сохранена.
 
-- Статус: `IN_REVIEW` — P2-01 готов к review отдельным backend slice; PR #7 опубликован, ready, mergeable/CLEAN.
-- Назначенный исполнитель: Codex в роли агента 2 по поручению команды.
-- Текущая задача/ветка/база: `P2-01` / `feature/bracket-runtime` / `origin/develop` `d9488e3`; PR HEAD `0568149`; PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7) OPEN, ready for review, `CLEAN`, checks не настроены.
-- Пути P2-01: `backend/apps/competition/`, `backend/config/settings.py`, `backend/apps/common/api_urls.py`, `context/agents/agent-2.md`, аудит и PR body.
-- Задачи: P2-01–P2-06 из `ROADMAP.md`; собственные пути — `backend/apps/competition/`, `backend/apps/events/` и тесты/миграции этих apps.
-- P2-01: сохранить bracket algorithm/ORM/atomic generate/reset/pairing services из `a89b8fc`; merge актуального develop выполнен merge-коммитом `086ebdc`; свой AppConfig и URL include подключены; штатная suite — 58 passed, migration check — no changes; PR body и статус опубликованы. HTTP pair/reset поверхность и F08 guard остаются P2-02.
-- Следующий срез после P2-01: P2-02 — lifecycle guard для archived reset и HTTP full pairings/reset по v1; затем P2-03 clock/start, P2-04 score/ledger, P2-05 admin actions, P2-06 event store/snapshots/SSE.
-- Зависимости по портам: начать core без соседних веток по `docs/architecture/parallel-contracts.md`; реальный start закрыт, если READY problem catalog отсутствует. Для P2-03/04 использовать typed локальные test receipts/catalog, не подменять production adapters.
-- Отдельная ранее написанная pure-clock работа: локальный commit `c6789a7` в checkout `work/FirsterChuv-agent2-clock`, первоначальная база `146b2cb`; по v2 перепроверить и вести как P2-03.1 после обновления от `origin/develop`. Пока не опубликована.
-- Передача: CompetitionGatewayV1 для A3 admission/result/workspace; PublicAccessV1 и EventWriter для публичного чтения/событий; fixtures в `contracts/mvp-v1/`.
-- Последние аудиты: [P2-01 публикация](../audits/2026-10-09T165856+0300-agent-2-P2-01-publication.md), [P2-01 sync/wiring](../audits/2026-10-09T165701+0300-agent-2-P2-01-sync-wiring.md), прежние A2-01 audits и [ревизия координатора](../audits/2026-10-09T163805+0300-coordinator-parallel-roadmap.md).
+- Статус: `IN_PROGRESS` — P2-02.1; P2-06.1 остаётся следующим по очереди.
+- Исполнитель: Codex в роли агента 2.
+- Текущая ветка/база: `feature/bracket-runtime`; PR #7 продолжен от сохранённого HEAD `1952244`, затем синхронизируется merge-коммитом с `origin/develop` `c5682dd657969b699e22b8a2815b5247ad5a1553`.
+- Scope: status guard `DRAFT`/`SCHEDULED` для generate/reset/full-pairings services до любых reads/existing-bracket return/freeze; SQLite conditional write сериализует решение с archive/start; отказ не меняет roster freeze или сетку.
+- План-проверки: unit/domain regression для трёх mutators, HTTP regression для имеющегося generate endpoint, persistence/race coverage; файлы: `backend/apps/competition/services.py`, собственные bracket tests, эта карточка и отдельный audit.
+- Граница: без новых HTTP endpoints/idempotency/full-pairings DTO P2-02.2; чужие tournament/common/app paths не менять. После review P2-02.1 следующий независимый пункт — P2-06.1.
 
-Сверять P2 implementation, integration и full acceptance раздельно. Не менять чужие ветки, migrations или принадлежащие другим агентам apps. `context/STATE.md` обновляет интеграционный координатор после merge.
+- Проверены/integration feature: pure clock #11 28d6cda и score #13 19bbf88, по 12 tests. Доступность в develop — после MERGED общего integration PR; cores не заменяют persistence/API.
+- Первое READY P2-02.1: fix #7 1952244 generate/reset/pairings только draft/scheduled, SQLite transactional lifecycle guard + regression. Ordinary registration/rank/import уже готовы. Затем merge #7 и P2-02.2 HTTP/idempotency/reason/full pairings.
+- Второй короткий READY P2-06.1: fix #16 8340014 SOLVED/lastVerdict WA/CE roundtrip без ослабления public whitelist.
+- Следом P2-03 persisted MatchRun/config/manual/both_ready/gateway/workspace/clock command и P2-04 accepted ledger/results/FINALIZING/downstream/failure sink. Не писать готовые clock/score повторно.
+- Резерв во время CONNECT: P2-05 pure guards 8f5b762 включены в integration feature → command store/effects, P2-06 projector/snapshot/SSE tests. Не ждать живой judge/importer/frontend для своих domain/DB/API slices.
+- Пути: competition/events, свои migrations/tests; common wiring кратким CONNECT. При sync сохранить all app registrations, CI и чужие audits.
+- Runtime без реального catalog/access provider отказывает. Full T05–11/T16–17/T19–20 не пройдены; own cards/audits фиксируют implementation/integration/acceptance отдельно.
+
+[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
