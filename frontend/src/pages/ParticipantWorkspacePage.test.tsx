@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ParticipantWorkspacePage } from './ParticipantWorkspacePage'
@@ -51,6 +52,55 @@ describe('ParticipantWorkspacePage', () => {
     expect(await screen.findByRole('table', {}, { timeout: 5000 })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Отправить решение' })).toBeDisabled()
     expect(screen.getByText(/синтетические попытки не создаются/)).toBeInTheDocument()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('keeps a language response and template when no local syntax mode exists', async () => {
+    renderWorkspace('/matches/match-1?scenario=workspace-ui&compiler=rust-fixture')
+
+    const languagePicker = await screen.findByRole('combobox', { name: 'Язык программирования' })
+    expect(languagePicker).toHaveValue('rust2024')
+    expect(languagePicker).toHaveTextContent('Rust 2024')
+
+    const editor = await screen.findByRole('textbox', { name: 'Исходный код, задача A, Rust 2024' })
+    await waitFor(() => expect(editor).toHaveTextContent('println!("Hello, world!");'))
+    expect(editor).toHaveAttribute('contenteditable', 'true')
+    expect(screen.getByText(/нет локального режима подсветки/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Отправить решение' })).toBeDisabled()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('restores task-scoped local drafts across task switches and page remount when draft API is unavailable', async () => {
+    const user = userEvent.setup({ delay: 1 })
+    const entry = '/matches/match-1?scenario=workspace-ui&draft=offline-fixture'
+    const firstPage = renderWorkspace(entry)
+
+    const editorA = await screen.findByRole('textbox', { name: 'Исходный код, задача A, C++20' })
+    editorA.focus()
+    for (const character of 'draftA') await user.keyboard(character)
+    await waitFor(() => expect(editorA).toHaveTextContent('draftA'))
+
+    await user.click(screen.getByRole('button', { name: /Задача B/ }))
+    const editorB = await screen.findByRole('textbox', { name: 'Исходный код, задача B, C++20' })
+    editorB.focus()
+    for (const character of 'draftB') await user.keyboard(character)
+    await waitFor(() => expect(editorB).toHaveTextContent('draftB'))
+
+    await user.click(screen.getByRole('button', { name: /Задача A/ }))
+    const restoredA = await screen.findByRole('textbox', { name: 'Исходный код, задача A, C++20' })
+    await waitFor(() => expect(restoredA).toHaveTextContent('draftA'))
+
+    firstPage.unmount()
+    renderWorkspace(entry)
+
+    const remountedA = await screen.findByRole('textbox', { name: 'Исходный код, задача A, C++20' })
+    await waitFor(() => expect(remountedA).toHaveTextContent('draftA'))
+    await user.click(screen.getByRole('button', { name: /Задача B/ }))
+    const remountedB = await screen.findByRole('textbox', { name: 'Исходный код, задача B, C++20' })
+    await waitFor(() => expect(remountedB).toHaveTextContent('draftB'))
+
+    expect(screen.getByText(/Серверное хранилище недоступно/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Отправить решение' })).toBeDisabled()
     expect(fetch).not.toHaveBeenCalled()
   })
 
