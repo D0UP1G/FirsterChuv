@@ -40,6 +40,7 @@ Domain service не зависит от DRF view/serializer: view проверя
 ## Контракты модулей
 
 - `MatchPort.assert_can_submit(user, matchId, problemId)` проверяет роль, слот, активный run, status и server deadline, возвращает runId/elapsedMs/scoring version. Проверка допуска и сохранение посылки выполняются согласованно в короткой транзакции; завершение матча не может обойти уже сохранённую допустимую посылку.
+- `backend.apps.tournaments.services.freeze_roster(tournament_id)` принадлежит агенту 1. Агент 2 вызывает его внутри внешнего `transaction.atomic()` bracket generation; сервис фиксирует roster и возвращает active entrants в canonical seed order. Любая ошибка дальнейшей генерации должна откатить тот же transaction, включая freeze.
 - `JudgeProvider.execute(job)` возвращает bounded result: verdict, compile diagnostics, execution metrics и internal reason. Его принимает только trusted worker, не browser.
 - `ResultService.record(submissionId, leaseToken, result)` проверяет актуальность job/run, идемпотентно завершает submission, обновляет score/finalizing и event в транзакции.
 - `EventWriter.append(scope, type, publicPayload)` пишет event в той же транзакции, что изменяемый state. При rollback event не виден.
