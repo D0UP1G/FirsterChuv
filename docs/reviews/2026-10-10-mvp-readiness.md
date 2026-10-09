@@ -120,3 +120,13 @@ A5 follow-up о merge доставлен, compact wait подтверждает 
 A4 safe persisted run/start/gateway/original participant+task snapshot/result+failure sinks/durable clock/winner; A3 actual compiler/import/executor/queue stability/factories/one-command runtime; A5 real endpoint CONNECT в существующий UI. M0 normalized tasks с настоящим verdict — промежуточный working slice, не полный обязательный MVP. Next M1: все management/both_ready/admin interventions/rich tasks/verdicts/drafts/recovery/security; M2: public SSE/map/projector/official/hostile/demo. Базовая безопасность обязательна до M0. [План](../../ROADMAP.md), [M0 gates](../quality/m0-demo.md), [source case](../source/Кейс_Платформа_соревнований.pdf).
 
 Новому A5 отправлен explicit follow-up с тремя ролями и приоритетом M0, compact wait подтверждает active. Остальные владельцы получили назначение в Git; coordinator не утверждает, что автоматически запустил их внешние sessions. Individual WAITING_CONNECT записывается per port/route/SHA и сменяется independent READY task в той же сессии; полный roadmap task не заканчивается после одного PR при наличии разрешённой независимой работы.
+
+
+### Source65 и целостность плана: checkpoint 2026-10-10T02:01:38+03:00
+
+#65 updated head881d535 содержит новый own append-only audit P5-02; incremental diff только card/audit, responsive code идентичен c735e67 с source CI5/5 SUCCESS. Обычный merge выполнен без conflicts; App.tsx сохраняет одновременно бренд #64, safe auth return path #62 и responsive import #65. Автор сообщил DEV-only 320/390px/Tab checks, их не выдаём за independent real multi-session M0 или full visual acceptance на combined SHA.
+
+Integrity PASS: все30 parent task headings v4=v5; все37 requirement IDs и21 T-ID сохранены;170 base context/audits files и4 incoming #63/#64 exact blobs неизменны; source65 audit будет добавлен в final check. Исторический v4 сохранён byte-for-byte; PDF SHA-256 неизменен; backend/scripts/config/CI/contracts diff относительно85e0cd0 zero. Frontend после65 проходит отдельный combined rerun, final exact-head CI требуется перед merge. Никакие unsafe runtime heads53/57–59 не включены.
+
+
+Combined #63/#64/#65 frontend final rerun:18 files/84 tests PASS(28.53s), typecheck/lint/build PASS;5 прежних lint warnings и612.88kB chunk warning. Final integrity:170 base context/audits files +5 incoming source audits exact, all3 source heads ancestors; unsafe53/57–59 latest heads excluded; backend/config/CI/scripts/contracts diff zero. Полный browser/hostile/official M0 NOT_RUN.

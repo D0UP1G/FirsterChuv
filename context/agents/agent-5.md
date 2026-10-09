@@ -4,7 +4,7 @@
 
 - Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
 - Статус назначения READY; actual IN_PROGRESS/branch/base/paths владелец фиксирует перед своими edits. Датированная передача не запускает остановленную сессию.
-- Первое действие: P5-03 real auth/invite/admin/bracket #50 CONNECT; #62 safe return path уже merged, #64 минимальный бренд проверяется coordinator integration.
+- Первое действие: P5-03 real auth/invite/admin/bracket #50 CONNECT; #62 safe return path уже merged, #64 минимальный бренд/#65 basic responsive включены в проверяемую coordinator integration.
 - Независимый резерв: typed match/workspace clients/loading/error states, private draft recovery/logout isolation/keyboard/basic responsive; actual config/start/problem/submit/history/result подключать по одному endpoint.
 - Владение: весь frontend/src/styles/design/runtime clients/editor/map/UI/browser checks; backend/code providers не изменять.
 - Передача: A4 API/run/result/public; A3 workspace/task/draft/queue/judge. Приоритет M0 real match, не полировка 13 static screens/projector до submit. Missing endpoint блокирует только CONNECT, не роль.

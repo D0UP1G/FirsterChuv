@@ -4,7 +4,7 @@
 
 ## Текущее состояние
 
-Auth/roles/CRUD/roster/invites, bracket/manual pairings/reset, clock/score/readiness/ledger cores, queue/worker/outboxes, normalized catalog, LocalJudge, drafts CAS и React editor/map интегрированы через #60/#61/#62. Полного рабочего MVP пока нет: требуется production run/gateway/providers/worker/sinks и реальный browser сценарий. #53/#57–59 требуют correctness fixes и пока не слиты. #63/#64 reference/React бренд входят в текущую coordinator feature до её MERGED.
+Auth/roles/CRUD/roster/invites, bracket/manual pairings/reset, clock/score/readiness/ledger cores, queue/worker/outboxes, normalized catalog, LocalJudge, drafts CAS и React editor/map интегрированы через #60/#61/#62. Полного рабочего MVP пока нет: требуется production run/gateway/providers/worker/sinks и реальный browser сценарий. #53/#57–59 требуют correctness fixes и пока не слиты. #63/#64/#65 reference/React бренд/mobile входят в текущую coordinator feature до её MERGED.
 
 [ROADMAP v5](ROADMAP.md): три активных владельца — A4 (прежний A1) API/domain/events/common contracts, A3 judge/tasks/queue + config/Compose/startup/CI/acceptance, A5 весь frontend. Первым делаем [M0: реальный матч двух участников](docs/quality/m0-demo.md); полные обязательные блоки кейса остаются отдельной приёмкой. [STATE](context/STATE.md), [review/проверки](docs/reviews/2026-10-10-mvp-readiness.md), [contracts](docs/architecture/parallel-contracts.md), [handoffs](docs/architecture/runtime-handoffs.md), [дизайн](frontend/design/README.md).
 

@@ -6,7 +6,7 @@
 
 В develop 85e0cd0 интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, clock/score/readiness/ledger/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 MERGED. Это готовые части, их не нужно переписывать.
 
-#63 уточняет static reference по кейсу, #64 переносит токены бренда в React. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — [ревизия](docs/reviews/2026-10-10-mvp-readiness.md).
+#63 уточняет static reference по кейсу, #64 переносит токены бренда в React, #65 добавляет минимальные mobile/focus правила и own audit. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — [ревизия](docs/reviews/2026-10-10-mvp-readiness.md).
 
 Реального сквозного MVP пока нет. Не подключены полностью persisted run/gateway/snapshot/result+failure sinks, actual worker executor/readiness и production API/UI. #53 и #57–59 пока не включены: воспроизведены SQLite races и rematch/downstream defect. Последний #57 5ae4af5 синхронизирован с develop, но runtime.py не изменён относительно проверенного 0073fbd. #58 b66b6cd добавляет clock command; это не исправляет найденные races. В #59 0ba3119 надо сохранить frozen participant fix из 9eb394c, исправив оставшиеся дефекты.
 
@@ -136,7 +136,7 @@ README/env/архитектура/вариант Б, demo либо video≤5min,
 
 ## A5: весь frontend
 
-### P5-01 · минимальный бренд/shared components · implementation #64 IN_REVIEW, M0 приоритет
+### P5-01 · минимальный бренд/shared components · implementation #64/#65 IN_REVIEW, M0 приоритет
 
 BLITZ_ARENA tokens/header/admin/auth style, preserve CodeMirror/sanitization/scoped drafts и typed transport. #64 CSS/metadata+brand label прошёл source CI; после coordinator merge available. Не переносить mock actions/data из 13 static screens. Нет необходимости полировать все экраны до real submit.
 
