@@ -146,6 +146,59 @@ export interface ProblemCatalogEntry {
   readiness: 'READY' | 'NOT_READY'
 }
 
+export interface MatchProblemDetails extends ProblemVersion {
+  title: string
+  statementMarkdown: string
+  assetIds: string[]
+  examples: Array<{ input: string; output: string }>
+  timeLimitMs: number
+  memoryLimitBytes: number
+}
+
+export interface MatchProblemLanguage {
+  id: string
+  name: string
+  template: string
+}
+
+export interface DraftSnapshot {
+  runId: string
+  problemId: string
+  languageId: string
+  source: string
+  revision: number
+  updatedAt: string
+}
+
+export interface DraftWriteInput {
+  runId: string
+  source: string
+  expectedRevision: number
+}
+
+export interface SubmissionInput {
+  runId: string
+  problemId: string
+  languageId: string
+  source: string
+}
+
+export type SubmissionProcessStatus = 'QUEUED' | 'RUNNING' | 'RETRY_WAIT' | 'FINISHED' | 'INFRA_FAILED' | 'CANCELLED'
+export type SubmissionVerdict = 'OK' | 'WA' | 'TL' | 'ML' | 'RE' | 'CE'
+
+export interface SubmissionReceipt {
+  submissionId: string
+  runId: string
+  status: SubmissionProcessStatus
+  verdict: SubmissionVerdict | null
+  receivedAt: string
+  elapsedMs: number
+}
+
+export interface SubmissionDetail extends SubmissionReceipt {
+  diagnostics: string | null
+}
+
 export interface MatchTaskState {
   problemId: string
   label: string
@@ -471,6 +524,50 @@ export const api = {
 
   match(matchId: string): Promise<MatchView> {
     return request<MatchView>(`/matches/${segment(matchId)}`)
+  },
+
+  matchProblem(matchId: string, problemId: string): Promise<MatchProblemDetails> {
+    return request<MatchProblemDetails>(`/matches/${segment(matchId)}/problems/${segment(problemId)}`)
+  },
+
+  matchProblemLanguages(matchId: string, problemId: string): Promise<MatchProblemLanguage[]> {
+    return request<MatchProblemLanguage[]>(`/matches/${segment(matchId)}/problems/${segment(problemId)}/languages`)
+  },
+
+  draft(matchId: string, problemId: string, runId: string, languageId: string): Promise<DraftSnapshot> {
+    const params = new URLSearchParams({ runId, languageId })
+    return request<DraftSnapshot>(`/matches/${segment(matchId)}/problems/${segment(problemId)}/draft?${params.toString()}`)
+  },
+
+  saveDraft(
+    matchId: string,
+    problemId: string,
+    languageId: string,
+    input: DraftWriteInput,
+  ): Promise<DraftSnapshot> {
+    const params = new URLSearchParams({ languageId })
+    return mutate<DraftSnapshot>(
+      `/matches/${segment(matchId)}/problems/${segment(problemId)}/draft?${params.toString()}`,
+      input,
+      'PUT',
+    )
+  },
+
+  submitSolution(
+    matchId: string,
+    input: SubmissionInput,
+    idempotencyKey: string,
+  ): Promise<SubmissionReceipt> {
+    return mutate<SubmissionReceipt>(`/matches/${segment(matchId)}/submissions`, input, 'POST', idempotencyKey)
+  },
+
+  submissions(matchId: string, problemId: string): Promise<Page<SubmissionReceipt>> {
+    const params = new URLSearchParams({ problemId, limit: '50', offset: '0' })
+    return request<Page<SubmissionReceipt>>(`/matches/${segment(matchId)}/submissions?${params.toString()}`)
+  },
+
+  submission(submissionId: string): Promise<SubmissionDetail> {
+    return request<SubmissionDetail>(`/submissions/${segment(submissionId)}`)
   },
 
   readyMatch(matchId: string, idempotencyKey: string): Promise<MatchView> {
