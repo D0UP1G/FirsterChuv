@@ -1,13 +1,16 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from backend.apps.accounts.models import User
 from backend.apps.competition.domain.bracket import BracketInputError
 from backend.apps.competition.models import Match, MatchRun, MatchSlot
 from backend.apps.competition.services import (
+    BracketLifecycleConflict,
     BracketPersistenceError,
     BracketResetConflict,
     generate_bracket,
@@ -301,3 +304,109 @@ class PersistBracketTests(TestCase):
 
         with self.assertRaises(BracketPersistenceError):
             generate_bracket(tournament.pk)
+
+    def test_all_mutators_reject_closed_tournament_without_changing_state(self):
+        tournament, roster = self.create_tournament("closed-lifecycle", 4)
+        generate_bracket(tournament.pk)
+        pairings = (
+            (str(roster[0].pk), str(roster[1].pk)),
+            (str(roster[2].pk), str(roster[3].pk)),
+        )
+        mutators = {
+            "generate": lambda: generate_bracket(tournament.pk),
+            "reset": lambda: reset_bracket(tournament.pk),
+            "pairings": lambda: set_first_round_pairings(tournament.pk, pairings),
+        }
+
+        def snapshot():
+            tournament_state = Tournament.objects.filter(pk=tournament.pk).values_list(
+                "status", "roster_frozen_at", "active_participant_count"
+            ).get()
+            matches = list(
+                Match.objects.filter(tournament_id=tournament.pk)
+                .order_by("round_index", "position", "id")
+                .values_list(
+                    "id",
+                    "bracket_key",
+                    "kind",
+                    "status",
+                    "winner_id",
+                    "current_run_id",
+                    "next_match_id",
+                    "next_slot",
+                )
+            )
+            slots = list(
+                MatchSlot.objects.filter(match__tournament_id=tournament.pk)
+                .order_by("match__round_index", "match__position", "slot_index")
+                .values_list(
+                    "id",
+                    "match_id",
+                    "slot_index",
+                    "resolution",
+                    "participant_id",
+                    "upstream_match_id",
+                )
+            )
+            participants = list(
+                TournamentParticipant.objects.filter(tournament_id=tournament.pk)
+                .order_by("id")
+                .values_list("id", "user_id", "seed", "status", "removed_at")
+            )
+            return tournament_state, matches, slots, participants
+
+        for status_value in (
+            Tournament.Status.RUNNING,
+            Tournament.Status.COMPLETED,
+            Tournament.Status.ARCHIVED,
+        ):
+            Tournament.objects.filter(pk=tournament.pk).update(status=status_value)
+            for name, mutate in mutators.items():
+                with self.subTest(status=status_value, action=name):
+                    before = snapshot()
+                    with self.assertRaises(BracketLifecycleConflict):
+                        mutate()
+                    self.assertEqual(snapshot(), before)
+
+    def test_scheduled_tournament_can_generate_bracket(self):
+        tournament, _ = self.create_tournament("scheduled", 3)
+        Tournament.objects.filter(pk=tournament.pk).update(
+            status=Tournament.Status.SCHEDULED
+        )
+
+        matches = generate_bracket(tournament.pk)
+
+        self.assertTrue(matches)
+        tournament.refresh_from_db()
+        self.assertEqual(tournament.status, Tournament.Status.SCHEDULED)
+        self.assertIsNotNone(tournament.roster_frozen_at)
+
+    def test_each_mutator_issues_conditional_write_before_reads(self):
+        tournament, roster = self.create_tournament("write-first", 4)
+        generate_bracket(tournament.pk)
+        pairings = (
+            (str(roster[0].pk), str(roster[1].pk)),
+            (str(roster[2].pk), str(roster[3].pk)),
+        )
+        mutators = {
+            "generate": lambda: generate_bracket(tournament.pk),
+            "reset": lambda: reset_bracket(tournament.pk),
+            "pairings": lambda: set_first_round_pairings(tournament.pk, pairings),
+        }
+
+        for name, mutate in mutators.items():
+            with self.subTest(action=name):
+                with CaptureQueriesContext(connection) as captured:
+                    mutate()
+                statements = [
+                    query["sql"].strip()
+                    for query in captured
+                    if query["sql"].lstrip().upper().startswith(
+                        ("SELECT", "UPDATE", "INSERT", "DELETE")
+                    )
+                ]
+                self.assertTrue(statements, "expected database statements")
+                first = statements[0].upper()
+                self.assertTrue(first.startswith("UPDATE"), first)
+                self.assertIn("TOURNAMENTS_TOURNAMENT", first)
+                self.assertIn("STATUS", first)

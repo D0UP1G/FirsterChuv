@@ -13,7 +13,11 @@ from backend.apps.competition.domain.bracket import (
 )
 from backend.apps.competition.models import Match, MatchRun, MatchSlot
 from backend.apps.tournaments.models import Tournament, TournamentParticipant
-from backend.apps.tournaments.services import freeze_roster, retry_sqlite_locked_write
+from backend.apps.tournaments.services import (
+    EDITABLE_TOURNAMENT_STATUSES,
+    freeze_roster,
+    retry_sqlite_locked_write,
+)
 
 
 class BracketPersistenceError(RuntimeError):
@@ -22,6 +26,33 @@ class BracketPersistenceError(RuntimeError):
 
 class BracketResetConflict(BracketPersistenceError):
     """Raised when a bracket has progressed beyond the explicit reset boundary."""
+
+
+class BracketLifecycleConflict(BracketPersistenceError):
+    """Raised when bracket mutations target a non-editable tournament."""
+
+    status_code = 409
+    code = "tournament_not_editable"
+
+
+def _claim_editable_tournament(tournament_id: UUID | str) -> Tournament:
+    """Acquire the tournament write lock before reading its lifecycle or bracket.
+
+    SQLite does not provide effective row locks through ``select_for_update``.
+    This conditional no-op UPDATE is deliberately the first data statement in
+    each mutator's transaction, serializing it with archive/start transitions.
+    """
+    changed = Tournament.objects.filter(
+        pk=tournament_id,
+        status__in=EDITABLE_TOURNAMENT_STATUSES,
+    ).update(updated_at=models.F("updated_at"))
+    if changed == 0:
+        if not Tournament.objects.filter(pk=tournament_id).exists():
+            raise Tournament.DoesNotExist("Турнир не найден.")
+        raise BracketLifecycleConflict(
+            "Сетку можно создавать и изменять только у чернового или запланированного турнира."
+        )
+    return Tournament.objects.get(pk=tournament_id)
 
 
 def _ordered_matches(tournament_id: UUID | str) -> list[Match]:
@@ -122,9 +153,7 @@ def generate_bracket(tournament_id: UUID | str) -> list[Match]:
     Repeated calls return the existing bracket and never duplicate matches.
     A failure after roster freeze rolls back the freeze with all bracket writes.
     """
-    tournament = Tournament.objects.filter(pk=tournament_id).first()
-    if tournament is None:
-        raise Tournament.DoesNotExist("Турнир не найден.")
+    tournament = _claim_editable_tournament(tournament_id)
 
     existing = _ordered_matches(tournament.pk)
     if existing:
@@ -183,9 +212,7 @@ def _clear_unstarted_bracket(tournament_id: UUID) -> None:
 @transaction.atomic
 def reset_bracket(tournament_id: UUID | str) -> list[Match]:
     """Explicitly rebuild a frozen bracket while no match run has started."""
-    tournament = Tournament.objects.filter(pk=tournament_id).first()
-    if tournament is None:
-        raise Tournament.DoesNotExist("Турнир не найден.")
+    tournament = _claim_editable_tournament(tournament_id)
     if not Match.objects.filter(tournament_id=tournament.pk).exists():
         raise BracketPersistenceError("Сетка ещё не создана.")
 
@@ -210,9 +237,7 @@ def set_first_round_pairings(
     The complete bracket is rebuilt so bye winners and downstream slots stay in
     sync with the edited first round.
     """
-    tournament = Tournament.objects.filter(pk=tournament_id).first()
-    if tournament is None:
-        raise Tournament.DoesNotExist("Турнир не найден.")
+    tournament = _claim_editable_tournament(tournament_id)
     if not Match.objects.filter(tournament_id=tournament.pk).exists():
         raise BracketPersistenceError("Сетка ещё не создана.")
     if tournament.roster_frozen_at is None:

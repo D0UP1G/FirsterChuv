@@ -106,6 +106,51 @@ class BracketAPITests(TestCase):
         self.assertEqual(extra_field.status_code, 400)
         self.assertEqual(Match.objects.filter(tournament=self.tournament).count(), 0)
 
+    def test_generation_returns_conflict_for_closed_tournament_without_freezing(self):
+        self.login_with_csrf(self.admin)
+        url = f"/api/v1/tournaments/{self.tournament.pk}/bracket/generate"
+        original_roster = list(
+            self.tournament.participants.order_by("id").values_list(
+                "id", "user_id", "seed", "status", "removed_at"
+            )
+        )
+
+        for lifecycle_status in (
+            Tournament.Status.RUNNING,
+            Tournament.Status.COMPLETED,
+            Tournament.Status.ARCHIVED,
+        ):
+            with self.subTest(status=lifecycle_status):
+                Tournament.objects.filter(pk=self.tournament.pk).update(
+                    status=lifecycle_status
+                )
+                response = self.client.post(
+                    url,
+                    {"seedingMode": "manual"},
+                    format="json",
+                )
+
+                self.assertEqual(response.status_code, 409, response.content)
+                self.assertEqual(
+                    response.json()["error"]["code"],
+                    "tournament_not_editable",
+                )
+                self.tournament.refresh_from_db()
+                self.assertIsNone(self.tournament.roster_frozen_at)
+                self.assertEqual(
+                    self.tournament.status,
+                    lifecycle_status,
+                )
+                self.assertEqual(
+                    list(
+                        self.tournament.participants.order_by("id").values_list(
+                            "id", "user_id", "seed", "status", "removed_at"
+                        )
+                    ),
+                    original_roster,
+                )
+                self.assertFalse(Match.objects.filter(tournament=self.tournament).exists())
+
     def test_only_admin_or_joined_active_participant_can_read_bracket(self):
         self.login_with_csrf(self.admin)
         generated = self.client.post(

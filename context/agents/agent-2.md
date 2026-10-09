@@ -6,7 +6,7 @@
 - Исполнитель: Codex в роли агента 2.
 - Текущая ветка/база: `feature/bracket-runtime`; PR #7 продолжен от сохранённого HEAD `1952244`, затем синхронизируется merge-коммитом с `origin/develop` `c5682dd657969b699e22b8a2815b5247ad5a1553`.
 - Scope: status guard `DRAFT`/`SCHEDULED` для generate/reset/full-pairings services до любых reads/existing-bracket return/freeze; SQLite conditional write сериализует решение с archive/start; отказ не меняет roster freeze или сетку.
-- План-проверки: unit/domain regression для трёх mutators, HTTP regression для имеющегося generate endpoint, persistence/race coverage; файлы: `backend/apps/competition/services.py`, собственные bracket tests, эта карточка и отдельный audit.
+- План-проверки: persistence regression для трёх mutators, HTTP regression для имеющегося generate endpoint, проверка первого SQL write до чтений; файлы: `backend/apps/competition/services.py`, собственные bracket tests, эта карточка и отдельный audit.
 - Граница: без новых HTTP endpoints/idempotency/full-pairings DTO P2-02.2; чужие tournament/common/app paths не менять. После review P2-02.1 следующий независимый пункт — P2-06.1.
 
 - Проверены/integration feature: pure clock #11 28d6cda и score #13 19bbf88, по 12 tests. Доступность в develop — после MERGED общего integration PR; cores не заменяют persistence/API.
