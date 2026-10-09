@@ -39,6 +39,14 @@ class ResultReceipt:
     verdict: str
 
 
+@dataclass(frozen=True, slots=True)
+class InfrastructureFailureReceipt:
+    submission_id: UUID
+    run_id: UUID
+    reason_code: str
+    retryable: bool
+
+
 class CompetitionGatewayV1(Protocol):
     def authorize_submission(
         self,
@@ -58,6 +66,12 @@ class EventWriter(Protocol):
 
 class ResultSink(Protocol):
     def apply_result(self, receipt: ResultReceipt) -> bool: ...
+
+
+class InfrastructureFailureSink(Protocol):
+    """Compatible local shape for the additive A2 technical-failure port."""
+
+    def record_infrastructure_failure(self, receipt: InfrastructureFailureReceipt) -> None: ...
 
 
 class LanguageRegistry(Protocol):

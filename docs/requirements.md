@@ -98,3 +98,5 @@ P-ID выше ведут к ROADMAP v3, старые A-ID сохранены. Co
 | D01–06 | API scaffold/README/env/history/CI #17 | Full one-command runtime, official demo/video/release |
 
 [Ревизия 19 PR и 53 аудитов](reviews/2026-10-09-integration-review.md) содержит SHA/результаты/ограничения. Все полные T01–21 остаются NOT_RUN. Только official mapping/final T12/T14/T21 ждут package, остальные задачи выполняются независимо по [runtime handoffs](architecture/runtime-handoffs.md).
+
+Новая проверка 2026-10-09T23:54+03:00 уточняет implementation: #32 и frontend до #42 MERGED; #7/#16 corrections, #34 readiness, #37 worker/outboxes, #38 ledger и #41 command receipts проверены вместе в coordinator feature. Доступность после integration MERGED и конкретные следующие срезы — [STATE](../context/STATE.md), [новый audit](../context/audits/2026-10-09T235434+0300-coordinator-new-pr-review.md). Полные T01–21 по-прежнему открыты; pure core/DI tests не закрывают runtime/system acceptance.

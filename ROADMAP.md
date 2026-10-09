@@ -4,9 +4,9 @@
 
 ## На каком этапе проект
 
-Актуализация при разблокировании A3 2026-10-09: #20 уже MERGED; sandbox/clock/score/catalog/admin guards находятся в develop. React/auth/admin/participant workspace/spectator UI slices #22/#24/#27/#28/#29 тоже MERGED, как и regression tests #30/#31. Parser fix #25 MERGED отдельно. Проверенные #15 queue/#23 LocalJudge/#26 admin catalog объединены в [integration PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32); доступны в develop после MERGED этого PR. Состояние merge — GitHub и [STATE](context/STATE.md).
+Актуализация 2026-10-09T23:54+03:00: #20/#25/#32 MERGED; sandbox/clock/score/catalog/admin guards/queue/LocalJudge доступны в develop. Frontend slices и regression PR до #42 MERGED. В новой coordinator feature проверены и объединены #7 bracket/lifecycle, #16 events/SOLVED fix, #34 readiness, #37 worker/outboxes/adapters, #38 ledger core, #41 command receipts. Доступность — после MERGED integration PR, затем брать свежий develop без отдельного STATE prerequisite. [STATE](context/STATE.md), [новый аудит](context/audits/2026-10-09T235434+0300-coordinator-new-pr-review.md).
 
-Сквозной MVP ещё не готов: нужны persisted run/gateway/ledger/runtime, actual worker и HTTP/SSE CONNECT. #7 получил опубликованный lifecycle fix на `1a2b54a`, его актуальная версия ещё не интегрирована; #16 обновлён до `6eac91f`, новый head требует review перед merge (старый B03 относится к `8340014`). У #21 найден SQLite CAS race, конкретная READY задача P3-05.1 ниже. Official package/README не получены. Процент готовности по количеству helper-файлов не рассчитывается.
+Сквозной MVP ещё не готов: нужны persisted configured run/gateway/ledger/effects, production worker executor/providers/version snapshot, HTTP/SSE CONNECT. Исправления #7 `1a2b54a` и #16 `a0b1dcc` проверены; после integration merge повторять их не требуется. У #21 `1706ecf` сохраняется SQLite CAS race, P3-05.1 READY. Official package/README не получены.
 
 ## Как работать без остановки на зависимости
 
@@ -24,8 +24,8 @@
 | Агент | Первое действие | Пока CONNECT/review ждёт | Владение |
 |---|---|---|---|
 | 1 | P1-03 public/share access + proxy/logging | P1-04 Compose/readiness; P1-02 additive failure port | accounts/tournaments/common/config/deploy/scripts |
-| 2 | P2-02.1 fix #7; P2-06.1 fix #16 | P2-03 persisted run/API; P2-04 ledger; P2-05 command store/effects | competition/events, свои migrations |
-| 3 | P3-02.2 normalized import management; P3-04.2 worker | P3-05.1 CAS race #21; worker DI/lease/failure tests | sandbox/problems/submissions/drafts/judge |
+| 2 | После merge #7 P2-03 persisted run/API/gateway; P2-04 persistent ledger | P2-02.2 pairing/reset API; P2-05 durable effects; P2-06 projector/events/SSE tests | competition/events, свои migrations |
+| 3 | P3-02.2 normalized import management; P3-05.1 CAS race #21 | P3-04 snapshot/executor/failure CONNECT; own lease/container recovery | sandbox/problems/submissions/drafts/judge |
 | 4 | Продолжать текущий P4-06 browser/API CONNECT | По одному endpoint после merge; UI slices P4-01–05 уже интегрированы | frontend и browser tests |
 
 Контракты: [v1](docs/architecture/parallel-contracts.md), [runtime handoffs](docs/architecture/runtime-handoffs.md). Реальные register/login/CRUD/invites доступны уже сейчас. A4 не ждёт A2/A3. A2 не ждёт judge для clock/ledger/HTTP и tests. A3 не ждёт clock для реального исполнения bundle. A1 не ждёт UI для access/proxy/infrastructure.
@@ -36,9 +36,13 @@
 
 PR #12 merged: create/list/revoke/preview/accept, hashed token/use/cap/freeze/idempotency. Не повторять backend. P4-02 проверяет register/invite browser flow, A1 помогает исправлять конкретные API дефекты. M02/S02; full T04 открыт.
 
+P1-01.1 READY: стабилизировать concurrent invite acceptance/retry. Прежний shared-cache race тест intermittently даёт 1 accepted + 2 database_busy, хотя capacity=2; пойман также первым combined CI #44. File-backed class PASS 2/2; код турниров не менялся в #44. Проверить contention/revoke/expiry/idempotency и bounded retry на real file DB; сохранять capacity safety и assertions. Независимая задача A1.
+
 ### P1-02 · CI/common contracts · DONE исходный срез, READY additive handoff
 
 PR #17 и docs #18/#19 merged; 4 GitHub jobs, strict schemas/common ports/import isolation. Не повторять bootstrap CI. **P1-02.5:** материализовать отдельные additive InfrastructureFailureReceipt/Sink по runtime-handoffs, не менять существующий ResultReceipt/verdicts. У A2/A3 до merge допустимы локальные compatible Protocol в tests/core. Admin guard suite уже включена в integration CI runner. Branch protection recommendation не объявлять включённой: сейчас правил нет. D02/S01/S02; T20 partial.
+
+P1-02.6 READY: frontend CI по lockfile (tests/typecheck/build), pinned Node и воспроизводимая ограниченная concurrency. Текущие 4 jobs не проверяют frontend. Default suite после #43 поймал два 5s timeout; полный maxWorkers=1 повтор прошёл 81/81 без изменения assertions/timeouts. Добавить CI независимо от backend providers.
 
 ### P1-03 · feature/platform-security-access · READY
 
@@ -58,35 +62,35 @@ P1-04.1 инфраструктура и script/config validation доступн�
 
 ## Агент 2: сетка, настоящий матч, результат, public stream
 
-### P2-01 · bracket registration · IN_REVIEW, #7 требует P2-02.1
+### P2-01 · bracket registration · проверено, integration merge
 
-HEAD #7 1952244 уже имеет ORM/ordinary AppConfig/URL registration, BYE/WAITING/canonical rank и private generate/read. Старые seed/import/registration blockers закрыты. Не писать повторно и не ждать A1. После lifecycle fix обновить свою ветку из develop, сохранить clock/score/catalog registrations и CI, повторить suite/check/migration drift, опубликовать тот же PR. M03/M04; T05/T06 partial.
+HEAD #7 `1a2b54a`: ORM/AppConfig/URL, BYE/WAITING/canonical rank и private generate/read проверены вместе с lifecycle correction. После MERGED integration PR получать fresh develop и продолжать P2-02.2/P2-03. M03/M04; T05/T06 partial.
 
 ### P2-02 · feature/bracket-persistence · READY
 
-**P2-02.1 приоритет:** #7 services generate/reset/full pairings допускают archived/running/completed. Единый guard draft/scheduled внутри transaction до existing-return/freeze, SQLite conditional write до reads для сериализации с archive/start. Regression всех трёх mutators и HTTP generate; отказ сохраняет matches/freeze/roster. После проверки merge #7.
+**P2-02.1 проверен в #7 `1a2b54a`:** draft/scheduled guard первым SQLite conditional UPDATE, до reads/existing-return/freeze; regression всех трёх mutators и HTTP generate прошёл. После integration MERGED этот подпункт завершён.
 
 P2-02.2 full first-round PUT pairings по v1 User UUID → frozen entrant UUID, POST reset, reason/actor/Idempotency-Key/409 rules. Сервисы уже написаны, добавить HTTP/idempotency/lifecycle/race tests. Не размораживать roster, BYE без played run, начавшаяся история не удаляется. Ничего не требует живого judge/UI. M03/M04; T05/T06.
 
 ### P2-03 · feature/match-clock-start-runtime · READY
 
-Pure clock #11 проверен и включён в интеграционный срез; не писать заново. Сделать persisted current MatchRun/state/config, immutable problem versions/checksum/rules, READY/RUNNING/PAUSED/FINALIZING, manual/both_ready, реальные get/config/ready/start API и run_match_clock/restart. Catalog в #14 — готовый порт; verified compiler нужен только для настоящего READY/start, test catalog допустим в tests.
+Pure clock #11 в develop; manual/both_ready/idempotent ready core #34 проверен в новой integration feature. Следующий срез: persisted current MatchRun/state/config, immutable problem versions/checksum/rules, READY/RUNNING/PAUSED/FINALIZING, реальные get/config/ready/start API и run_match_clock/restart. Catalog готов; verified compiler нужен для production READY/start, test catalog допустим в tests.
 
 CompetitionGatewayV1.authorize_submission/authorize_workspace: trusted actor/current run/membership/task/condition/time, strict deadline equality закрыта, active elapsed без пауз. Все DB решения в транзакции вызывающего submission service. До runtime adapter production fail closed. CONNECT A3 коротким срезом; если он ждёт — ledger и actions. M05/M06/P03; T07–09.
 
 ### P2-04 · feature/match-ledger-results · READY
 
-Pure score #13 проверен, не повторять. Реальный accepted-attempt ledger с unique submission_id и immutable server received/elapsed; register_accepted/apply_result по common v1, idempotent duplicate/out-of-order/SUPERSEDED. FINALIZING ждёт accepted pending results; инфраструктурный сбой не превращать в RE/WA или поражение. Additive failure sink помечает техническую проблему и разрешает восстановление/ручное вмешательство без автоматического победителя.
+Pure score #13 в develop; immutable accepted/result core #38 проверен в новой integration feature. Следующий срез: DB ledger с unique submission_id и immutable server received/elapsed; register_accepted/apply_result по common v1, atomic duplicate/out-of-order/SUPERSEDED. FINALIZING ждёт accepted pending; infrastructure failure требует отдельного sink и audited восстановления без автоматического победителя.
 
 Winner/downstream/event одной transaction либо согласованным durable outbox; full tie → новый run, старый score не переносится. Domain/DB tests с typed test receipts независимы от sandbox. CONNECT A3 queue/result/failure adapter. M05/M07/J04; T09/T10/T19.
 
 ### P2-05 · feature/match-admin-actions · READY для завершения уже начатого среза
 
-Pure guards из 8f5b762, 12 tests и suite runner включены в общий integration PR. Не создавать повторный helper PR; после sync develop делать persisted pause/resume/extend/technical/rematch/replacement. Trusted actor/reason/command receipts, idempotency, history/no-score-carry, atomic запрет изменения после started downstream. Пока runtime ждёт — guards/command store/tests. M08; T11/T20.
+Pure guards `8f5b762` в develop; intent/receipt idempotency core #41 проверен в новой integration feature. Следующий срез: persisted pause/resume/extend/technical/rematch/replacement, trusted actor/reason, durable command receipt/effects, history/no-score-carry, atomic запрет после started downstream. Пока runtime CONNECT ждёт — persistence transaction/API tests по typed snapshots. M08; T11/T20.
 
 ### P2-06 · feature/public-events-sse · READY
 
-**P2-06.1 приоритет:** #16 8340014 validator ошибочно требует SOLVED.lastVerdict==OK. OK→WA/CE сохраняют SOLVED, lastVerdict отражает последнюю попытку. Исправить validator без ослабления whitelist/privacy; score→event roundtrip tests, затем merge store slice.
+**P2-06.1 проверен в #16 `a0b1dcc`:** durable event store и score→event roundtrip OK→WA/CE сохраняют SOLVED с последним verdict. Whitelist/privacy сохранены. После integration MERGED следующий шаг P2-06.2/3.
 
 P2-06.2 EventWriter adapter/producers и durable snapshots с coherent lastEventId; P2-06.3 public HTTP/SSE/heartbeat/cursor/resync/connection caps/slow client. PublicAccessV1 A1 подключить отдельным CONNECT, event store/projector/transport tests писать сейчас. Если access adapter ещё отсутствует, public runtime не открывать. Source/email/CE никогда не public. V01–03/S02; T16/T17/T20.
 
@@ -114,9 +118,9 @@ JudgeProvider.execute(TrustedJudgeJob) загружает immutable version/chec
 
 ### P3-04 · feature/submission-queue-core → worker/connect · READY
 
-**P3-04.1 выполнен:** #15 `555ca0e` включает bounded retry всей transaction только busy/locked, исходный received_at и retryable 503. Координатор повторил 29/29 tests на файловой SQLite (разные/одинаковые keys, cap/ledger/event rollback). Core включён в текущую integration feature; после её merge продолжать P3-04.2–4, не повторять fix.
+**P3-04.1 в develop через #32:** #15 `555ca0e`, bounded admission retry/received_at/503. Новый #37 `d331927` проверен: worker loop/heartbeat/DB lease recovery/result+failure outboxes и common adapters; file-backed suite 49/49, combined backend 230 tests PASS. Доступность #37 — после integration MERGED.
 
-P3-04.2 actual run_judge_worker/loop/claim/lease/retry/outbox/restart/own orphan cleanup. P3-04.3 thin local MatchPort/AcceptedLedger/ResultSink adapters к CompetitionGatewayV1: extra local match_id остаётся на стороне queue, ResultApplication.applied преобразуется в bool; applied=false не означает delivery failure. LanguageRegistry совпадает. P3-04.4 trusted job version/checksum из immutable run snapshot; failure sink для exhausted infra jobs, чтобы pending ledger не висел навсегда без понятной технической причины. Никаких fake verdict.
+Остаток P3-04.2: production executor/factory и собственный container cleanup после process kill по доказанному owner/claim fencing. P3-04.3 adapters реализованы; нужен CONNECT реальных A2 providers. P3-04.4 technical failure outbox реализован; нужны common failure adapter/A2 sink и trusted version/checksum из immutable accepted run. Два конкретных contract requests в context/contracts/. DI/retry/outbox tests доступны независимо; runtime до providers отказывает.
 
 Core/recovery/adapter tests независимы от живого match provider; runtime CONNECT требует реальных A2 ports. Пока он ждёт — LocalJudge и drafts. J04/E03; T09/T14/T19/T20.
 

@@ -80,3 +80,24 @@ class ResultOutbox(models.Model):
     sent_at = models.DateTimeField(null=True, blank=True)
     last_error_code = models.CharField(max_length=64, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class InfrastructureFailureOutbox(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Ожидает публикации"
+        SENDING = "SENDING", "Публикуется"
+        SENT = "SENT", "Опубликована"
+
+    submission = models.OneToOneField(
+        Submission,
+        on_delete=models.PROTECT,
+        related_name="infrastructure_failure_outbox",
+    )
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.PENDING)
+    attempt_count = models.PositiveIntegerField(default=0)
+    available_at = models.DateTimeField(db_index=True)
+    lease_token = models.UUIDField(null=True, blank=True)
+    lease_until = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    last_error_code = models.CharField(max_length=64, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)

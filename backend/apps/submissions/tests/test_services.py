@@ -16,8 +16,8 @@ from backend.apps.submissions.errors import (
     SubmissionError,
     SubmissionNotFound,
 )
-from backend.apps.submissions.models import QueueCounter, ResultOutbox, Submission
-from backend.apps.submissions.ports import ResultReceipt, SubmissionPermit
+from backend.apps.submissions.models import InfrastructureFailureOutbox, QueueCounter, ResultOutbox, Submission
+from backend.apps.submissions.ports import InfrastructureFailureReceipt, ResultReceipt, SubmissionPermit
 from backend.apps.submissions.services import SubmissionService, _is_sqlite_lock_error, _reserve_capacity
 
 
@@ -72,6 +72,20 @@ class FakeResultSink:
             raise RuntimeError("result store unavailable")
         self.receipts.append(receipt)
         return True
+
+
+class FakeInfrastructureFailureSink:
+    """Test-only sink for technical failure receipts."""
+
+    def __init__(self, *, fail_once=False):
+        self.fail_once = fail_once
+        self.receipts: list[InfrastructureFailureReceipt] = []
+
+    def record_infrastructure_failure(self, receipt):
+        if self.fail_once:
+            self.fail_once = False
+            raise RuntimeError("failure store unavailable")
+        self.receipts.append(receipt)
 
 
 class SubmissionQueueTests(TestCase):
@@ -292,7 +306,7 @@ class SubmissionQueueTests(TestCase):
             self.assertIsNotNone(claim)
             state = SubmissionService.record_infrastructure_failure(
                 claim,
-                error_code="docker_unavailable",
+                error_code="private:diagnostic",
                 now=now + timedelta(milliseconds=1),
             )
             self.assertEqual(claim.attempt_count, attempt)
@@ -301,8 +315,91 @@ class SubmissionQueueTests(TestCase):
                 now = now + timedelta(seconds=2 ** (attempt - 1) + 2)
         record = Submission.objects.get(pk=accepted.id)
         self.assertEqual(record.status, Submission.Status.INFRA_FAILED)
+        self.assertEqual(record.internal_reason, "infrastructure_error")
         self.assertIsNone(record.verdict)
         self.assertEqual(QueueCounter.objects.get(scope_key="global").pending_count, 0)
+        outbox = InfrastructureFailureOutbox.objects.get(submission=record)
+        self.assertEqual(outbox.status, InfrastructureFailureOutbox.Status.PENDING)
+
+    def test_failure_outbox_retries_sink_and_recovers_an_expired_delivery_lease(self):
+        accepted = self.submit()
+        now = self.now + timedelta(seconds=1)
+        for attempt in range(1, 6):
+            claim = SubmissionService.claim_next(now=now, lease_seconds=60)
+            SubmissionService.record_infrastructure_failure(
+                claim,
+                error_code="judge_infrastructure_error",
+                now=now + timedelta(milliseconds=1),
+            )
+            if attempt < 5:
+                now += timedelta(seconds=2 ** (attempt - 1) + 2)
+
+        delivery_at = now + timedelta(seconds=1)
+        first = SubmissionService.claim_pending_infrastructure_failure(now=delivery_at, lease_seconds=1)
+        self.assertIsNotNone(first)
+        self.assertEqual(first.receipt.submission_id, accepted.id)
+        self.assertEqual(first.receipt.run_id, self.run_id)
+        self.assertEqual(first.receipt.reason_code, "judge_infrastructure_error")
+        self.assertFalse(first.receipt.retryable)
+
+        sink = FakeInfrastructureFailureSink(fail_once=True)
+        self.assertFalse(
+            SubmissionService.deliver_infrastructure_failure(first, sink=sink, now=delivery_at)
+        )
+        outbox = InfrastructureFailureOutbox.objects.get(submission_id=accepted.id)
+        self.assertEqual(outbox.status, InfrastructureFailureOutbox.Status.PENDING)
+        self.assertEqual(outbox.last_error_code, "failure_sink_failed")
+
+        retry_at = outbox.available_at
+        second = SubmissionService.claim_pending_infrastructure_failure(now=retry_at, lease_seconds=1)
+        self.assertIsNotNone(second)
+        reclaimed = SubmissionService.claim_pending_infrastructure_failure(
+            now=retry_at + timedelta(seconds=2),
+            lease_seconds=30,
+        )
+        self.assertIsNotNone(reclaimed)
+        self.assertNotEqual(second.lease_token, reclaimed.lease_token)
+        with self.assertRaises(StaleLease):
+            SubmissionService.deliver_infrastructure_failure(
+                second,
+                sink=sink,
+                now=retry_at + timedelta(seconds=2),
+            )
+
+        self.assertTrue(
+            SubmissionService.deliver_infrastructure_failure(
+                reclaimed,
+                sink=sink,
+                now=retry_at + timedelta(seconds=2),
+            )
+        )
+        outbox.refresh_from_db()
+        self.assertEqual(outbox.status, InfrastructureFailureOutbox.Status.SENT)
+        self.assertEqual(sink.receipts, [reclaimed.receipt])
+
+    def test_expired_final_worker_lease_creates_failure_outbox(self):
+        accepted = self.submit()
+        now = self.now + timedelta(seconds=1)
+        for attempt in range(1, 5):
+            claim = SubmissionService.claim_next(now=now, lease_seconds=60)
+            SubmissionService.record_infrastructure_failure(
+                claim,
+                error_code="judge_infrastructure_error",
+                now=now + timedelta(milliseconds=1),
+            )
+            now += timedelta(seconds=2 ** (attempt - 1) + 2)
+
+        final_claim = SubmissionService.claim_next(now=now, lease_seconds=1)
+        self.assertEqual(final_claim.attempt_count, 5)
+        recovered_at = now + timedelta(seconds=2)
+        self.assertEqual(SubmissionService.recover_expired_claims(now=recovered_at), 1)
+
+        record = Submission.objects.get(pk=accepted.id)
+        self.assertEqual(record.status, Submission.Status.INFRA_FAILED)
+        self.assertEqual(record.internal_reason, "worker_lease_expired")
+        self.assertIsNone(record.verdict)
+        outbox = InfrastructureFailureOutbox.objects.get(submission=record)
+        self.assertEqual(outbox.status, InfrastructureFailureOutbox.Status.PENDING)
 
     def test_result_outbox_survives_sink_failure_and_delivers_idempotent_receipt(self):
         self.submit()
