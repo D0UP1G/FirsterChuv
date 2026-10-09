@@ -1,18 +1,12 @@
 # Агент 2: сетка и live backend
 
-Перепланировано координатором 2026-10-09 по ROADMAP v2; старые A-ID — только исторические ссылки.
+Карточка объединена координатором при повторной ревизии 2026-10-09 по запросу команды. Собственные аудиты исполнителя сохранены.
 
-- Статус: `IN_PROGRESS` — P2-03.1 pure clock core; persisted lifecycle/start/clock command и MatchPort ещё впереди.
-- Исполнитель: Codex в роли агента 2.
-- Текущая задача/ветка/база: `P2-03.1` / `feature/match-clock-start` / актуальная `origin/develop` `d9488e3`. Срез опубликован в PR [#11](https://github.com/D0UP1G/FirsterChuv/pull/11), OPEN и ready for review; проверяемая remote ветка обновлена документирующим аудитом.
-- Рабочий checkout: `work/FirsterChuv-agent2-clock`.
-- Пути текущего среза: `backend/apps/competition/domain/clock.py`, `backend/apps/competition/tests/test_clock.py`, эта карточка и аудит.
-- P2-01: bracket algorithm/ORM/generation/read slice опубликован в PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7), HEAD `1952244`, OPEN/ready/CLEAN; штатная suite 58 passed, migration check чистый.
-- Выполнено в P2-03.1: aware UTC timestamps, elapsed ms без учёта pause intervals, READY→RUNNING, pause/resume arithmetic, строгий `< deadline` admission, idempotent RUNNING→FINALIZING, validation времени/параметров; 12 pure unit tests прошли до sync.
-- Дорожка: P2-02 persistence/lifecycle HTTP, P2-03 clock/start, P2-04 scoring/ledger, P2-05 admin actions, P2-06 events/SSE. Pure clock/score/event store разрешены без ожидания judge/importer/UI.
-- Следующий шаг: завершить merge актуальной develop и публикацию проверяемого P2-03.1 slice; затем расширить clock/start state machine по `match.json` с immutable task/rule config и `manual`/`both_ready`. DB MatchRun wiring требует merge P2-01 и отсутствующие MatchRun lifecycle fields.
-- Порты: использовать `ProblemCatalogV1.describe_ready`, `CompetitionGatewayV1.authorize_submission/register_accepted/apply_result`, `EventWriter` только по v1. Отсутствующий runtime provider должен fail closed; test catalog допустим только в tests.
-- Владеет: `backend/apps/competition/`, `backend/apps/events/`, собственными migrations/tests; общие настройки и другие apps не менять без разрешённого узкого wiring.
-- Последние аудиты: [P2-03.1 review handoff](../audits/2026-10-09T170351+0300-agent-2-P2-03-clock-ready.md), [P2-03.1 publication](../audits/2026-10-09T170300+0300-agent-2-P2-03-clock-publication.md), [clock core sync](../audits/2026-10-09T170108+0300-agent-2-P2-03-clock-core.md), исходный [clock core audit](../audits/2026-10-09T164411+0300-agent-2-A2-02-clock-domain.md). Следующее действие — расширить pure lifecycle/startMode по P2-03, сохраняя PR #11 отдельным.
+- В feature/mvp-integration-review-2 собраны pure clock PR #11 (28d6cda) и scoring PR #13 (19bbf88). Это проверенные малые срезы, до интеграции общего PR не являются кодом develop.
+- PR #7 (1952244) остаётся открытым: archived/running/completed допускают generate/reset/pairing. Нужен lifecycle guard и regression до merge.
+- PR #16 (8340014) остаётся открытым: SOLVED с lastVerdict WA после OK ошибочно отвергается; contract v1 допускает этот результат.
+- Pure admin guards опубликованы в feature/match-admin-actions (8f5b762), отдельный PR пока отсутствует. ORM/HTTP/idempotency/event effects этим не реализованы.
+- Следующие задачи: исправления #7/#16, затем persisted MatchRun/clock/API, CompetitionGatewayV1 ledger/results, public snapshots/SSE. Pure core не заменяет этот runtime.
+- При зависимости продолжать следующую доступную задачу в своей зоне, оставлять WAITING_CONNECT только у конкретного подключения. Не завершать дорожку из-за отсутствия judge/UI.
 
-Разделять implementation, integration и full acceptance. Общий `context/STATE.md` обновляет координатор после merge.
+[ROADMAP](../../ROADMAP.md), [v1](../../docs/architecture/parallel-contracts.md). Итог интеграции проверяется по GitHub MERGED и свежим refs; далее карточка будет дополнена общим планом ревизии.
