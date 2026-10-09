@@ -54,3 +54,10 @@
 - [Оригинальный sync audit](../audits/2026-10-10T000400+0300-agent-2-P2-02-1-develop-sync.md) сохранён без изменений. Исторический source card доступен в ancestry f300150.
 - Автор продолжает независимый P2-06.2 в собственной event feature во время review #7. Прежние readiness/ledger/command checkpoints этой карточки сохранены.
 - Код P2-01/P2-02.1 уже в develop через MERGED #44 (03a4636); текущий coordinator closeout объединяет поздний source sync и audit. После его MERGED обновить свою ветку из fresh develop и продолжить готовый подпункт.
+
+## P2-02.2 current completion
+
+- Implemented manual first-round pairings and bracket reset HTTP commands with frozen participant mapping, actor/reason validation, CSRF/admin protection, idempotency replay, conflicting-intent `409`, lifecycle guards, atomic receipt persistence, and SQLite lock retry.
+- Added migration `competition.0002_bracketcommandreceipt`, API/domain regression coverage, and same-key concurrency coverage.
+- Verification on this branch: targeted bracket API plus persistence tests `23 passed`; same-key concurrency test `1 passed`; full backend suite `237 passed, 2 skipped`; Django system check clean; migration drift check clean; `git diff --check` clean.
+- Branch includes fresh `origin/develop` sync at merge commit `7815160`; P2-02.2 implementation remains ready to publish as a follow-up PR after merged PR #7.
