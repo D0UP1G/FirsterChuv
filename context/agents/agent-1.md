@@ -2,20 +2,14 @@
 
 Карточку перепланировал координатор по запросу команды 2026-10-09; это наблюдаемый статус и назначения, не новая рабочая сессия владельца.
 
-- Реализация: bootstrap/auth/roles/tournament/roster срезы A1-01/02/03 интегрированы PR #2/#5/#8; state sync #4/#6/#9 merged; документационная ревизия #10 merged.
-- Приёмка: полные T01/T02/T03/T05/T20 ещё открыты; координатор повторил 37 backend tests на develop 146b2cb до PR #10.
-- Текущая задача: **P1-01 IN_REVIEW**, `feature/tournament-invites`; [PR #12](https://github.com/D0UP1G/FirsterChuv/pull/12) открыт в `develop`.
-- База перед edits: исходная ветка создана от `146b2cb64a6273472c2de9cae04bfad21acd1782`; fetched `origin/develop=d9488e3bf960c6a2248fd4399ba5848a091b8769` влит merge commit `23dcd02e1f519dd4064d33956f60daf7ec932658`; до изменений дерева код проверен на этом synced HEAD.
-- Текущие пути: `backend/apps/tournaments/{models,migrations,serializers,services,views,urls,tests}.py`, `backend/config/settings.py` (preview throttle), `docs/architecture/{api,data-model,parallel-contracts,security}.md`, `docs/{requirements.md,quality/mvp-acceptance.md}`, эта карточка и аудит.
-- Малые шаги: P1-01.1 модели/ограничения/create-list-revoke; P1-01.2 public preview + authenticated accept; P1-01.3 атомарность use/roster-cap/repeat/race; P1-01.4 сверка M02/T04, аудит и PR.
-- [x] P1-01.1 Invite/InviteAcceptance models, migration, create/list/revoke и hashed-token boundary.
-- [x] P1-01.2 Anonymous rate-limited preview и authenticated participant accept после register/login.
-- [x] P1-01.3 Atomic maxUses + roster cap/freeze + idempotency; DB/API concurrency regression tests.
-- [x] P1-01.4 Проверить M02/S02/T04, обновить API/data/security acceptance docs и записать аудит.
-- Проверки P1-01: `makemigrations --check --dry-run` — без drift; 10 invite/concurrency tests и полный backend suite (47 tests) прошли; `compileall` и `git diff --check` без ошибок. T04/S02 целиком всё ещё не приняты; см. audit.
-- Очередь: P1-01 приглашения → P1-02 CI/короткие подключения → P1-03 proxy/share access → P1-04 Compose → P1-05 release gate.
-- Если ждёт интеграция: делать CI/proxy/Compose; не ждать весь A2/A3/A4. STATE sync не блокирует начало задачи.
-- Исторические подтверждения: [A1-03 review](../audits/2026-10-09T154714+0300-agent-1-A1-03-4-case-cross-check.md), [integration](../audits/2026-10-09T155025+0300-agent-1-A1-03-integration-state-sync.md), PR #8/#9.
-- Следующий шаг: провести merge PR #12 merge commit-ом после проверки; затем обновить integrated STATE отдельным GitFlow sync-срезом и начать P1-02 в отдельной feature-ветке от актуального `origin/develop`. Не открывать заново merged STATE PR #9.
+- Реализация: bootstrap/auth/roles/tournament/roster интегрированы PR #2/#5/#8; state sync #4/#6/#9, roadmap #10 и invites P1-01 #12 merged.
+- Интеграция P1-01: merge commit `cad34ea4ddf1171779dc22139f2e1533160b5015` в `develop`; PR #12 head `a0b3252904d684855d55d8d1ca163e64ed861f2c`. Полные T01/T02/T03/T04/T05/T20 всё ещё открыты.
+- Текущая задача: **P1-02 IN_PROGRESS**, `feature/platform-ci-contracts`; финальная сверка новых PR #15/#16 и контрактных форм перед публикацией.
+- База перед edits: актуальный `origin/develop=cad34ea4ddf1171779dc22139f2e1533160b5015`; отдельная feature-ветка создана от этого SHA. Новые open refs проверены read-only.
+- Текущие пути: `.github/workflows/{ci.yml,sandbox-real-smoke.yml}`, `backend/apps/common/{contracts.py,tests.py}`, `backend/apps/tournaments/tests.py` (стабилизация race-assertion P1-01, найденной полным CI прогоном), `contracts/mvp-v1/schemas.json`, `scripts/{check_contracts.py,check_contract_imports.py,check_domain_suites.py}`, `pyproject.toml`, `uv.lock`, `context/STATE.md`, эта карточка, `docs/architecture/parallel-contracts.md`, GitFlow/quality docs и отдельный аудит сверки.
+- Малые шаги P1-02: .1 синхронизировать STATE по подтверждённому PR #12 и обновить наблюдаемый список open refs; .2 CI для Django checks/tests/migration drift с отдельным sandbox-unit шагом без real-Docker подмены; .3 formal fixture schemas/checker и shared typed v1 ports без imports отсутствующих apps; .4 сверить PR #13–#16: локальные receipts/ResultSink в PR #15 требуют narrow adapter к неизменённому v1 при CONNECT, `LanguageRegistry.is_supported` совпадает с добавленным общим port; PR #16 event store пока без production EventWriter adapter. Не менять v1 required fields/semantics без version/migration plan; race-тест допускает только одно принятие и второй `invite_unavailable` либо bounded `database_busy`; сверить D02/S01/S02/T20 partial, записать аудит и PR.
+- Очередь: P1-02 CI/contracts → P1-03 proxy/share access → P1-04 Compose → P1-05 release gate; P1-01 browser CONNECT остаётся у P4-02.
+- Аудиты P1-02: [реализация CI и контрактов](../audits/2026-10-09T174100+0300-agent-1-P1-02-ci-contracts.md), [сверка PR #15/#16 и финальные проверки](../audits/2026-10-09T175107+0300-agent-1-P1-02-contract-refresh.md).
+- Следующий шаг: опубликовать feature → develop, дождаться четырёх GitHub CI jobs, слить merge commit и обновить integrated STATE; P1-03 пока не начинать по текущему поручению.
 
 План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.

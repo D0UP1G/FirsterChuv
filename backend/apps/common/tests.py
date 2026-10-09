@@ -1,4 +1,7 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -9,6 +12,19 @@ from backend.apps.common.api import CamelCaseJSONRenderer, exception_handler
 
 
 class APIContractTests(TestCase):
+    def test_common_ports_import_without_optional_domain_apps(self):
+        repository_root = Path(__file__).resolve().parents[3]
+        result = subprocess.run(
+            [sys.executable, str(repository_root / "scripts/check_contract_imports.py")],
+            cwd=repository_root,
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("without optional domain apps", result.stdout)
+
     def test_health_is_minimal_and_correlatable(self):
         response = self.client.get("/health")
 
