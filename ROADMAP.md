@@ -4,9 +4,9 @@
 
 ## На каком этапе проект
 
-Актуализация при разблокировании A3 2026-10-09: #20 уже MERGED; sandbox/clock/score/catalog/admin guards находятся в develop. React/auth/admin/participant workspace/spectator UI slices #22/#24/#27/#28/#29 тоже MERGED, как и новые regression tests #30. Parser fix #25 MERGED отдельно. Проверенные #15 queue/#23 LocalJudge/#26 admin catalog объединены в `feature/agent-3-merge-unblock`; доступны в develop после MERGED её integration PR. Состояние merge — GitHub и [STATE](context/STATE.md).
+Актуализация при разблокировании A3 2026-10-09: #20 уже MERGED; sandbox/clock/score/catalog/admin guards находятся в develop. React/auth/admin/participant workspace/spectator UI slices #22/#24/#27/#28/#29 тоже MERGED, как и regression tests #30/#31. Parser fix #25 MERGED отдельно. Проверенные #15 queue/#23 LocalJudge/#26 admin catalog объединены в [integration PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32); доступны в develop после MERGED этого PR. Состояние merge — GitHub и [STATE](context/STATE.md).
 
-Сквозной MVP ещё не готов: нужны persisted run/gateway/ledger/runtime, actual worker и HTTP/SSE CONNECT. #7 получил опубликованный lifecycle fix на `1a2b54a`, его актуальная версия ещё не интегрирована; #16 ждёт исправления SOLVED.lastVerdict. У #21 найден SQLite CAS race, конкретная READY задача P3-05.1 ниже. Official package/README не получены. Процент готовности по количеству helper-файлов не рассчитывается.
+Сквозной MVP ещё не готов: нужны persisted run/gateway/ledger/runtime, actual worker и HTTP/SSE CONNECT. #7 получил опубликованный lifecycle fix на `1a2b54a`, его актуальная версия ещё не интегрирована; #16 обновлён до `6eac91f`, новый head требует review перед merge (старый B03 относится к `8340014`). У #21 найден SQLite CAS race, конкретная READY задача P3-05.1 ниже. Official package/README не получены. Процент готовности по количеству helper-файлов не рассчитывается.
 
 ## Как работать без остановки на зависимости
 

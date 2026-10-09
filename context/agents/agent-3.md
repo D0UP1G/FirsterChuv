@@ -9,6 +9,7 @@
 - Следующие независимые READY: P3-02.2 normalized upload/import status management (parser #25 уже доступен), P3-04.2 actual worker/lease/recovery/result outbox, P3-05.1 CAS race #21. Не писать заново уже проверенные queue/catalog/LocalJudge cores.
 - WAITING_CONNECT ограничен конкретными подпунктами: production A2 gateway/ledger/result/failure sink, version/checksum workspace contract. До подключения использовать DI/test-only ports; runtime fail-closed. Если один подпункт ждёт — в той же сессии продолжать следующую READY задачу. P3-06 отдельно WAITING_EXTERNAL на official package.
 - Полная приёмка MVP/browser/hostile/restart не закрыта. Подробности проверки и передачи: [новый аудит](../audits/2026-10-09T224851+0300-coordinator-agent-3-unblock.md).
+- Integration PR [#32](https://github.com/D0UP1G/FirsterChuv/pull/32): первый объединённый head прошёл 4/4 CI; fresh A4 #31 сохранён до merge, повтор CI на обновлённом head. [Publication checkpoint](../audits/2026-10-09T230104+0300-coordinator-agent-3-publication.md). После `MERGED` не ждать дополнительный STATE/ответ соседнего автора для уже READY import/worker/CAS fix.
 
 ## Исторические checkpoint публикаций
 

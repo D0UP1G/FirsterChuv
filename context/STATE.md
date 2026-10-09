@@ -1,8 +1,10 @@
 # Состояние проекта при разблокировании агента 3
 
-Снимок 2026-10-09, Europe/Moscow. На старте текущей проверки develop `13cd2d4` (#29); после отдельно подтверждённого merge #25 — `ed14416fee0d1cccbd0b9a202e563d49f062572a`; перед публикацией синхронизирован свежий develop `8c6836b` (#30 A4). Main `e9fc0ef` остаётся bootstrap. PR #20 уже MERGED: sandbox/clock/score/catalog/admin guards в develop. Также MERGED frontend #22/#24/#27/#28/#29/#30.
+Снимок 2026-10-09, Europe/Moscow. На старте проверки develop `13cd2d4` (#29); #25 отдельно MERGED `ed14416`; перед публикацией включён A4 #30 `8c6836b`, перед итоговым merge — A4 #31 `b9c25cb`. Main `e9fc0ef` остаётся bootstrap. PR #20 MERGED: sandbox/clock/score/catalog/admin guards в develop. Также MERGED frontend #22/#24/#27/#28/#29/#30/#31.
 
 В `feature/agent-3-merge-unblock` обычными merge commits объединены проверенные #26 `435cef7` admin catalog, #15 `555ca0e` queue race fix и #23 `942b4f5` LocalJudge. До MERGED её integration PR эти три среза находятся в проверенной feature; после MERGED доступны в develop. Исходные feature refs, аудиты и frontend/карточка активного A4 сохранены. Не ждать ещё одного STATE PR после подтверждённого code merge. [Аудит и конкретные следующие задачи](audits/2026-10-09T224851+0300-coordinator-agent-3-unblock.md).
+
+Integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) опубликован; первый head получил 4/4 CI PASS, после fresh #31 финальные checks повторяются. [Publication checkpoint](audits/2026-10-09T230104+0300-coordinator-agent-3-publication.md). Этот текст — checkpoint перед операцией; фактический MERGED/remote refs определяют доступность кода.
 
 ## Что есть и чего нет
 
@@ -17,15 +19,15 @@
 | Normalized catalog | develop #20/#25; admin catalog #26 в текущей feature | Normalized import/status API, verified compiler/workspace HTTP/official adapter |
 | Bracket ORM/API | #7 обновлён до 1a2b54a, fix опубликован; не включён в эту проверку A3 | Review нового lifecycle fix, потом full reset/pairing HTTP |
 | Queue core | #15 555ca0e в текущей feature; SQLite race исправлен, 29 file-backed tests pass | Actual worker/provider/result+failure adapters, runtime CONNECT |
-| Event store | #16 8340014 не включён: SOLVED.lastVerdict B03 | Fix OK→WA, producers/access/snapshots/SSE |
+| Event store | #16 обновлён до 6eac91f; новая версия вне текущего A3 review | Проверить новый head; исторический B03 относится к 8340014; producers/access/snapshots/SSE CONNECT |
 | Admin guards | develop #20, 8f5b762 | Pure guards; настоящие command store/effects/HTTP отсутствуют |
 | LocalJudge | #23 942b4f5 в текущей feature; real Docker/synthetic bundle OK | Worker deployment/readiness, verified compiler, official checker protocol |
 | Private drafts | #21 1706ecf OPEN: воспроизведён CAS busy→500 | P3-05.1 bounded retry/revision conflict/503 перед merge |
-| Frontend | develop #22/#24/#27/#28/#29/#30, UI P4-01–05 + regression tests | Текущий A4 browser/API CONNECT по endpoint, full acceptance |
+| Frontend | develop #22/#24/#27/#28/#29/#30/#31, UI P4-01–05 + regression tests | Текущий A4 browser/API CONNECT по endpoint, full acceptance |
 | Official package/README | Не получены | Только adapter/final official acceptance WAITING_EXTERNAL |
 | Full one-command demo/release | Не готовы | R1→R2→R3; main не релиз |
 
-Текущая проверка: 150 backend tests PASS с 2 ожидаемыми skips после одного записанного P1 concurrency FAIL; отдельно 29 file-backed submissions, 9 strict fixtures/common import, 36 domain и 15 sandbox unit PASS; migration drift нет. Fresh frontend #30: 16 files / 63 tests и TypeScript/Vite build PASS. На отдельном свежем image #23: 5 actual sandbox smoke, task limit 100 ms/64 MiB и 1 real LocalJudge smoke PASS. Production image/tag и compiler readiness не менялись; официальный/полный hostile/browser T01–21 acceptance не закрыт. GitHub CI и publication записываются в новом аудите.
+Текущая проверка: 150 backend tests PASS с 2 ожидаемыми skips после одного записанного P1 concurrency FAIL; отдельно 29 file-backed submissions, 9 strict fixtures/common import, 36 domain и 15 sandbox unit PASS; migration drift нет. Fresh frontend #31: 16 files / 64 tests и TypeScript/Vite build PASS. На отдельном свежем image #23: 5 actual sandbox smoke, task limit 100 ms/64 MiB и 1 real LocalJudge smoke PASS. Production image/tag и compiler readiness не менялись; официальный/полный hostile/browser T01–21 acceptance не закрыт. GitHub CI и publication записаны в publication checkpoint.
 
 ## Следующая работа одновременно
 
