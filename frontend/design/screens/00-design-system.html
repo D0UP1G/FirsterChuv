@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — дизайн-система</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+</style>
+</head>
+<body>
+<div class="app-frame" style="width: 1440px; min-height: 2240px; padding: 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 48px; font-family: 'Space Mono', monospace; color: #e6fbff">
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; border-bottom: 1px solid rgba(0,229,255,0.22); padding-bottom: 32px">
+    <div>
+      <p class="eyebrow"><span class="live-dot"></span> BRANDBOOK &amp; DESIGN SYSTEM v2.0</p>
+      <h1 class="ba-h1" style="font-size: 64px">BLITZ<span class="brand-accent">_</span>ARENA</h1>
+      <p class="ba-lede" style="font-size: 16px">SPEED PROGRAMMING PLATFORM // ВЗЛОМАЙ СИСТЕМУ ЗА 20 МИНУТ</p>
+    </div>
+    <p class="ba-mono-muted" style="max-width: 360px; text-align: right">Marathon / Cyberpunk. Матовый чёрный, кислотный неон, тех-сетка. Каждый элемент несёт прикладной смысл.</p>
+  </header>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="ba-h2">01 · Палитра</h2>
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+      <div class="ba-panel" style="padding: 0">
+        <div style="height: 120px; background: #000000; border-bottom: 1px solid rgba(0,229,255,0.22)"></div>
+        <div style="padding: 12px"><b class="ba-h3">Primary Void</b><p class="ba-mono-muted">#000000 · фон</p></div>
+      </div>
+      <div class="ba-panel" style="padding: 0">
+        <div style="height: 120px; background: #ccff00"></div>
+        <div style="padding: 12px"><b class="ba-h3">Toxic Acid</b><p class="ba-mono-muted">#CCFF00 · активные элементы, заголовки</p></div>
+      </div>
+      <div class="ba-panel" style="padding: 0">
+        <div style="height: 120px; background: #00ff66"></div>
+        <div style="padding: 12px"><b class="ba-h3">Toxic Acid OK</b><p class="ba-mono-muted">#00FF66 · [BREACHED] [OK]</p></div>
+      </div>
+      <div class="ba-panel" style="padding: 0">
+        <div style="height: 120px; background: #ff3333"></div>
+        <div style="padding: 12px"><b class="ba-h3">Alarm Red</b><p class="ba-mono-muted">#FF3333 · ошибки, [LOCKED], критический таймер</p></div>
+      </div>
+      <div class="ba-panel" style="padding: 0">
+        <div style="height: 120px; background: rgba(0,229,255,0.10); border-bottom: 1px solid #00e5ff"></div>
+        <div style="padding: 12px"><b class="ba-h3">Tech Grid</b><p class="ba-mono-muted">#00E5FF · полупрозрачные подложки карточек и полей</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="ba-h2">02 · Типографика</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+      <div class="ba-panel ba-frame">
+        <p class="ba-kicker">Orbitron · заголовки</p>
+        <p style="font-family: Orbitron, sans-serif; font-size: 40px; font-weight: 800; text-transform: uppercase">Матч 1 × 1</p>
+        <p class="ba-mt-5 ba-kicker">Rajdhani · интерфейс</p>
+        <p style="font-family: Rajdhani, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase">Запустить матч · Пауза · Продлить</p>
+      </div>
+      <div class="ba-panel ba-frame">
+        <p class="ba-kicker">Space Mono · основной текст</p>
+        <p style="font-size: 16px">Задачи решаются в любом порядке. Позиция на карте — подтверждённое число решённых задач.</p>
+        <p class="ba-mt-5 ba-kicker">VT323 · код, консоль, таймеры</p>
+        <p class="ba-timer">17:42</p>
+        <p style="font-family: VT323, monospace; font-size: 22px; color: #8fb3ba">&gt; submission.judged  B  [WA]</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="ba-h2">03 · Кнопки и поля</h2>
+    <div class="ba-panel" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center">
+      <button class="button" type="button">Создать турнир</button>
+      <button class="button button-outline" type="button">Смотреть турниры</button>
+      <button class="button button-quiet" type="button">Обновить</button>
+      <button class="button text-danger" type="button">Отозвать</button>
+      <button class="button" type="button" disabled="disabled">Недоступно</button>
+      <button class="button" type="button"><span class="ba-command">EXECUTE_DUMP</span></button>
+      <a class="text-link" href="#">Текстовая ссылка ↗</a>
+    </div>
+    <div class="ba-panel form-grid">
+      <label class="form-field"><span>Название турнира</span><input value="Блиц 2026"></label>
+      <label class="form-field"><span>Запуск</span><select><option>Вручную</option><option>Готовность обоих</option></select></label>
+      <label class="form-field has-error"><span>Лимит участников</span><input value="1"><small class="field-error">Минимум 2 участника</small></label>
+      <label class="form-field"><span>Равенство в финале</span><input value="Переигровка" disabled="disabled"></label>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="ba-h2">04 · Статусы — теги терминала</h2>
+    <div class="ba-table-wrap">
+      <table class="ba-table">
+        <thead><tr><th>Группа</th><th>Вид</th><th>Источник в API</th></tr></thead>
+        <tbody>
+          <tr><td>Узлы задач</td><td style="display: flex; gap: 8px; flex-wrap: wrap"><span class="ba-tag ba-tag-breached">BREACHED</span><span class="ba-tag ba-tag-active">ACTIVE</span><span class="ba-tag ba-tag-locked">LOCKED</span></td><td class="ba-mono-muted">SOLVED → BREACHED · NOT_STARTED/ATTEMPTED → ACTIVE · до старта матча → LOCKED</td></tr>
+          <tr><td>Вердикты</td><td style="display: flex; gap: 8px; flex-wrap: wrap"><span class="ba-tag ba-tag-ok">OK</span><span class="ba-tag ba-tag-wa">WA</span><span class="ba-tag ba-tag-tl">TL</span><span class="ba-tag ba-tag-ml">ML</span><span class="ba-tag ba-tag-re">RE</span><span class="ba-tag ba-tag-ce">CE</span></td><td class="ba-mono-muted">verdict: OK | WA | TL | ML | RE | CE</td></tr>
+          <tr><td>Проверка</td><td style="display: flex; gap: 8px; flex-wrap: wrap"><span class="ba-tag ba-tag-queued">QUEUED</span><span class="ba-tag ba-tag-running">RUNNING</span><span class="ba-tag ba-tag-infra">СБОЙ ПРОВЕРКИ</span></td><td class="ba-mono-muted">status: QUEUED | RUNNING | INFRA_FAILED (не ошибка участника)</td></tr>
+          <tr><td>Матч</td><td style="display: flex; gap: 8px; flex-wrap: wrap"><span class="ba-tag ba-tag-neutral">WAITING</span><span class="ba-tag ba-tag-active">READY</span><span class="ba-tag ba-tag-live">RUNNING</span><span class="ba-tag ba-tag-neutral">PAUSED</span><span class="ba-tag ba-tag-queued">FINALIZING</span><span class="ba-tag ba-tag-ok">FINISHED</span><span class="ba-tag ba-tag-warn">TIED</span></td><td class="ba-mono-muted">match.status</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 class="ba-h2">05 · Состояния экрана</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+      <div class="state-card" role="status"><span class="spinner" aria-hidden="true"></span>Загружаем зрительскую карту…</div>
+      <div class="state-card state-card-error" role="alert"><span>Не удалось загрузить матч.</span><button class="text-button" type="button">Повторить</button></div>
+      <div class="spectator-reconnect-banner" role="alert"><span>Соединение потеряно. Данные могут быть устаревшими.</span><button class="text-button" type="button">Перезагрузить снимок</button></div>
+      <div class="empty-state"><h3 class="ba-h3">Турниров пока нет</h3><p>Создайте первый турнир — он появится в этом списке.</p></div>
+    </div>
+    <div class="ba-panel ba-frame" style="display: flex; justify-content: space-between; align-items: center; gap: 24px">
+      <div>
+        <p class="eyebrow" style="color: #ff3333">404 · NODE NOT FOUND</p>
+        <p class="ba-h1">Похоже, вы свернули не туда.</p>
+      </div>
+      <a class="button" href="#">Вернуться на главную</a>
+    </div>
+  </section>
+</div>
+</body>
+</html>

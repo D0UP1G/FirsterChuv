@@ -145,3 +145,7 @@ Target response `{error: {code, message, fields?}, requestId}`. 400/422 — не
 DRF по умолчанию имеет собственный формат/особенности 401/403; агент 1 нормализует его явно. Message отображается как text, не HTML. Private responses `Cache-Control: no-store`. Admin writes, extension и rematch имеют command idempotency key, чтобы сетевой retry не повторял действия.
 
 Role permission проверяется вместе с ownership/run state. Зарегистрированный participant другого турнира не имеет private доступа; known UUID не даёт право submit. Для changes whitelist serializer fields, нельзя mass-assign role/score/createdBy/winner из обычного DTO. Source/Markdown/URL всегда недоверенные данные.
+
+## Уточнение и текущие маршруты после новой ревизии 2026-10-10
+
+#50 реализует admin PUT /tournaments/{id}/bracket/pairings и POST /tournaments/{id}/bracket/reset с reason и Idempotency-Key; прочие match/config/ready/start/admin effects routes остаются target до production implementation. #21 private draft CAS исправлен, endpoint требует real WorkspaceAccess: GET /matches/{id}/problems/{problemId}/draft?runId=...&languageId=...; missing record404, PUT body прежний. [Selector принят координатором](../../context/contracts/2026-10-10-mvp-boundaries.md). Объединённые code slices доступны только после MERGED integration PR; полная browser/system acceptance отдельно.

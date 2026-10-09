@@ -57,6 +57,32 @@ jobs:
       - name: Run backend suite
         run: uv run --locked python manage.py test
 
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v6.3.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Run frontend typecheck
+        run: npm run typecheck
+      - name: Run frontend lint
+        run: npm run lint
+      - name: Run frontend tests
+        run: npm test -- --maxWorkers=1
+      - name: Build frontend
+        run: npm run build
+
   domain:
     name: domain
     runs-on: ubuntu-latest

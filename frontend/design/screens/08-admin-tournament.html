@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — управление турниром</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.ba-cols{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.ba-col-main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.ba-col-side{flex:1 1 400px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.seed-input{width:80px;min-height:40px;padding:6px 8px;border:1px solid rgba(0,229,255,.22);background:rgba(0,229,255,.05);color:#e6fbff}
+.invite-url-row{display:flex;gap:8px}
+.invite-url-row input{flex:1;min-width:0}
+.directory-controls{display:flex;gap:8px}
+.directory-controls input{flex:1;min-width:0}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/admin/tournaments/:tournamentId" data-api="GET|PATCH /api/v1/tournaments/{id} · …/participants · …/invites · GET /api/v1/admin/users · GET /api/v1/problems">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация">
+      <a class="nav-link" href="#">Зрителям</a>
+      <a class="nav-link" href="#">Кабинет</a>
+      <a class="nav-link active" href="#">Организатору</a>
+    </nav>
+    <div class="account-nav"><span class="account-name">Организатор</span><span class="role-pill role-admin">организатор</span><button class="button button-quiet button-small" type="button">Выйти</button></div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="page-section management-page">
+      <div class="breadcrumbs"><a href="#">Турниры</a><span>/</span><span>Блиц 2026</span></div>
+      <div class="management-heading">
+        <div>
+          <p class="eyebrow">CONTROL ROOM // ТУРНИР · DRAFT</p>
+          <h1>Блиц 2026</h1>
+          <p class="page-lede">5 из 16 участников · состав не заморожен · public</p>
+        </div>
+        <div class="management-actions">
+          <button class="button button-quiet" type="button">Обновить</button>
+          <a class="button" href="#">Сетка и матчи</a>
+        </div>
+      </div>
+
+      <div class="ba-tabs" role="tablist" aria-label="Разделы турнира">
+        <button class="ba-tab" role="tab" type="button" aria-selected="true">Участники</button>
+        <button class="ba-tab" role="tab" type="button" aria-selected="false">Приглашения</button>
+        <button class="ba-tab" role="tab" type="button" aria-selected="false">Задачи</button>
+        <button class="ba-tab" role="tab" type="button" aria-selected="false">Параметры</button>
+      </div>
+
+      <div class="ba-cols">
+        <div class="ba-col-main">
+          <section class="management-panel" aria-labelledby="roster-heading">
+            <div class="panel-heading"><div><h2 id="roster-heading">Состав участников</h2><p>Посев — целое число, уникальное в турнире. Пустой посев встаёт в конец.</p></div><span class="meta-pill">5 / 16</span></div>
+            <div class="ba-table-wrap">
+              <table class="ba-table">
+                <thead><tr><th>Посев</th><th>Участник</th><th>Статус</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td><label class="ba-sr-only" for="seed-1">Посев Ира</label><input id="seed-1" class="seed-input" value="1"></td><td><b>Ира</b></td><td><span class="ba-tag ba-tag-ok">ACTIVE</span></td><td style="text-align: right"><button class="button button-quiet button-small" type="button">Сохранить посев</button> <button class="button button-small text-danger" type="button">Снять</button></td></tr>
+                  <tr><td><label class="ba-sr-only" for="seed-2">Посев Максим</label><input id="seed-2" class="seed-input" value="2"></td><td><b>Максим</b></td><td><span class="ba-tag ba-tag-ok">ACTIVE</span></td><td style="text-align: right"><button class="button button-quiet button-small" type="button">Сохранить посев</button> <button class="button button-small text-danger" type="button">Снять</button></td></tr>
+                  <tr><td><label class="ba-sr-only" for="seed-3">Посев Алина</label><input id="seed-3" class="seed-input" value="3"></td><td><b>Алина</b></td><td><span class="ba-tag ba-tag-ok">ACTIVE</span></td><td style="text-align: right"><button class="button button-quiet button-small" type="button">Сохранить посев</button> <button class="button button-small text-danger" type="button">Снять</button></td></tr>
+                  <tr><td><label class="ba-sr-only" for="seed-4">Посев Денис</label><input id="seed-4" class="seed-input" value=""></td><td><b>Денис</b></td><td><span class="ba-tag ba-tag-ok">ACTIVE</span></td><td style="text-align: right"><button class="button button-quiet button-small" type="button">Сохранить посев</button> <button class="button button-small text-danger" type="button">Снять</button></td></tr>
+                  <tr><td class="ba-mono-muted">—</td><td style="color: #5d7c82"><b>Олег</b></td><td><span class="ba-tag ba-tag-neutral">REMOVED</span></td><td></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="ba-banner ba-banner-alarm ba-mt-4" role="alertdialog" aria-label="Снятие участника Денис"><span>Снять Дениса с турнира? Запись сохранится как REMOVED.</span><button class="button button-small text-danger" type="button">Снять</button><button class="button button-quiet button-small" type="button">Отмена</button></div>
+          </section>
+
+          <section class="management-panel" aria-labelledby="problems-heading">
+            <div class="panel-heading"><div><h2 id="problems-heading">Задачи</h2><p>Импорт официального пакета. Закрытые тесты и чекеры в интерфейсе не показываются.</p></div><button class="button button-small" type="button">Импортировать пакет</button></div>
+            <div class="ba-table-wrap">
+              <table class="ba-table">
+                <thead><tr><th>Задача</th><th>Версия</th><th>Готовность</th><th>Комментарий</th></tr></thead>
+                <tbody>
+                  <tr><td>[Задача A из пакета]</td><td class="ba-mono-muted">v1 · sha256…</td><td><span class="ba-tag ba-tag-ok">READY</span></td><td class="ba-mono-muted">—</td></tr>
+                  <tr><td>[Задача B из пакета]</td><td class="ba-mono-muted">v1 · sha256…</td><td><span class="ba-tag ba-tag-ok">READY</span></td><td class="ba-mono-muted">—</td></tr>
+                  <tr><td>[Задача C из пакета]</td><td class="ba-mono-muted">v1 · sha256…</td><td><span class="ba-tag ba-tag-locked">NOT_READY</span></td><td style="color: #ff3333">Компилятор не подтверждён</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="ba-col-side">
+          <section class="management-panel" aria-labelledby="directory-heading">
+            <div class="panel-heading"><div><h2 id="directory-heading">Найти участника</h2><p>Каталог показывает только имя, без e-mail.</p></div></div>
+            <form class="directory-controls search-form"><label class="ba-sr-only" for="dir-q">Имя участника</label><input id="dir-q" class="ba-input" value="Ан"><button class="button button-small" type="submit">Найти</button></form>
+            <ul class="directory-results ba-mt-3" style="list-style: none; padding: 0">
+              <li class="directory-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed rgba(0,229,255,.10)"><span class="directory-name">Анна</span><button class="button button-quiet button-small" type="button">Добавить</button></li>
+              <li class="directory-row" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0"><span class="directory-name">Антон</span><button class="button button-quiet button-small" type="button">Добавить</button></li>
+            </ul>
+          </section>
+
+          <section class="management-panel ba-frame" aria-labelledby="invites-heading">
+            <div class="panel-heading"><div><h2 id="invites-heading">Приглашения</h2><p>Ссылка показывается один раз — сразу при создании.</p></div></div>
+            <form class="invite-controls form-grid">
+              <label class="form-field"><span>Действует до</span><input type="datetime-local" value="2026-10-12T18:00"></label>
+              <label class="form-field"><span>Лимит активаций</span><input type="number" min="1" value="10"></label>
+              <div class="form-field-wide"><button class="button button-small" type="submit">Создать ссылку</button></div>
+            </form>
+            <div class="ba-mt-4 invite-result success-panel">
+              <p class="ba-kicker">Новая ссылка — скопируйте сейчас</p>
+              <div class="invite-url-row ba-mt-2"><label class="ba-sr-only" for="invite-url">Ссылка-приглашение</label><input id="invite-url" class="ba-input" readonly="readonly" value="https://[домен]/invites/[token]"><button class="button button-small" type="button">Копировать</button></div>
+            </div>
+            <ul class="invite-list ba-mt-4" style="list-style: none; padding: 0">
+              <li class="invite-row" style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px dashed rgba(0,229,255,.10)"><span class="ba-mono-muted">до 12.10 18:00 · 3 / 10</span><span class="invite-status ba-tag ba-tag-ok">ACTIVE</span><button class="button button-small text-danger" type="button">Отозвать</button></li>
+              <li class="invite-row" style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 0"><span class="ba-mono-muted">до 08.10 18:00 · 2 / 5</span><span class="invite-status ba-tag ba-tag-locked">REVOKED</span><span></span></li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

@@ -1,6 +1,19 @@
 # Агент 2: сетка и live backend
 
+## Назначение координатора 2026-10-10T01:11:53+03:00: Настоящий матч и результат
+
+- Источник: прямое поручение команды перераспределить оставшийся MVP и создать нового frontend owner. Это текущее назначение; прежние author checkpoints ниже сохранены как история.
+- Статус назначения: READY; фактический IN_PROGRESS выставляет владелец при начале edits в своём изолированном checkout.
+- Первое действие: исправить проверенные #57–59 (0073fbd/1f3fae5/latest9eb394c): SQLite read→write/full bounded retry, exact-command replay, revoke/reopen downstream после разрешённого rematch. Participant snapshot/late old result fix уже есть в latest9eb394c — сохранить; file-backed tests. PR только в develop, после #50 база доступна без переписывания веток. Persistence cores уже написаны, не повторять. Затем P2-03 get/config/start/ready + production gateway/snapshot, по одному endpoint.
+- Независимый резерв: HTTP serializers/permissions для config/start/ready, P2-04 durable failure sink/finalization/promotion, P2-05 API/replacement. #58 accepted/result и #59 actions исправлять по конкретным замечаниям [review](../../docs/reviews/2026-10-10-mvp-readiness.md), не реализовывать повторно.
+- Владение: competition/models/services/migrations/tests; events переданы A4.
+- Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
+- [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
+
+
 Перепланировано координатором по поручению команды 2026-10-09; audit history владельца сохранена.
+
+- Коррекция аудита P2-03: короткий ref `6320b4b` раскрывается в `6320b4bb75a0dbc5284946cb0161cb1842d15847`; две исходные записи не переписывались. См. [коррекционный аудит](../audits/2026-10-10T002548+0300-agent-2-P2-03-base-sha-correction.md).
 
 - Проверены/integration feature: pure clock #11 28d6cda и score #13 19bbf88, по 12 tests. Доступность в develop — после MERGED общего integration PR; cores не заменяют persistence/API.
 - Первое READY P2-02.1: fix #7 1952244 generate/reset/pairings только draft/scheduled, SQLite transactional lifecycle guard + regression. Ordinary registration/rank/import уже готовы. Затем merge #7 и P2-02.2 HTTP/idempotency/reason/full pairings.
@@ -10,7 +23,7 @@
 - Пути: competition/events, свои migrations/tests; common wiring кратким CONNECT. При sync сохранить all app registrations, CI и чужие audits.
 - Runtime без реального catalog/access provider отказывает. Full T05–11/T16–17/T19–20 не пройдены; own cards/audits фиксируют implementation/integration/acceptance отдельно.
 - P2-06.1 correction опубликована в PR #16 на `a0b1dcc`; checks прошли, PR OPEN/CLEAN. Изменение пока не интегрировано в develop.
-- Статус: `IN_PROGRESS` — P2-03 pure readiness/start policy для `manual` и `both_ready`; ветка `feature/match-ready-gate`, база синхронизирована merge из `origin/develop` `6320b4b51ef2e053c1e9ce81349d4480be85f9d4`.
+- Статус: `IN_PROGRESS` — P2-03 pure readiness/start policy для `manual` и `both_ready`; ветка `feature/match-ready-gate`, база синхронизирована merge из `origin/develop` `6320b4bb75a0dbc5284946cb0161cb1842d15847`.
 - Пути текущего независимого среза: `backend/apps/competition/domain/start_policy.py`, тесты в `backend/apps/competition/tests/test_clock.py`, эта карточка и audit. Pure clock #11 повторно не реализуется.
 - Граница: закрыть идемпотентную ready policy и auto-start обоих игроков для `both_ready`; не добавлять persistence/API. `Match`/`MatchRun` модели принадлежат незавершённому PR #7, поэтому ORM wiring продолжается после его интеграции.
 - Реализация: [P2-03 readiness gate, PR #34](https://github.com/D0UP1G/FirsterChuv/pull/34), latest head `fba94a28aabbfd773e025e9ee626dc11b8326994`, OPEN/CLEAN; четыре CI check прошли.
@@ -54,3 +67,19 @@
 - [Оригинальный sync audit](../audits/2026-10-10T000400+0300-agent-2-P2-02-1-develop-sync.md) сохранён без изменений. Исторический source card доступен в ancestry f300150.
 - Автор продолжает независимый P2-06.2 в собственной event feature во время review #7. Прежние readiness/ledger/command checkpoints этой карточки сохранены.
 - Код P2-01/P2-02.1 уже в develop через MERGED #44 (03a4636); текущий coordinator closeout объединяет поздний source sync и audit. После его MERGED обновить свою ветку из fresh develop и продолжить готовый подпункт.
+
+## P2-02.2 current completion
+
+- Implemented manual first-round pairings and bracket reset HTTP commands with frozen participant mapping, actor/reason validation, CSRF/admin protection, idempotency replay, conflicting-intent `409`, lifecycle guards, atomic receipt persistence, and SQLite lock retry.
+- Added migration `competition.0002_bracketcommandreceipt`, API/domain regression coverage, and same-key concurrency coverage.
+- Verification on this branch: targeted bracket API plus persistence tests `23 passed`; same-key concurrency test `1 passed`; full backend suite `237 passed, 2 skipped`; Django system check clean; migration drift check clean; `git diff --check` clean.
+- Branch includes fresh `origin/develop` sync at merge commit `7815160`; P2-02.2 implementation remains ready to publish as a follow-up PR after merged PR #7.
+
+## Current publication closeout (2026-10-10)
+
+- P2-02.2 manual pairing/reset API is published in [PR #50](https://github.com/D0UP1G/FirsterChuv/pull/50).
+- P2-03 base-SHA audit correction is published in [PR #51](https://github.com/D0UP1G/FirsterChuv/pull/51).
+- P1-02.6 frontend CI is published in [PR #52](https://github.com/D0UP1G/FirsterChuv/pull/52).
+- P2-06.2 durable public snapshots is published in [PR #53](https://github.com/D0UP1G/FirsterChuv/pull/53), latest head `fd79038`.
+- P3-05.1 draft CAS retry is already included in open [PR #21](https://github.com/D0UP1G/FirsterChuv/pull/21), latest head `620f58e`, with four successful CI checks.
+- Next independent implementation remains P2-03 persisted runtime; P2-06.3 public HTTP/SSE stays gated on PublicAccessV1.
