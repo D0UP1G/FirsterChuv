@@ -21,7 +21,7 @@
 | Toxic Acid `#CCFF00` | `--ba-acid` | Активные элементы, основная кнопка, границы выбранного, акцент заголовков, таймер |
 | Toxic Acid `#00FF66` | `--ba-acid-ok` | Успех: `[BREACHED]`, `[OK]`, победитель, LIVE |
 | Alarm Red `#FF3333` | `--ba-alarm` | `[WA] [TL] [ML] [RE] [CE]`, `[LOCKED]`, критический таймер (меньше 60 с), опасные действия |
-| Tech Grid `#00E5FF` | `--ba-grid*` | Полупрозрачные подложки карточек и полей, линии каркаса, фоновая сетка 48 px |
+| Tech Grid `#00E5FF` | `--ba-grid*` | Полупрозрачные подложки карточек и полей, линии каркаса, тех-сетка 24 px внутри карточек |
 | Space Mono | `--ba-font-base` | Основной текст |
 | Orbitron / Rajdhani | `--ba-font-display` / `--ba-font-ui` | Заголовки / кнопки, вкладки, подписи полей |
 | VT323 | `--ba-font-terminal` | Код, логи, лента событий, таймеры, счёт |
@@ -30,6 +30,15 @@
 `https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=VT323&display=swap`.
 
 Брендбук не задаёт цвет основного текста. Взят светлый оттенок Tech Grid `--ba-text: #e6fbff` и приглушённые `--ba-text-muted` / `--ba-text-dim` с контрастом не ниже 4.5:1 на чёрном. Углы прямые (`--ba-radius: 0`); угловые засечки терминала — класс `ba-frame`.
+
+### Тех-сетка
+
+Фон страницы — чистый `#000000` без сетки. Сетка (`--ba-grid-pattern`, шаг `--ba-grid-step: 24px`) рисуется только внутри элементов, раздел 15 `blitz.css`:
+
+- **есть:** карточки и панели (`ba-panel`, `management-panel`, `workspace-panel`, `auth-card`, `dashboard-card`, `invite-preview-card`, `tournament-card`, `spectator-match-card`, `empty-state`, `success-panel`, `workspace-conflict`), условие задачи `workspace-statement-panel`, колонка сетки турнира `spectator-bracket`, сцена проектора `spectator-page-projector`; для нового блока — класс `ba-grid`;
+- **нет:** фон страницы, шапка, подвал, поля ввода, кнопки, теги, редактор кода, баннеры и строки состояния, внутренние чёрные блоки (примеры, ячейки задач, строки таблиц).
+
+Правило сетки стоит в конце файла. Цвет подложки компонентам задавать через `background-color`: shorthand `background` в инлайновом стиле сотрёт сетку.
 
 ## Статусы: брендбук ↔ API
 
