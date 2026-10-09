@@ -12,4 +12,16 @@
 - Исторические аудиты: [harness](https://github.com/D0UP1G/FirsterChuv/blob/feature/sandbox-proof/context/audits/2026-10-09T140224+0300-agent-3-A3-01c.md), [publication](https://github.com/D0UP1G/FirsterChuv/blob/feature/sandbox-proof/context/audits/2026-10-09T143912+0300-agent-3-A3-01-pr.md).
 - Следующий шаг: sync develop, собственные IN_PROGRESS/branch/base/paths; устранить F01/F07 и перепроверить реальные контейнеры. Отсутствующий adapter/provider в runtime всегда fail closed.
 
+## Текущая сессия: P3-04
+
+- ID задачи: `P3-04`; статус: `IN_PROGRESS`.
+- Ветка: `feature/submission-queue-core`; база `origin/develop`: `cad34ea4ddf1171779dc22139f2e1533160b5015`; исходный HEAD: `cad34ea4ddf1171779dc22139f2e1533160b5015`.
+- Пути в работе: `backend/apps/submissions/`, `backend/config/settings.py`, разрешённая регистрация `backend/apps/common/api_urls.py`, эта карточка и отдельный аудит.
+- Объём: private source/submission storage, idempotent bounded admission через обязательные injected ports, SQLite conditional claim/lease/retry/recovery и durable result outbox. HTTP/runtime без настоящих ports не принимать.
+- Ограничения: provider/CompetitionGateway/EventWriter не реализованы в develop; тестовые adapters будут только в изолированных tests. Не менять чужие apps/branches и общий `context/STATE.md`.
+- Реализовано в этой feature-сессии: admission + private author API, idempotency/hash, глобальная/авторская/матчевая capacity, rate limit, leases/renewal/recovery/backoff и ResultSink outbox; приложение и routes зарегистрированы штатно. Production POST без ports отвечает 503.
+- Проверки feature worktree: `backend.apps.submissions` — 19 tests; полный backend — 66 tests; Django check, migration drift, compileall и diff check прошли. Реальный judge, HTTP 202 на настоящих MatchPort adapters и browser/hostile acceptance не запускались.
+- Текущий статус: реализация готова к публикации; задача остаётся `IN_PROGRESS`, пока нет PR в `develop`. `context/STATE.md` не менялся.
+- Следующий шаг: merge свежего `origin/develop` в эту ветку при необходимости, открыть PR в `develop`, затем отметить P3-04 `IN_REVIEW` отдельным publication audit. После готовности P2-03/04 и P3-03 выполнить runtime CONNECT.
+
 План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
