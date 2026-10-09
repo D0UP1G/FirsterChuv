@@ -118,6 +118,25 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .ba-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ba-space-3); }
 .ba-section + .ba-section { margin-top: var(--ba-space-7); }
 
+/* ---------- 3b. Вложенность текста ----------
+ * Уровень 0 (по краю): надзаголовок, заголовки, подписи, теги, кнопки, поля.
+ * Уровень 1 (+24 px и линия Tech Grid): текст под своим заголовком — лид, описания, абзацы, списки, лента.
+ * Уровень 2 (ещё +24 px): вложенное в текст первого уровня — списки внутри описания, диагностика попытки. */
+:root { --ba-indent: 24px; --ba-indent-rule: 2px solid var(--ba-grid-line); }
+.ba-indent-1,
+.page-lede, .ba-lede, .panel-heading p,
+:where(h1, h2, h3, h4, .ba-h1, .ba-h2, .ba-h3) ~ :where(p, ul, ol):not(.ba-kicker, .card-kicker, .eyebrow, .ba-h1, .ba-h2, .ba-h3, .ba-indent-0),
+.ba-copy > :where(p, ul, ol):not(.ba-kicker, .card-kicker, .ba-h1, .ba-h2, .ba-h3, .ba-indent-0),
+.problem-statement > :not(h1, h2, h3, h4, .ba-kicker),
+.ba-feed, .workspace-history-list, .field-help, .field-error {
+  padding-left: calc(var(--ba-indent) - 2px);
+  border-left: var(--ba-indent-rule);
+}
+.ba-indent-2, .ba-copy > :where(ul, ol), .workspace-history-item .workspace-diagnostics { margin-left: var(--ba-indent); }
+:where(ul, ol).ba-list, .ba-copy > :where(ul, ol) { padding-left: calc(var(--ba-indent) + 16px); }
+.ba-indent-0 { padding-left: 0; border-left: 0; margin-left: 0; }
+@media (max-width: 760px) { :root { --ba-indent: 12px; } }
+
 /* Утилиты отступа сверху — только из шкалы, вместо инлайновых margin */
 .ba-mt-1 { margin-top: var(--ba-space-1); }
 .ba-mt-2 { margin-top: var(--ba-space-2); }
