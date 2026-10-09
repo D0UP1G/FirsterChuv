@@ -1,5 +1,14 @@
 # Координатор: ревизия и параллельный план
 
+## Новая ревизия и передача frontend, 2026-10-10T01:01:49+03:00
+
+- Статус: IN_PROGRESS. Прямой запрос команды: проверить исправленные/новые PR, сверить кейс и roadmap, создать нового владельца frontend и распределить остаток MVP.
+- Ветка: feature/mvp-readiness-handoff; база origin/develop cc204e62a060eb2ceb16067a1b0693a2e083d9ab.
+- Scope: exact heads #21/#50/#51/#52/#53/#54/#55, новые author audits и source case. Готовые PR сохраняются ordinary merge commits через проверенную integration feature.
+- Планируемые пути: ROADMAP.md, AGENTS.md, context/PROJECT.md, context/STATE.md, context/agents/README.md и карточки с явным coordinator handoff, новый frontend owner card, новые audits/review report/operations handoff. Runtime source только из проверенных PR; shared registration conflicts — union без потери apps.
+- Чужие checkout/feature refs не переключать, не переписывать и не удалять. Работа новых владельцев — изолированные checkout; frontend handoff не требует повторной реализации готового UI.
+- Проверки и финальные статусы будут записаны после фактического результата; сквозной MVP заранее не объявляется готовым.
+
 ## Завершение слияний после PR #44, 2026-10-10
 
 - Статус: IN_REVIEW; ветка feature/mvp-review-closeout от develop 03a463650828774d5767e086a69183f83c38006b.
