@@ -5,7 +5,8 @@
 - Задача: corrective slice P2-06.1 по Agent 2 card и ROADMAP v3.
 - Ветка: `feature/public-events-sse`, существующий [PR #16](https://github.com/D0UP1G/FirsterChuv/pull/16), base `develop`.
 - База: свежий `origin/develop` `ed14416fee0d1cccbd0b9a202e563d49f062572a`, интегрирован merge commit `a26df6d`.
-- Статус: реализация и локальные проверки завершены; публикация correction в PR #16 — следующий шаг.
+- Статус: correction опубликована в существующий PR #16; CI успешен, merge не выполнялся.
+- Implementation commit: `2f6cac1be920fdb563d354479ea56f2a21386589`.
 
 ## Цель и требования
 
@@ -35,3 +36,7 @@ Scoring core считает задачу `SOLVED` после первого `OK`
 Этот slice чинит сериализацию authoritative score event, но сам по себе не подтверждает V01–03/S02/T16/T17/T20 полностью. Producers, `PublicAccessV1`, coherent snapshots, anonymous HTTP/SSE transport, replay/resync/backpressure и browser acceptance остаются отдельными задачами P2-06.
 
 Следующий шаг: зафиксировать correction вместе с этим audit, запушить существующую ветку через настроенный GitHub CLI credentials, обновить описание PR #16 и проверить GitHub status checks. Не создавать второй PR и не вливать PR без отдельного решения.
+
+## Публикация
+
+PR #16 обновлён через GitHub CLI и указывает новую семантику, tests и audit. На implementation head `2f6cac1` все GitHub checks прошли: `backend`, `contracts-and-common-imports`, `domain`, `sandbox-unit`; merge state `CLEAN`. PR оставлен открытым для review. Следующий шаг Agent 2 — ждать/обрабатывать review по #16, затем идти к P2-03 persisted MatchRun по порядку.
