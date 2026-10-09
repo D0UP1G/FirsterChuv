@@ -32,6 +32,8 @@ required_contracts = (
     "AttemptReceipt",
     "CompetitionGatewayV1",
     "EventWriter",
+    "InfrastructureFailureReceipt",
+    "InfrastructureFailureSink",
     "JudgeInfrastructureError",
     "JudgeProvider",
     "JudgeResult",
@@ -44,6 +46,8 @@ required_contracts = (
     "PublicAccessContext",
     "ResultApplication",
     "ResultReceipt",
+    "RunProblemSnapshot",
+    "RunProblemSnapshotProvider",
     "TrustedJudgeJob",
     "WorkspaceContext",
 )
