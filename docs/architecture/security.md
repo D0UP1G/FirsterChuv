@@ -4,6 +4,26 @@
 
 Текущая документация не означает, что защита уже реализована. Каждый контроль подтверждается в T18/T20 и аудите владельца.
 
+Develop 146b2cb содержит интегрированные account/roster срезы PR #5/#8: явную CSRF-защиту изменений аккаунта/турнира/roster, HttpOnly cookies сессии/CSRF, серверное назначение роли participant, ограничение частоты auth-запросов, admin-only tournament writes, roster API, conditional capacity updates, bounded retry SQLite locks и идемпотентный bracket freeze hook. `freeze_roster` перед фиксацией повторно проверяет active account и роль `participant` для каждой активной записи; deactivated/admin entrant блокирует создание сетки. `IsApplicationAdmin` не доверяет Django `is_staff`/`is_superuser`; неактивная учётная запись не проходит permission check. Строгие serializers отклоняют неизвестные и доступные только для чтения поля. Replacement после игры остаётся контролируемым действием A2. Private match ownership остаётся ответственностью A2/A3. Частичные тесты не закрывают T02/T20 целиком. DRF throttle cache пока process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
+
+### Частичные доказательства backend slices Agent 1
+
+Результаты ниже относятся к срезам Agent 1, интегрированным PR #5/#8; 37 backend tests повторены ревизией на develop 146b2cb. Полные T02/T03/T05/T20 в `docs/quality/mvp-acceptance.md` остаются `NOT_RUN` до интеграции с bracket runtime, browser/API проверки и проверки сыгравшего участника на реальном match history, а также полной security матрицы.
+
+| Проверка | Доказательство | Что остаётся вне результата |
+|---|---|---|
+| Регистрация всегда выдаёт `participant`; `role=admin` и неизвестные поля отклоняются | `AccountAuthenticationTests.test_register_requires_csrf_and_never_accepts_role_assignment` | Invite accept и полный путь регистрации по приглашению |
+| Анонимный запрос и participant не получают admin permission; inactive admin запрещён; Django staff flags не заменяют application role | `AccountAuthenticationTests.test_admin_permission_uses_application_role_and_active_state` | Это probe view, а не реальный tournament/admin write endpoint; нет object ownership/UUID IDOR checks |
+| Неизвестный email, неверный пароль и inactive account дают одинаковый login failure | `AccountAuthenticationTests.test_login_failure_is_generic_and_success_starts_private_session` | Browser/session matrix и downstream permission checks для реальных endpoint |
+| Auth mutations требуют CSRF, cross-origin registration отклоняется, session/private response не кэшируются | `AccountAuthenticationTests.test_register_requires_csrf_and_never_accepts_role_assignment`, `test_cross_origin_registration_is_rejected`, `test_csrf_token_is_http_only_and_me_requires_login` | Полный hostile browser suite на каждой будущей mutation и всех origins/proxy paths |
+| Bootstrap не принимает password option, не печатает secret, не повышает participant и не меняет существующий пароль | `CreateAdminCommandTests` | Production secret manager/host process review; лог/CI/runtime secret scans всей системы |
+| Tournament CRUD доступен только активному application admin, требует CSRF, проверяет даты/cap/format/visibility/config и отклоняет mass assignment | `TournamentAPITests.test_admin_can_create_list_read_and_patch_a_tournament`, `test_create_rejects_invalid_dates_cap_format_visibility_and_unknown_fields`, `test_admin_mutations_require_csrf_and_reject_mass_assignment` | Integrated PR #8 / A1-03.1; полного T03 и browser check нет |
+| Directory не раскрывает email; roster принимает только активного participant, соблюдает cap/seed, идемпотентно назначает и логически снимает; participant не читает чужой tournament UUID | `TournamentAPITests.test_admin_user_directory_is_minimal_active_participant_only_and_bounded`, `test_capacity_seed_uniqueness_and_active_participant_role_are_enforced`, `test_assign_is_idempotent_remove_is_logical_and_reassignment_reuses_entry`, `test_participant_reads_only_joined_tournaments_and_safe_roster_fields` | Integrated PR #8 / A1-03.2; нет параллельного invite accept и полного T05/browser check |
+| Параллельные assignment не превышают cap; freeze при assignment race содержит добавленного игрока либо отклоняет позднее добавление; внешний rollback bracket снимает freeze; неактивный/admin entrant не замораживается; после freeze API сохраняет строки и запрещает add/seed/remove | `RosterCapacityConcurrencyTests.test_simultaneous_assignments_never_exceed_capacity`, `RosterCapacityConcurrencyTests.test_assignment_racing_freeze_is_either_in_roster_or_rejected`, `RosterFreezeTests.test_outer_bracket_transaction_rollback_also_rolls_back_freeze`, `RosterFreezeTests.test_freeze_revalidates_active_account_and_participant_role`, `TournamentAPITests.test_roster_changes_are_rejected_after_freeze` | Integrated PR #8 / A1-03.3/.4; in-memory SQLite и нет реального A2 bracket runtime/browser acceptance или played Match history |
+| SQL/XSS/SSRF/archive/worker command attacks, source confidentiality и sandbox isolation | Нет account-slice доказательства для этих threat areas | Владелец/приёмка по A1/A3/A4 и полному T20 |
+
+Следовательно, текущие проверки дают частичные доказательства для `TEAM01`/`S02` и отдельных ветвей `T02`/`T20`, но не pass целого acceptance scenario.
+
 ## Границы доверия
 
 Недоверенные данные: HTTP body/query, UUID, email/displayName/description, source, custom stdin, Markdown/TeX/assets, архивы/manifest и remote import responses. Admin-only upload тоже валидируется. Исполняемый source всегда враждебен, даже если пользователь зарегистрирован.
@@ -34,7 +54,7 @@ Trusted API управляет состоянием, но не имеет Docker
 
 Password hashing штатным поддерживаемым Django hasher, а не собственной схемой. Login/register имеют rate limits и безопасные сообщения. Session cookie HttpOnly, Secure при HTTPS, SameSite; production DEBUG off, ALLOWED_HOSTS и trusted origins заданы. Logout инвалидирует session. Для локального HTTP исключение Secure только в dev settings, не в production.
 
-Application role admin не выдаёт Django superuser автоматически. Первичный admin создаётся management command без пароля в argv/Git/logs; использовать защищённое окружение/интерактивный ввод оператора. Public role promotion не существует. Деактивированный аккаунт не может submit/управлять.
+Application role admin не выдаёт Django superuser автоматически. `create_admin` создаёт первичный application admin с `is_staff=False` и `is_superuser=False`, запрашивает пароль без echo в TTY или читает его из `DJANGO_ADMIN_PASSWORD`, переданного через protected secret injection; пароль не является CLI argument и не выводится. Команда идемпотентна для существующего активного admin и не меняет его пароль; существующего participant она не повышает. Public role promotion не существует. Деактивированный аккаунт не может submit/управлять.
 
 CORS с credentials только для разрешённого origin; предпочтительно один origin через proxy. GET не меняет state. Login/register CSRF защищаются явно: DRF SessionAuthentication для анонимного запроса не заменяет эту меру. Private code/draft/diagnostics responses no-store, shared caches запрещены.
 
@@ -65,3 +85,9 @@ T18: infinite loop, memory exhaustion, process creation, network probe, host/sec
 T20: SQL/XSS/CSRF/SSRF/archive/command injection и обход ролей/UUID. Проверять server response, DB invariants и browser effect; отсутствие видимой ошибки само по себе не доказывает защиту. Записать фактические execution settings и ограничения платформы, а не утверждение «Docker полностью безопасен».
 
 Если Docker/isolation недоступны, запрещено временно выполнять participant code напрямую. Сохранить submission и показать infrastructure error. Перед release непройденные обязательные security checks блокируют заявление о готовности.
+
+## Граница supervisor protocol в sandbox
+
+Ревизия PR #3 выявила F01 (невалидный Docker PID flag) и F07: в diagnostic copy solution может писать в stdout управляющего процесса через `/proc/1/fd/1`; host launcher собирает PIPE до проверки cap. Пока это не исправлено и не проверено владельцем, harness не считается прошедшим real security gate. Parser отказывает при marker injection, успешная подделка verdict не установлена, unbounded flood не выполнялся.
+
+Нужны защита supervisor descriptors от solution и bounded host stream reading с kill/cleanup при overflow, включая compile/run stderr. Лимит файла `/work/program.stdout` не охватывает обходной канал. P3-01 требует bounded regression probe, resource recovery и normal job после отказа; результаты в [ревизии](../reviews/2026-10-09-repository-audit.md). Контейнерная граница и целостность протокола проверяются отдельно.

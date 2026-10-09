@@ -48,7 +48,7 @@ git worktree add ../firster-agent-4 -b feature/frontend-shell-auth origin/develo
 2. Заполнить отдельный audit и own card. Не менять общий integrated STATE для результата, которого ещё нет в develop.
 3. Commit с понятным scope, например `feat(competition): enforce match deadline`; docs — `docs: document MVP architecture`.
 4. Push только feature. PR base develop, description включает task IDs, requirement IDs, ссылку на audit, contract/migration changes, фактические проверки и ограничения.
-5. После review/checks merge commit; агент 1 проверяет интеграцию и обновляет STATE. Feature удаляется только после доказанного включения и сохранения нужной работы.
+5. После review/checks merge commit; координатор интеграции проверяет merge и обновляет STATE без блокирования следующей задачи. Feature удаляется только после доказанного включения и сохранения нужной работы.
 
 Использовать PR template. Не записывать токены в CLI/PR, multiline body передавать через файл или structured argument. Опубликованность подтверждать `git ls-remote`/PR, не только локальным commit.
 
@@ -58,4 +58,8 @@ git worktree add ../firster-agent-4 -b feature/frontend-shell-auth origin/develo
 
 Проверить теги/remote refs и demo URI после публикации. Если на время release develop продолжает получать новые функции, не переносить их в текущий release случайным merge всей develop. Hotfix main также возвращается в develop, чтобы дефект не появился в следующей версии.
 
-Branch protection/CI rules сейчас не подтверждены. Агент 1 может подготовить рекомендуемые правила для владельца: обязательный PR, checks и merge commits для main/develop. Наличие текста GitFlow не означает, что GitHub уже технически запрещает прямой push.
+Ревизия 2026-10-09: main/develop protected=false, configured checks отсутствуют. Агент 1 может подготовить рекомендуемые правила для владельца: обязательный PR, checks и merge commits для main/develop. Наличие текста GitFlow не означает, что GitHub уже технически запрещает прямой push.
+
+## Короткие срезы и актуальность
+
+ROADMAP v2 заменяет ожидание всей чужой задачи контрактами и отдельными CONNECT-шагами. CODE merge достаточно для следующей feature-задачи; отдельный STATE sync PR не prerequisite. Реализацию алгоритма можно review/merge отдельно от полной browser acceptance, сохранив честный scope. Перед продолжением PR #3/#7 владелец merge-ит актуальный develop в свою ветку, не делает rebase/force push. При конфликтах карточки сохранить актуальный план P-ID и собственное новое фактическое состояние, прежние аудиты не переписывать.

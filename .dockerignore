@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+!.env.example
+.data
+.cache
+.venv
+__pycache__
+*.py[cod]
+*.sqlite3*
+problem-packages
+submission-artifacts
+uploads
+frontend
+docs
+context

@@ -1,6 +1,6 @@
 # Компоненты и границы системы
 
-Командный стек: Django REST Framework, React, SQLite3. Для MVP предлагается один Django-проект с разделением ответственности на apps, один worker и собственная Docker-песочница. Все названия каталогов — план, исходного кода пока нет.
+Командный стек: Django REST Framework, React, SQLite3. Для MVP предлагается один Django-проект с разделением ответственности на apps, один worker и собственная Docker-песочница. Backend/common/accounts/tournaments уже integrated (PR #2/#5/#8); остальные компоненты — цель. Фактический снимок в context/STATE.md.
 
 ```mermaid
 flowchart LR
@@ -40,12 +40,13 @@ Domain service не зависит от DRF view/serializer: view проверя
 ## Контракты модулей
 
 - `MatchPort.assert_can_submit(user, matchId, problemId)` проверяет роль, слот, активный run, status и server deadline, возвращает runId/elapsedMs/scoring version. Проверка допуска и сохранение посылки выполняются согласованно в короткой транзакции; завершение матча не может обойти уже сохранённую допустимую посылку.
+- `backend.apps.tournaments.services.freeze_roster(tournament_id)` принадлежит агенту 1. Агент 2 вызывает его внутри внешнего `transaction.atomic()` bracket generation; сервис фиксирует roster и возвращает active entrants в canonical seed order. Любая ошибка дальнейшей генерации должна откатить тот же transaction, включая freeze.
 - `JudgeProvider.execute(job)` возвращает bounded result: verdict, compile diagnostics, execution metrics и internal reason. Его принимает только trusted worker, не browser.
 - `ResultService.record(submissionId, leaseToken, result)` проверяет актуальность job/run, идемпотентно завершает submission, обновляет score/finalizing и event в транзакции.
 - `EventWriter.append(scope, type, publicPayload)` пишет event в той же транзакции, что изменяемый state. При rollback event не виден.
 - `PublicProjection.snapshot(matchId)` формирует whitelist-представление без private code, email, tests и compiler logs.
 
-Интерфейсы фиксируются в A1-01 вместе с владельцами. Они описывают собственную платформу, не непроверенные методы внешнего API.
+Базовые Protocol уже добавлены A1-01; уточнённые порты, accepted ledger и независимые consumers задаёт [parallel-contracts v1](parallel-contracts.md). Они описывают собственную платформу, не непроверенные методы внешнего API.
 
 ## SQLite и очередь
 

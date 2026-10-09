@@ -1,6 +1,6 @@
 # Документация FirsterChuv
 
-Документы описывают будущую архитектуру. Реализация не начата; готовность подтверждается кодом и приёмкой, а не этими файлами. Подтверждённый стек: Django REST Framework + React, SQLite3, собственная песочница.
+Документы задают контракты и приёмку. На проверенном develop 146b2cb есть backend, auth и tournament/roster/freeze; open PR #3/#7 ещё не integrated. Полного MVP нет. Сверять факты с STATE и [ревизией PR](reviews/2026-10-09-repository-audit.md); [ROADMAP v2](../ROADMAP.md) заменяет старые блокирующие зависимости.
 
 | Документ | Что в нём |
 |---|---|
@@ -12,6 +12,7 @@
 | [Данные](architecture/data-model.md) | Сущности, ограничения и индексы |
 | [Сценарии](architecture/user-flows.md) | Регистрация, администратор, участник, зритель |
 | [Матч и сетка](architecture/match-engine.md) | Состояния, таймер, правила результата, вмешательства |
+| [Контракты параллельной работы](architecture/parallel-contracts.md) | DTO/порты/атомарные границы и fixtures v1 |
 | [API](architecture/api.md) | REST, права и контракты |
 | [Проверка кода](architecture/judging.md) | Собственный judge, очередь, sandbox, импорт |
 | [События](architecture/realtime.md) | SSE и безопасные публичные DTO |
