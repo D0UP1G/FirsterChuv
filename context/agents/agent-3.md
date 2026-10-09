@@ -23,6 +23,19 @@
 - Следующий шаг: дождаться merge PR #15 в `develop`; затем обновить эту ветку обычным `git merge origin/develop`, проверить собственный diff и опубликовать PR строго в `develop`. После публикации главный READY execution приоритет — P3-03 LocalJudge; P3-04.3–4 продолжить после него/по доступности A2 adapter и snapshot. До публикации PR #15 не создавать дублирующий stacked PR.
 - Handoff-сверка: [`2026-10-09T214821+0300-agent-3-P3-04.2-handoff-correction.md`](../audits/2026-10-09T214821+0300-agent-3-P3-04.2-handoff-correction.md) уточняет порядок из аудита реализации по ROADMAP v3.
 
+## Текущая сессия: P3-04.3 · queue adapters к common v1
+
+- ID задачи: `P3-04.3`; статус: `IN_PROGRESS`.
+- Ветка: `feature/submission-worker`; HEAD на старте `38ed3bef68fab79085200a0bda8570be2830f1c3`; последний проверенный `origin/develop=c5682dd657969b699e22b8a2815b5247ad5a1553`.
+- Ветка уже содержит локальную queue dependency из PR #15 и предыдущий P3-04.2; чужие worktree/ветки не редактируются. По прямому указанию команды не сливать `origin/develop` или чужие feature branches.
+- Планируемые пути: `backend/apps/submissions/adapters.py`, adapter tests, submissions README, эта карточка и отдельные start/implementation audits. Shared contracts/settings/Compose и миграции не менять.
+- Срез: адаптировать local queue receipts/ports к common `CompetitionGatewayV1`, `EventWriter`, `LanguageRegistry`, `ResultSink`; `match_id` остаётся local-only, common DTO exact shape сохраняется, `ResultApplication.applied=False` считается успешно доставленным receipt.
+- Настоящих A2 production providers ещё нет; адаптеры не создают fallback/fake runtime и не включаются в factory. Не менять открытые PR #15/#16/#21/#23/#25/#26.
+- Стартовый аудит: [`2026-10-09T220323+0300-agent-3-P3-04.3-start.md`](../audits/2026-10-09T220323+0300-agent-3-P3-04.3-start.md).
+- Реализация: exact common `AttemptReceipt`/`ResultReceipt` mapping (local-only `match_id` не утекает), permit conversion, EventWriter/LanguageRegistry forwarding, `ResultApplication.applied` mapping; `applied=False` проверено end-to-end как успешная outbox delivery. Изменены `submissions/adapters.py`, tests и README; shared contract files/config не менялись.
+- Проверки: submissions suite 46/46 PASS на файловой SQLite; Django checks, compileall, migration drift check и `git diff --check` PASS. Runtime A2 providers не запускались.
+- Implementation audit: [`2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md`](../audits/2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md). Статус остаётся `IN_PROGRESS` до разрешённой интеграции/PR; user instructed not to merge branches.
+
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
 
 ## Текущая сессия: P3-04.1 / admission race

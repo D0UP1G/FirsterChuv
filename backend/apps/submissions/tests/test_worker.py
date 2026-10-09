@@ -8,7 +8,8 @@ from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from backend.apps.accounts.models import User
-from backend.apps.common.contracts import JudgeInfrastructureError, JudgeResult
+from backend.apps.common.contracts import JudgeInfrastructureError, JudgeResult, ResultApplication
+from backend.apps.submissions.adapters import ResultSinkAdapter
 from backend.apps.submissions.errors import IntegrationUnavailable
 from backend.apps.submissions.factory import get_submission_worker
 from backend.apps.submissions.models import QueueCounter, ResultOutbox, Submission
@@ -122,6 +123,24 @@ class SubmissionWorkerTests(TransactionTestCase):
         self.assertEqual(len(self.executor.submissions), 1)
         self.assertEqual(Submission.objects.get(pk=second.id).status, Submission.Status.QUEUED)
         self.assertEqual(Submission.objects.get(pk=first.id).status, Submission.Status.FINISHED)
+
+    def test_superseded_result_application_is_successful_outbox_delivery(self):
+        class SupersededGateway:
+            def apply_result(self, receipt):
+                return ResultApplication(applied=False)
+
+        accepted = self.submit()
+        self.worker.run_once(now=self.now + timedelta(seconds=1))
+        result_worker = SubmissionWorker(
+            service=self.service,
+            executor=self.executor,
+            result_sink=ResultSinkAdapter(SupersededGateway()),
+        )
+
+        iteration = result_worker.run_once(now=self.now + timedelta(seconds=2))
+
+        self.assertEqual(iteration.action, WorkerAction.RESULT_DELIVERED)
+        self.assertEqual(ResultOutbox.objects.get(submission_id=accepted.id).status, ResultOutbox.Status.SENT)
 
     def test_typed_judge_infrastructure_error_retries_without_verdict(self):
         accepted = self.submit()
