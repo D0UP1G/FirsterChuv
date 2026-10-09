@@ -185,4 +185,44 @@ describe('auth API client', () => {
     expect(new Headers(pauseInit?.headers).get('Idempotency-Key')).toBe('command-pause-1')
     expect(JSON.parse(String(pauseInit?.body))).toEqual({ reason: 'Технический перерыв' })
   })
+
+  it('loads and saves private drafts with revision fields and submits with a durable idempotency key', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20', source: 'int main() {}', revision: 2, updatedAt: '2026-10-09T17:00:00Z' }))
+      .mockResolvedValueOnce(jsonResponse({ csrfToken: 'csrf-workspace' }))
+      .mockResolvedValueOnce(jsonResponse({ runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20', source: 'int main() { return 0; }', revision: 3, updatedAt: '2026-10-09T17:01:00Z' }))
+      .mockResolvedValueOnce(jsonResponse({ submissionId: 'submission-1', runId: 'run-1', status: 'QUEUED', verdict: null, receivedAt: '2026-10-09T17:02:00Z', elapsedMs: 120000 }))
+
+    const existing = await api.draft('match A', 'problem/1', 'run-1', 'cpp20')
+    const saved = await api.saveDraft('match A', 'problem/1', 'cpp20', { runId: 'run-1', source: 'int main() { return 0; }', expectedRevision: existing.revision })
+    const receipt = await api.submitSolution('match A', {
+      runId: 'run-1', problemId: 'problem/1', languageId: 'cpp20', source: saved.source,
+    }, 'retry-key-1')
+
+    expect(existing.revision).toBe(2)
+    expect(saved.revision).toBe(3)
+    expect(receipt.submissionId).toBe('submission-1')
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+
+    const [draftUrl, draftInit] = fetchMock.mock.calls[0]
+    expect(draftUrl).toBe('/api/v1/matches/match%20A/problems/problem%2F1/draft?runId=run-1&languageId=cpp20')
+    expect(draftInit?.method).toBeUndefined()
+    expect(draftInit?.cache).toBe('no-store')
+
+    const [saveUrl, saveInit] = fetchMock.mock.calls[2]
+    expect(saveUrl).toBe('/api/v1/matches/match%20A/problems/problem%2F1/draft?languageId=cpp20')
+    expect(saveInit?.method).toBe('PUT')
+    expect(new Headers(saveInit?.headers).get('X-CSRFToken')).toBe('csrf-workspace')
+    expect(JSON.parse(String(saveInit?.body))).toEqual({ runId: 'run-1', source: 'int main() { return 0; }', expectedRevision: 2 })
+
+    const [submitUrl, submitInit] = fetchMock.mock.calls[3]
+    expect(submitUrl).toBe('/api/v1/matches/match%20A/submissions')
+    expect(submitInit?.method).toBe('POST')
+    expect(new Headers(submitInit?.headers).get('X-CSRFToken')).toBe('csrf-workspace')
+    expect(new Headers(submitInit?.headers).get('Idempotency-Key')).toBe('retry-key-1')
+    expect(JSON.parse(String(submitInit?.body))).toEqual({
+      runId: 'run-1', problemId: 'problem/1', languageId: 'cpp20', source: 'int main() { return 0; }',
+    })
+  })
 })

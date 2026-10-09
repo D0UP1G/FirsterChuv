@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router'
 import { ApiError, type UserRole } from './api/client'
 import { AuthProvider } from './auth/AuthContext'
@@ -10,6 +10,8 @@ import { AdminTournamentPage } from './pages/AdminTournamentPage'
 import { AdminMatchPage } from './pages/AdminMatchPage'
 import { InvitePage } from './pages/InvitePage'
 import './App.css'
+
+const ParticipantWorkspacePage = lazy(() => import('./pages/ParticipantWorkspacePage').then((module) => ({ default: module.ParticipantWorkspacePage })))
 
 function App() {
   return <AuthProvider><BrowserRouter><AppFrame /></BrowserRouter></AuthProvider>
@@ -33,6 +35,7 @@ function AppFrame() {
           <Route path="/admin" element={<RequireRole role="admin"><AdminTournamentsPage /></RequireRole>} />
           <Route path="/admin/tournaments/:tournamentId" element={<RequireRole role="admin"><AdminTournamentPage /></RequireRole>} />
           <Route path="/admin/tournaments/:tournamentId/matches" element={<RequireRole role="admin"><AdminMatchPage /></RequireRole>} />
+          <Route path="/matches/:matchId" element={<RequireRole role="participant"><Suspense fallback={<LoadingState label="Загружаем рабочее место…" />}><ParticipantWorkspacePage /></Suspense></RequireRole>} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
