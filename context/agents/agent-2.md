@@ -2,6 +2,8 @@
 
 Перепланировано координатором по поручению команды 2026-10-09; audit history владельца сохранена.
 
+- Коррекция аудита P2-03: короткий ref `6320b4b` раскрывается в `6320b4bb75a0dbc5284946cb0161cb1842d15847`; две исходные записи не переписывались. См. [коррекционный аудит](../audits/2026-10-10T002548+0300-agent-2-P2-03-base-sha-correction.md).
+
 - Проверены/integration feature: pure clock #11 28d6cda и score #13 19bbf88, по 12 tests. Доступность в develop — после MERGED общего integration PR; cores не заменяют persistence/API.
 - Первое READY P2-02.1: fix #7 1952244 generate/reset/pairings только draft/scheduled, SQLite transactional lifecycle guard + regression. Ordinary registration/rank/import уже готовы. Затем merge #7 и P2-02.2 HTTP/idempotency/reason/full pairings.
 - Второй короткий READY P2-06.1: fix #16 8340014 SOLVED/lastVerdict WA/CE roundtrip без ослабления public whitelist.
@@ -10,7 +12,7 @@
 - Пути: competition/events, свои migrations/tests; common wiring кратким CONNECT. При sync сохранить all app registrations, CI и чужие audits.
 - Runtime без реального catalog/access provider отказывает. Full T05–11/T16–17/T19–20 не пройдены; own cards/audits фиксируют implementation/integration/acceptance отдельно.
 - P2-06.1 correction опубликована в PR #16 на `a0b1dcc`; checks прошли, PR OPEN/CLEAN. Изменение пока не интегрировано в develop.
-- Статус: `IN_PROGRESS` — P2-03 pure readiness/start policy для `manual` и `both_ready`; ветка `feature/match-ready-gate`, база синхронизирована merge из `origin/develop` `6320b4b51ef2e053c1e9ce81349d4480be85f9d4`.
+- Статус: `IN_PROGRESS` — P2-03 pure readiness/start policy для `manual` и `both_ready`; ветка `feature/match-ready-gate`, база синхронизирована merge из `origin/develop` `6320b4bb75a0dbc5284946cb0161cb1842d15847`.
 - Пути текущего независимого среза: `backend/apps/competition/domain/start_policy.py`, тесты в `backend/apps/competition/tests/test_clock.py`, эта карточка и audit. Pure clock #11 повторно не реализуется.
 - Граница: закрыть идемпотентную ready policy и auto-start обоих игроков для `both_ready`; не добавлять persistence/API. `Match`/`MatchRun` модели принадлежат незавершённому PR #7, поэтому ORM wiring продолжается после его интеграции.
 - Реализация: [P2-03 readiness gate, PR #34](https://github.com/D0UP1G/FirsterChuv/pull/34), latest head `fba94a28aabbfd773e025e9ee626dc11b8326994`, OPEN/CLEAN; четыре CI check прошли.
