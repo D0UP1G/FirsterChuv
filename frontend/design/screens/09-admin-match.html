@@ -47,7 +47,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
           <h1>Сетка и матчи</h1>
           <p class="page-lede">Состав заморожен 09.10 11:40. Победитель матча автоматически занимает слот следующего раунда.</p>
         </div>
-        <div class="management-actions"><button class="button button-quiet" type="button">Обновить</button><a class="button button-outline" href="#">Публичная карта</a></div>
+        <div class="management-actions"><button class="button button-quiet" type="button">Обновить</button><a class="button button-outline" href="#">Публичная карта</a><button class="button button-outline" type="button" disabled="disabled" title="Доступно после результата финала" data-action="завершение турнира — endpoint в api.md не определён">Завершить турнир</button></div>
       </div>
 
       <section class="management-panel" aria-labelledby="bracket-heading">
@@ -64,7 +64,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
           </div>
           <div class="bracket-round">
             <h3 class="ba-kicker">Обозначения</h3>
-            <div class="bracket-match-card"><div class="bracket-slot"><span>5 · Олег</span><span class="ba-tag ba-tag-neutral">BYE</span></div><p class="ba-indent-1 ba-mono-muted">При нечётном составе — проход без матча, без сыгранного run.</p></div>
+            <div class="bracket-match-card"><div class="bracket-slot"><span>[участник]</span><span class="ba-tag ba-tag-neutral">BYE</span></div><p class="ba-indent-1 ba-mono-muted">При нечётном составе — проход без матча, без сыгранного run.</p></div>
           </div>
         </div>
       </section>
@@ -72,11 +72,11 @@ a{color:#ccff00}a:hover{color:#00ff66}
       <div class="ba-cols ba-mt-5">
         <div class="ba-col-main">
           <section class="management-panel ba-frame" aria-labelledby="match-ops-heading">
-            <div class="panel-heading"><div><h2 id="match-ops-heading">M-1 · Ира — Максим</h2><p>Серверное время 12:07:13 · старт вручную</p></div><span class="ba-timer" style="font-size: 36px">12:47</span></div>
+            <div class="panel-heading"><div><h2 id="match-ops-heading">M-1 · Ира — Максим</h2><p>Серверное время 12:07:13 · запуск по готовности обоих</p></div><span class="ba-timer" style="font-size: 36px">12:47</span></div>
             <div class="match-action-row">
               <span class="ba-tag ba-tag-live">RUNNING</span>
               <button class="button button-small" type="button" data-action="pause">Пауза</button>
-              <button class="button button-small" type="button" disabled="disabled" data-action="start">Запустить матч</button>
+              <span class="ba-mono-muted">Стартовал, когда оба участника нажали «Готов»</span>
             </div>
             <div class="match-action-row">
               <label class="form-field"><span>Продлить, секунд</span><input type="number" min="1" max="7200" value="120"></label>
@@ -133,6 +133,31 @@ a{color:#ccff00}a:hover{color:#00ff66}
           </form>
         </div>
       </div>
+
+      <section class="ba-mt-7" aria-labelledby="before-start-heading">
+        <div class="panel-heading"><div><h2 id="before-start-heading">Состояния до старта</h2><p>Как те же блоки выглядят, пока сетка не создана и ни один матч не начался.</p></div></div>
+        <div class="ba-cols">
+          <div class="ba-col-main">
+            <div class="empty-state" data-state="bracket-empty">
+              <p class="ba-kicker">Турнирная сетка</p>
+              <h3 class="ba-h3">Сетка не создана</h3>
+              <p>Сетка строится из замороженного состава по посеву. При нечётном числе участников тот, кому не хватило пары, проходит раунд без матча (BYE). Создание сетки замораживает состав.</p>
+              <div class="ba-actions"><button class="button" type="button" data-action="POST …/bracket/generate">Сформировать сетку</button><span class="ba-mono-muted">4 участника · одиночное выбывание</span></div>
+            </div>
+          </div>
+          <div class="ba-col-side">
+            <form class="management-panel" aria-labelledby="pairings-edit-heading" data-state="pairings-editable">
+              <div class="panel-heading"><div><h2 id="pairings-edit-heading">Пары первого раунда</h2><p>Сохраняется весь раунд одной командой. Участник не может стоять в двух парах.</p></div></div>
+              <div class="pairing-grid">
+                <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">1</span><label class="form-field"><span>Левая</span><select><option>Ира</option><option>Алина</option></select></label><label class="form-field"><span>Правая</span><select><option>Денис</option><option>Максим</option></select></label></div>
+                <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">2</span><label class="form-field"><span>Левая</span><select><option>Алина</option><option>Ира</option></select></label><label class="form-field"><span>Правая</span><select><option>Максим</option><option>Денис</option></select></label></div>
+              </div>
+              <label class="ba-mt-3 form-field"><span>Причина ручной перестановки</span><input value="Разведение участников одной школы"></label>
+              <div class="form-actions"><button class="button button-small" type="submit" data-action="PUT …/bracket/pairings">Сохранить полный раунд</button><button class="button button-small button-quiet" type="button">Отмена</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
     </section>
   </main>
 
