@@ -1,5 +1,13 @@
 # Координатор: ревизия и параллельный план
 
+## Завершение слияний после PR #44, 2026-10-10
+
+- Статус: IN_PROGRESS; ветка feature/mvp-review-closeout от develop 03a463650828774d5767e086a69183f83c38006b.
+- PR #44 MERGED после 4 SUCCESS checks на 2f679745c9a9ca2a174c7bc960ecb1437200e826. Параллельный A4 #45 вошёл в actual develop, итоговый frontend PASS 82/82 с одним worker.
+- Автор обновил #7 до f3001505fb70e9e810cd5da774a9a6dda996240f до merge #44; старый код уже в develop, новый audit/card ещё в source PR.
+- Scope: ordinary merge f300150, сохранить все текущие registrations byte-for-byte и актуальную A2 card с отдельным snapshot позднего sync. После разрешения требуется нулевой diff production/tests относительно develop.
+- Пути: own coordinator/card/STATE/ROADMAP/new closing audit, incoming A2 audit/card. Чужой active checkout/ref не менять.
+
 ## Новая ревизия активных PR, 2026-10-09T23:48+03:00
 
 - Статус: `IN_REVIEW`; прямое поручение команды — проверить новые PR и безопасно слить готовые срезы, сохранив работу активных агентов.
