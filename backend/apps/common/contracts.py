@@ -66,6 +66,22 @@ class ResultReceipt:
 
 
 @dataclass(frozen=True, slots=True)
+class InfrastructureFailureReceipt:
+    """Server allowlisted failure code only; never diagnostics or a verdict."""
+
+    submission_id: UUID
+    run_id: UUID
+    reason_code: str
+    retryable: bool
+
+
+class InfrastructureFailureSink(Protocol):
+    """Idempotent internal handoff for infrastructure failure outcomes."""
+
+    def record_infrastructure_failure(self, receipt: InfrastructureFailureReceipt) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
 class ResultApplication:
     """Whether an idempotent result was applied to the active run."""
 
@@ -231,6 +247,22 @@ class TrustedJudgeJob:
     problem_id: UUID
     problem_version: str
     problem_checksum: str
+
+
+@dataclass(frozen=True, slots=True)
+class RunProblemSnapshot:
+    """Immutable problem identity assigned to one run; checksum is SHA-256."""
+
+    run_id: UUID
+    problem_id: UUID
+    problem_version: str
+    problem_checksum: str
+
+
+class RunProblemSnapshotProvider(Protocol):
+    """Resolve a problem version/checksum from the requested run assignment."""
+
+    def resolve(self, run_id: UUID, problem_id: UUID) -> RunProblemSnapshot: ...
 
 
 class MatchPort(Protocol):

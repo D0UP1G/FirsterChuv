@@ -1,14 +1,25 @@
 import json
 import subprocess
 import sys
+from dataclasses import FrozenInstanceError, fields
 from pathlib import Path
 from types import SimpleNamespace
-from uuid import uuid4
+from typing import get_type_hints
+from uuid import UUID, uuid4
 
 from django.test import TestCase, override_settings
 from rest_framework.exceptions import NotAuthenticated
 
 from backend.apps.common.api import CamelCaseJSONRenderer, exception_handler
+from backend.apps.common.contracts import (
+    AttemptReceipt,
+    InfrastructureFailureReceipt,
+    InfrastructureFailureSink,
+    ResultReceipt,
+    RunProblemSnapshot,
+    RunProblemSnapshotProvider,
+    SubmissionPermit,
+)
 
 
 class APIContractTests(TestCase):
@@ -56,3 +67,76 @@ class APIContractTests(TestCase):
                 self.assertEqual(response.json()["error"]["code"], "not_found")
                 self.assertIn("requestId", response.json())
                 self.assertNotIn("Location", response)
+
+
+class SharedTypedPortTests(TestCase):
+    def test_new_provider_and_sink_signatures_use_common_dtos(self):
+        failure_hints = get_type_hints(InfrastructureFailureSink.record_infrastructure_failure)
+        snapshot_hints = get_type_hints(RunProblemSnapshotProvider.resolve)
+
+        self.assertIs(failure_hints["receipt"], InfrastructureFailureReceipt)
+        self.assertIs(failure_hints["return"], type(None))
+        self.assertIs(snapshot_hints["run_id"], UUID)
+        self.assertIs(snapshot_hints["problem_id"], UUID)
+        self.assertIs(snapshot_hints["return"], RunProblemSnapshot)
+
+    def test_infrastructure_failure_receipt_is_frozen_and_additive(self):
+        receipt = InfrastructureFailureReceipt(
+            submission_id=uuid4(),
+            run_id=uuid4(),
+            reason_code="worker_lease_expired",
+            retryable=False,
+        )
+
+        self.assertEqual(
+            tuple(field.name for field in fields(receipt)),
+            ("submission_id", "run_id", "reason_code", "retryable"),
+        )
+        with self.assertRaises(FrozenInstanceError):
+            setattr(receipt, "reason_code", "private diagnostics")
+
+    def test_run_problem_snapshot_is_frozen_and_run_scoped(self):
+        snapshot = RunProblemSnapshot(
+            run_id=uuid4(),
+            problem_id=uuid4(),
+            problem_version="2026-10",
+            problem_checksum="a" * 64,
+        )
+
+        self.assertEqual(
+            tuple(field.name for field in fields(snapshot)),
+            ("run_id", "problem_id", "problem_version", "problem_checksum"),
+        )
+        with self.assertRaises(FrozenInstanceError):
+            setattr(snapshot, "problem_checksum", "b" * 64)
+
+    def test_existing_v1_receipt_fields_remain_unchanged(self):
+        self.assertEqual(
+            tuple(field.name for field in fields(SubmissionPermit)),
+            ("run_id", "elapsed_ms", "scoring_version"),
+        )
+        self.assertEqual(
+            tuple(field.name for field in fields(AttemptReceipt)),
+            (
+                "submission_id",
+                "run_id",
+                "user_id",
+                "problem_id",
+                "received_at",
+                "elapsed_ms",
+                "scoring_version",
+            ),
+        )
+        self.assertEqual(
+            tuple(field.name for field in fields(ResultReceipt)),
+            (
+                "submission_id",
+                "run_id",
+                "user_id",
+                "problem_id",
+                "received_at",
+                "elapsed_ms",
+                "scoring_version",
+                "verdict",
+            ),
+        )
