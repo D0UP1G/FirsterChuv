@@ -1,6 +1,6 @@
 import unittest
 
-from domain.bracket import (
+from backend.apps.competition.domain.bracket import (
     BracketInputError,
     SeededParticipant,
     generate_single_elimination,

@@ -93,6 +93,12 @@ def _to_slot(source: _DraftNode | SeededParticipant | None) -> BracketSlot:
 
 def generate_single_elimination(
     participants: list[SeededParticipant] | tuple[SeededParticipant, ...],
+    *,
+    first_round_pairings: (
+        list[tuple[str | None, str | None]]
+        | tuple[tuple[str | None, str | None], ...]
+        | None
+    ) = None,
 ) -> BracketPlan:
     """Build a stable, seeded bracket with explicit bye states and no fake runs.
 
@@ -123,9 +129,45 @@ def generate_single_elimination(
     seeded = tuple(sorted(entrants, key=lambda entrant: entrant.seed))
     bracket_size = 1 << (len(seeded) - 1).bit_length()
     leaves: list[SeededParticipant | None] = [None] * bracket_size
-    for position, seed in enumerate(_seed_order(bracket_size)):
-        if seed <= len(seeded):
-            leaves[position] = seeded[seed - 1]
+    if first_round_pairings is None:
+        for position, seed in enumerate(_seed_order(bracket_size)):
+            if seed <= len(seeded):
+                leaves[position] = seeded[seed - 1]
+    else:
+        entrants_by_id = {entrant.participant_id: entrant for entrant in seeded}
+        if len(first_round_pairings) != bracket_size // 2:
+            raise BracketInputError(
+                "manual pairings must provide every first-round position"
+            )
+        seen_ids: set[str] = set()
+        for position, pairing in enumerate(first_round_pairings):
+            if not isinstance(pairing, tuple) or len(pairing) != 2:
+                raise BracketInputError(
+                    "each manual pairing must contain exactly two participant IDs"
+                )
+            if pairing == (None, None):
+                raise BracketInputError("a first-round pairing cannot be empty")
+            for offset, participant_id in enumerate(pairing):
+                if participant_id is None:
+                    continue
+                if not isinstance(participant_id, str) or not participant_id.strip():
+                    raise BracketInputError(
+                        "manual pairing participant IDs must be non-empty strings"
+                    )
+                if participant_id not in entrants_by_id:
+                    raise BracketInputError(
+                        "manual pairings may use only active bracket participants"
+                    )
+                if participant_id in seen_ids:
+                    raise BracketInputError(
+                        "a participant cannot occupy multiple first-round slots"
+                    )
+                seen_ids.add(participant_id)
+                leaves[position * 2 + offset] = entrants_by_id[participant_id]
+        if seen_ids != set(entrants_by_id):
+            raise BracketInputError(
+                "manual pairings must place every active participant exactly once"
+            )
 
     draft_nodes: list[_DraftNode] = []
 
