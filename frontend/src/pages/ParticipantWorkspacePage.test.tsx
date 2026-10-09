@@ -104,6 +104,45 @@ describe('ParticipantWorkspacePage', () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  it('restores separate language-scoped drafts after switching languages and remounting the page', async () => {
+    const user = userEvent.setup({ delay: 1 })
+    const entry = '/matches/match-1?scenario=workspace-ui&draft=offline-fixture'
+    const firstPage = renderWorkspace(entry)
+
+    const cppEditor = await screen.findByRole('textbox', { name: 'Исходный код, задача A, C++20' })
+    cppEditor.focus()
+    for (const character of 'cppDraft') await user.keyboard(character)
+    await waitFor(() => expect(cppEditor).toHaveTextContent('cppDraft'))
+
+    const languagePicker = screen.getByRole('combobox', { name: 'Язык программирования' })
+    await user.selectOptions(languagePicker, 'python3')
+    const pythonEditor = await screen.findByRole('textbox', { name: 'Исходный код, задача A, Python 3' })
+    pythonEditor.focus()
+    for (const character of 'pythonDraft') await user.keyboard(character)
+    await waitFor(() => expect(pythonEditor).toHaveTextContent('pythonDraft'))
+
+    await user.selectOptions(languagePicker, 'cpp20')
+    const restoredCpp = await screen.findByRole('textbox', { name: 'Исходный код, задача A, C++20' })
+    await waitFor(() => expect(restoredCpp).toHaveTextContent('cppDraft'))
+    await user.selectOptions(languagePicker, 'python3')
+    const restoredPython = await screen.findByRole('textbox', { name: 'Исходный код, задача A, Python 3' })
+    await waitFor(() => expect(restoredPython).toHaveTextContent('pythonDraft'))
+
+    firstPage.unmount()
+    renderWorkspace(entry)
+
+    const remountedCppPicker = await screen.findByRole('combobox', { name: 'Язык программирования' })
+    const remountedCpp = await screen.findByRole('textbox', { name: 'Исходный код, задача A, C++20' })
+    await waitFor(() => expect(remountedCpp).toHaveTextContent('cppDraft'))
+    await user.selectOptions(remountedCppPicker, 'python3')
+    const remountedPython = await screen.findByRole('textbox', { name: 'Исходный код, задача A, Python 3' })
+    await waitFor(() => expect(remountedPython).toHaveTextContent('pythonDraft'))
+
+    expect(screen.getByText(/Серверное хранилище недоступно/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Отправить решение' })).toBeDisabled()
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('does not fall back to fixtures when the production match API is unavailable', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ error: { code: 'not_found', message: 'Матч не найден.' } }, 404))
     renderWorkspace('/matches/match-1')
