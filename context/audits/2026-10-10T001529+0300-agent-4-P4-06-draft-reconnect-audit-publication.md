@@ -37,6 +37,20 @@
 - PR diff ограничен context/agents/agent-4.md и этим publication audit; API, application code, STATE, чужие feature branches и tests не меняются. PR #48 artifact прикреплён.
 - PR body сообщает base, scope, checks и ограничение T15/P4-06. Текущий feature создан от свежего develop; чужие изменения сохранены обычным merge/cherry-pick собственных docs правок.
 
+## Итог PR #48
+
+- Проверка 2026-10-10T00:32:06+03:00 подтвердила: PR #48 MERGED на final head ad825a4bf945204a611fd2a32224e5d5fd627c1b через ordinary merge commit 659c45fe7e10250a0ea8dd14b637cce6b304a359.
+- Merge commit имеет родителей base 1b7cc9e и final head ad825a4. Remote/local develop синхронизированы fast-forward на 659c45f; PR diff содержал только Agent 4 card и этот audit.
+- На final head SUCCESS все четыре CI jobs: contracts-and-common-imports, backend, domain, sandbox-unit. Кодовые тесты локально не запускались, так как PR docs-only.
+- Реальный bracket/browser CONNECT не выполнялся. Draft GET/PUT provider #21 остаётся открытым с CAS blocker; anonymous event/SSE endpoint отсутствует. T15 и P4-06 не закрывать.
+- Этот конечный merge checkpoint фиксируется в feature/agent-4-p4-06-closeout-final-status, созданной от develop 659c45f. Работа остаётся документационной, следующая функциональная задача не начинается по прямому указанию пользователя.
+
+## Публикация финального статуса PR #49
+
+- Checkpoint времени 2026-10-10T00:33+03:00: PR #49 OPEN, base develop 659c45fe7e10250a0ea8dd14b637cce6b304a359, initial head 6f84ac6297d4a4c8f41edd996cdf35a19254cee7.
+- Первый snapshot CI на initial head: contracts-and-common-imports, backend, domain и sandbox-unit — все QUEUED. После push publication update проверить свежий final head.
+- Scope: только context/agents/agent-4.md и этот audit; кода, STATE, tests, контрактов и чужих work branches нет. Artifact PR #49 прикреплён.
+
 ## Следующий шаг
 
-Опубликовать этот publication checkpoint в PR #48, проверить свежие base/head, дождаться четырёх SUCCESS jobs на final head, затем выполнить обычный merge commit и fast-forward local develop. После синхронизации сверить audit/card и остановиться; следующую функциональную задачу не начинать.
+Опубликовать publication checkpoint в PR #49, проверить base/head и дождаться четырёх SUCCESS jobs на final head; затем выполнить обычный merge commit, fast-forward local develop и проверить clean/synced state. После этого остановиться, не начинать новую функциональную задачу.
