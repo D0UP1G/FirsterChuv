@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ApiError, api, type Tournament, type TournamentInput } from '../api/client'
 import { TournamentForm } from '../components/TournamentForm'
+import { statusLabel } from './tournamentStatus'
 import './Admin.css'
 
 function messageFor(error: unknown): string {
@@ -14,13 +15,6 @@ function dateTime(value: string): string {
   return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
-const statusLabel: Record<Tournament['status'], string> = {
-  draft: 'Черновик',
-  scheduled: 'Запланирован',
-  running: 'Идёт',
-  completed: 'Завершён',
-  archived: 'Архивирован',
-}
 
 export function AdminTournamentsPage() {
   const navigate = useNavigate()
