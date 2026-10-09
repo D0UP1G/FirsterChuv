@@ -10,8 +10,9 @@
 body{margin:0}
 a{color:#ccff00}a:hover{color:#00ff66}
 .ba-state-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
-.ba-state{display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid rgba(0,229,255,.22);background-color:rgba(0,229,255,.03)}
+.ba-state{display:flex;flex-direction:column;gap:24px;padding:24px;border:1px solid rgba(0,229,255,.22);background-color:rgba(0,229,255,.03)}
 .ba-state-label{color:#5d7c82;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.ba-state-head{display:flex;flex-direction:column;gap:8px}
 .ba-state-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 @media (max-width:760px){.ba-state-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
@@ -31,8 +32,8 @@ a{color:#ccff00}a:hover{color:#00ff66}
       <div class="ba-state-grid">
         <!-- READY / до старта -->
         <article class="ba-state ba-grid" data-state="READY">
-          <span class="ba-state-label">До старта · READY / WAITING</span>
-          <div class="ba-state-top"><span class="ba-tag ba-tag-active">READY</span><span class="ba-timer is-paused">20:00</span></div>
+          <header class="ba-state-head"><span class="ba-state-label">До старта · READY / WAITING</span><div class="ba-state-top"><span class="ba-tag ba-tag-active">READY</span><span class="ba-timer is-paused">20:00</span></div></header>
+          <div class="ba-stack ba-stack-tight">
           <div class="ba-nodes">
             <button class="workspace-task-button is-locked" type="button" disabled="disabled"><span class="workspace-task-label">NODE A</span><span class="ba-tag ba-tag-locked">LOCKED</span></button>
             <button class="workspace-task-button is-locked" type="button" disabled="disabled"><span class="workspace-task-label">NODE B</span><span class="ba-tag ba-tag-locked">LOCKED</span></button>
@@ -40,54 +41,54 @@ a{color:#ccff00}a:hover{color:#00ff66}
             <button class="workspace-task-button is-locked" type="button" disabled="disabled"><span class="workspace-task-label">NODE D</span><span class="ba-tag ba-tag-locked">LOCKED</span></button>
           </div>
           <p class="ba-mono-muted">Задачи откроются после старта матча. Условия не загружаются заранее.</p>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center"><button class="button" type="button">Готов</button><span class="ba-mono-muted">Вы: <span class="ba-tag ba-tag-ok">ГОТОВ</span> · соперник: <span class="ba-tag ba-tag-neutral">ЖДЁМ</span></span></div>
+          </div>
+          <div class="ba-actions"><button class="button" type="button">Готов</button><span class="ba-mono-muted">Вы: <span class="ba-tag ba-tag-ok">ГОТОВ</span> · соперник: <span class="ba-tag ba-tag-neutral">ЖДЁМ</span></span></div>
         </article>
 
         <!-- RUNNING, критический таймер -->
         <article class="ba-state ba-grid" data-state="RUNNING-critical">
-          <span class="ba-state-label">Идёт · последняя минута</span>
-          <div class="ba-state-top"><span class="ba-tag ba-tag-live">RUNNING</span><span class="ba-timer is-critical">00:42</span></div>
+          <header class="ba-state-head"><span class="ba-state-label">Идёт · последняя минута</span><div class="ba-state-top"><span class="ba-tag ba-tag-live">RUNNING</span><span class="ba-timer is-critical">00:42</span></div></header>
           <p class="ba-mono-muted">Таймер становится Alarm Red, когда остаётся меньше 60 секунд. Отправка доступна.</p>
           <div class="workspace-submit-row" style="border: 1px solid rgba(0,229,255,.22)"><p class="workspace-hint">Черновик сохранён · rev 22</p><button class="button" type="button"><span class="ba-command">EXECUTE_DUMP</span></button></div>
         </article>
 
         <!-- PAUSED -->
         <article class="ba-state ba-grid" data-state="PAUSED">
-          <span class="ba-state-label">Пауза · PAUSED</span>
-          <div class="ba-state-top"><span class="ba-tag ba-tag-neutral">PAUSED</span><span class="ba-timer is-paused">08:15</span></div>
+          <header class="ba-state-head"><span class="ba-state-label">Пауза · PAUSED</span><div class="ba-state-top"><span class="ba-tag ba-tag-neutral">PAUSED</span><span class="ba-timer is-paused">08:15</span></div></header>
           <div class="ba-banner"><span class="ba-tag ba-tag-neutral">PAUSE</span><span>Организатор приостановил матч: <span data-field="reason">технические работы</span>. Часы остановлены, отправка недоступна. Редактор работает.</span></div>
           <div class="workspace-submit-row" style="border: 1px solid rgba(0,229,255,.22)"><p class="workspace-hint">Отправка откроется после продолжения</p><button class="button" type="button" disabled="disabled"><span class="ba-command">EXECUTE_DUMP</span></button></div>
         </article>
 
         <!-- FINALIZING -->
         <article class="ba-state ba-grid" data-state="FINALIZING">
-          <span class="ba-state-label">Время вышло · FINALIZING</span>
-          <div class="ba-state-top"><span class="ba-tag ba-tag-queued">FINALIZING</span><span class="ba-timer is-critical">00:00</span></div>
+          <header class="ba-state-head"><span class="ba-state-label">Время вышло · FINALIZING</span><div class="ba-state-top"><span class="ba-tag ba-tag-queued">FINALIZING</span><span class="ba-timer is-critical">00:00</span></div></header>
           <div class="ba-banner"><span class="spinner" aria-hidden="true"></span><span>Время матча вышло. Проверяем решения, отправленные до конца матча, — результат появится автоматически.</span></div>
           <div class="workspace-submit-row" style="border: 1px solid rgba(0,229,255,.22)"><p class="workspace-hint">Новые отправки не принимаются</p><button class="button" type="button" disabled="disabled"><span class="ba-command">EXECUTE_DUMP</span></button></div>
         </article>
 
         <!-- FINISHED win -->
         <article class="ba-state ba-grid" data-state="FINISHED-win" style="border-color: #00ff66; background-color: rgba(0,255,102,.05)">
-          <span class="ba-state-label">Итог · победа</span>
-          <div class="ba-state-top"><span class="ba-tag ba-tag-ok">SYSTEM BREACHED</span><span class="ba-terminal" style="font-size: 40px; color: #00ff66">3 : 2</span></div>
-          <p class="ba-h2">Победа. Вы проходите в финал</p>
-          <p class="ba-mono-muted">Следующий матч появится в кабинете. Ваш код и черновики остаются доступны только вам.</p>
+          <header class="ba-state-head"><span class="ba-state-label">Итог · победа</span><div class="ba-state-top"><span class="ba-tag ba-tag-ok">SYSTEM BREACHED</span><span class="ba-terminal" style="font-size: 40px; color: #00ff66">3 : 2</span></div></header>
+          <div class="ba-copy">
+            <p class="ba-h2">Победа. Вы проходите в финал</p>
+            <p class="ba-mono-muted">Следующий матч появится в кабинете. Ваш код и черновики остаются доступны только вам.</p>
+          </div>
           <a class="text-link" href="#">В кабинет ↗</a>
         </article>
 
         <!-- FINISHED loss / TIED -->
         <article class="ba-state ba-grid" data-state="FINISHED-loss · TIED">
-          <span class="ba-state-label">Итог · поражение / равенство</span>
-          <div class="ba-state-top"><span class="ba-tag ba-tag-locked">ACCESS DENIED</span><span class="ba-terminal" style="font-size: 40px; color: #ff3333">2 : 3</span></div>
+          <header class="ba-state-head"><span class="ba-state-label">Итог · поражение / равенство</span><div class="ba-state-top"><span class="ba-tag ba-tag-locked">ACCESS DENIED</span><span class="ba-terminal" style="font-size: 40px; color: #ff3333">2 : 3</span></div></header>
+          <div class="ba-stack ba-stack-tight">
           <p class="ba-h2">Матч завершён</p>
           <div class="ba-banner"><span class="ba-tag ba-tag-warn">TIED</span><span>Если равны решённые, штраф и время последнего принятого — назначается переигровка. Победитель случайно не выбирается.</span></div>
+          </div>
         </article>
 
         <!-- Конфликт черновика -->
         <section class="workspace-conflict" role="alert" style="grid-column: 1 / -1" data-state="draft-conflict">
           <span class="ba-state-label">Конфликт revision черновика</span>
-          <h3 class="ba-h3" style="margin-top: 8px">Найдены две версии черновика</h3>
+          <h3 class="ba-h3">Найдены две версии черновика</h3>
           <p class="ba-mono-muted">Ни одна не будет перезаписана молча. Выберите, какую оставить.</p>
           <div class="workspace-conflict-grid">
             <div><p class="ba-kicker">Локальная · этот браузер</p><pre>int main() {

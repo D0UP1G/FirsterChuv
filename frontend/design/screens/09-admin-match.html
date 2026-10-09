@@ -50,7 +50,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
         <div class="management-actions"><button class="button button-quiet" type="button">Обновить</button><a class="button button-outline" href="#">Публичная карта</a></div>
       </div>
 
-      <section class="management-panel" aria-labelledby="bracket-heading" style="margin-bottom: 24px">
+      <section class="management-panel" aria-labelledby="bracket-heading">
         <div class="panel-heading"><div><h2 id="bracket-heading">Турнирная сетка</h2><p>4 места · одиночное выбывание</p></div><button class="button button-small text-danger" type="button">Сбросить сетку</button></div>
         <div class="bracket-rounds">
           <div class="bracket-round">
@@ -69,7 +69,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
         </div>
       </section>
 
-      <div class="ba-cols">
+      <div class="ba-cols ba-mt-5">
         <div class="ba-col-main">
           <section class="management-panel ba-frame" aria-labelledby="match-ops-heading">
             <div class="panel-heading"><div><h2 id="match-ops-heading">M-1 · Ира — Максим</h2><p>Серверное время 12:07:13 · старт вручную</p></div><span class="ba-timer" style="font-size: 36px">12:47</span></div>
@@ -97,9 +97,9 @@ a{color:#ccff00}a:hover{color:#00ff66}
             </div>
             <label class="form-field match-reason"><span>Причина действия (обязательно, попадёт в журнал)</span><textarea rows="3" maxlength="1000">Технические работы на площадке</textarea></label>
 
-            <div class="match-task-statuses" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px">
-              <div class="match-player-tasks"><p class="ba-h3">Ира · 1</p><p style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px"><span class="ba-tag ba-tag-breached">A</span><span class="ba-tag ba-tag-wa">B ×2</span><span class="ba-tag ba-tag-neutral">C</span><span class="ba-tag ba-tag-neutral">D</span></p></div>
-              <div class="match-player-tasks"><p class="ba-h3">Максим · 1</p><p style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px"><span class="ba-tag ba-tag-neutral">A</span><span class="ba-tag ba-tag-neutral">B</span><span class="ba-tag ba-tag-breached">C</span><span class="ba-tag ba-tag-neutral">D</span></p></div>
+            <div class="ba-mt-5 match-task-statuses" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+              <div class="match-player-tasks"><p class="ba-h3">Ира · 1</p><p style="display: flex; gap: 6px; flex-wrap: wrap"><span class="ba-tag ba-tag-breached">A</span><span class="ba-tag ba-tag-wa">B ×2</span><span class="ba-tag ba-tag-neutral">C</span><span class="ba-tag ba-tag-neutral">D</span></p></div>
+              <div class="match-player-tasks"><p class="ba-h3">Максим · 1</p><p style="display: flex; gap: 6px; flex-wrap: wrap"><span class="ba-tag ba-tag-neutral">A</span><span class="ba-tag ba-tag-neutral">B</span><span class="ba-tag ba-tag-breached">C</span><span class="ba-tag ba-tag-neutral">D</span></p></div>
             </div>
           </section>
         </div>
@@ -112,7 +112,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
               <label class="problem-choice"><input type="checkbox" checked="checked"> <span>[Задача B]</span> <span class="ba-tag ba-tag-ok">READY</span></label>
               <label class="problem-choice"><input type="checkbox" disabled="disabled"> <span style="color: #5d7c82">[Задача C]</span> <span class="ba-tag ba-tag-locked">NOT_READY</span></label>
             </div>
-            <div class="form-grid" style="margin-top: 16px">
+            <div class="ba-mt-4 form-grid">
               <label class="form-field"><span>Длительность, с</span><input type="number" min="60" max="7200" value="1200"></label>
               <label class="form-field"><span>Запуск</span><select><option>Вручную</option><option>Готовность обоих</option></select></label>
               <label class="form-field"><span>Штраф, с</span><input value="60" disabled="disabled"></label>
@@ -127,8 +127,8 @@ a{color:#ccff00}a:hover{color:#00ff66}
               <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">1</span><label class="form-field"><span>Левая</span><select disabled="disabled"><option>Ира</option></select></label><label class="form-field"><span>Правая</span><select disabled="disabled"><option>Максим</option></select></label></div>
               <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">2</span><label class="form-field"><span>Левая</span><select disabled="disabled"><option>Алина</option></select></label><label class="form-field"><span>Правая</span><select disabled="disabled"><option>Денис</option></select></label></div>
             </div>
-            <label class="form-field" style="margin-top: 12px"><span>Причина ручной перестановки</span><input disabled="disabled" value=""></label>
-            <p class="field-help" style="margin-top: 8px">Матчи уже начались — перестановка недоступна.</p>
+            <label class="ba-mt-3 form-field"><span>Причина ручной перестановки</span><input disabled="disabled" value=""></label>
+            <p class="ba-mt-2 field-help">Матчи уже начались — перестановка недоступна.</p>
             <div class="form-actions"><button class="button button-small" type="submit" disabled="disabled">Сохранить полный раунд</button></div>
           </form>
         </div>

@@ -10,7 +10,7 @@
 body{margin:0}
 a{color:#ccff00}a:hover{color:#00ff66}
 .ba-states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
-.invite-preview-card{padding:28px;display:flex;flex-direction:column;gap:16px}
+.invite-preview-card{padding:28px;display:flex;flex-direction:column;gap:24px}
 .ba-state-label{color:#5d7c82;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 @media (max-width:760px){.ba-states{grid-template-columns:minmax(0,1fr)}}
 </style>
@@ -36,11 +36,13 @@ a{color:#ccff00}a:hover{color:#00ff66}
       <div class="ba-states">
         <div class="invite-preview-card ba-frame" data-state="valid-anonymous">
           <span class="ba-state-label">Состояние · гость</span>
-          <p class="ba-kicker">Турнир</p>
-          <h2 data-field="tournament.title">Блиц 2026</h2>
-          <p class="ba-mono-muted">Действует до <time data-field="expiresAt">12.10.2026, 18:00</time></p>
-          <p>Чтобы принять приглашение, войдите или создайте аккаунт участника.</p>
-          <div class="invite-preview-actions" style="display: flex; flex-wrap: wrap; gap: 12px">
+          <div class="ba-copy">
+            <p class="ba-kicker">Турнир</p>
+            <h2 data-field="tournament.title">Блиц 2026</h2>
+            <p class="ba-mono-muted">Действует до <time data-field="expiresAt">12.10.2026, 18:00</time></p>
+            <p>Чтобы принять приглашение, войдите или создайте аккаунт участника.</p>
+          </div>
+          <div class="invite-preview-actions ba-actions">
             <a class="button" href="#">Создать аккаунт</a>
             <a class="button button-outline" href="#">Войти</a>
           </div>
@@ -48,32 +50,36 @@ a{color:#ccff00}a:hover{color:#00ff66}
 
         <div class="invite-preview-card ba-frame" data-state="valid-participant">
           <span class="ba-state-label">Состояние · участник вошёл</span>
-          <p class="ba-kicker">Турнир</p>
-          <h2>Блиц 2026</h2>
-          <p class="ba-mono-muted">Действует до 12.10.2026, 18:00</p>
-          <div class="invite-preview-actions" style="display: flex; flex-wrap: wrap; gap: 12px">
+          <div class="ba-copy">
+            <p class="ba-kicker">Турнир</p>
+            <h2>Блиц 2026</h2>
+            <p class="ba-mono-muted">Действует до 12.10.2026, 18:00</p>
+          </div>
+          <div class="invite-preview-actions ba-actions">
             <button class="button" type="button">Присоединиться</button>
             <a class="button button-quiet" href="#">В кабинет</a>
           </div>
         </div>
 
-        <div class="success-panel" data-state="accepted" style="display: flex; flex-direction: column; gap: 12px; padding: 28px">
-          <span class="ba-state-label">Состояние · принято (200/201)</span>
-          <p><span class="ba-tag ba-tag-ok">ACCESS GRANTED</span></p>
-          <h2 class="ba-h2">Вы в составе турнира</h2>
-          <p class="ba-mono-muted">Повторное открытие ссылки не тратит ещё одну активацию.</p>
+        <div class="success-panel" data-state="accepted" style="display: flex; flex-direction: column; gap: 24px; padding: 28px">
+          <div class="ba-head"><span class="ba-state-label">Состояние · принято (200/201)</span><span class="ba-tag ba-tag-ok">ACCESS GRANTED</span></div>
+          <div class="ba-copy">
+            <h2 class="ba-h2">Вы в составе турнира</h2>
+            <p class="ba-mono-muted">Повторное открытие ссылки не тратит ещё одну активацию.</p>
+          </div>
           <a class="text-link" href="#">Перейти в кабинет ↗</a>
         </div>
 
         <div class="invite-preview-card invite-error-panel" data-state="unavailable" style="border-color: rgba(255,51,51,.55); background-color: rgba(255,51,51,.08)">
-          <span class="ba-state-label">Состояние · 404 / 410 / 409</span>
-          <p><span class="ba-tag ba-tag-locked">LOCKED</span></p>
-          <h2>Приглашение недоступно</h2>
-          <ul class="ba-mono-muted" style="margin: 0; padding-left: 18px">
-            <li>Срок ссылки истёк или её отозвали.</li>
-            <li>Лимит активаций исчерпан.</li>
-            <li>Состав турнира уже заморожен.</li>
-          </ul>
+          <div class="ba-head"><span class="ba-state-label">Состояние · 404 / 410 / 409</span><span class="ba-tag ba-tag-locked">LOCKED</span></div>
+          <div class="ba-copy">
+            <h2>Приглашение недоступно</h2>
+            <ul class="ba-list ba-mono-muted">
+              <li>Срок ссылки истёк или её отозвали.</li>
+              <li>Лимит активаций исчерпан.</li>
+              <li>Состав турнира уже заморожен.</li>
+            </ul>
+          </div>
           <button class="button button-outline" type="button">Проверить ещё раз</button>
         </div>
       </div>
