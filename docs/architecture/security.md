@@ -4,11 +4,11 @@
 
 Текущая документация не означает, что защита уже реализована. Каждый контроль подтверждается в T18/T20 и аудите владельца.
 
-Развёрнутый на `develop` снимок до P1-01 содержит integrated account/roster срезы PR #5/#8: явную CSRF-защиту изменений аккаунта/турнира/roster, HttpOnly cookies сессии/CSRF, серверное назначение роли participant, ограничение частоты auth-запросов, admin-only tournament writes, roster API, conditional capacity updates, bounded retry SQLite locks и идемпотентный bracket freeze hook. `freeze_roster` перед фиксацией повторно проверяет active account и роль `participant` для каждой активной записи; deactivated/admin entrant блокирует создание сетки. `IsApplicationAdmin` не доверяет Django `is_staff`/`is_superuser`; неактивная учётная запись не проходит permission check. Строгие serializers отклоняют неизвестные и доступные только для чтения поля. P1-01 invite API реализован только в `feature/tournament-invites` до merge. Replacement после игры остаётся контролируемым действием A2. Private match ownership остаётся ответственностью A2/A3. Частичные тесты не закрывают T02/T20 целиком. DRF throttle cache пока process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
+Текущий `develop` на `cad34ea` содержит integrated account/roster PR #5/#8 и invite API P1-01 PR #12: явную CSRF-защиту mutations, HttpOnly cookies, серверную роль participant, admin-only writes, roster capacity/freeze guards и atomic invite accept. `freeze_roster` перед фиксацией повторно проверяет active account и роль `participant`; `IsApplicationAdmin` не доверяет Django staff flags. Строгие serializers отклоняют неизвестные/read-only поля. Replacement после игры остаётся контролируемым действием A2; private match ownership — ответственностью A2/A3. Частичные тесты не закрывают T02/T20 целиком. DRF throttle cache process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
 
 ### Частичные доказательства backend slices Agent 1
 
-Результаты ниже относятся к срезам Agent 1, интегрированным PR #5/#8; 37 backend tests повторены ревизией на develop 146b2cb. Полные T02/T03/T05/T20 в `docs/quality/mvp-acceptance.md` остаются `NOT_RUN` до интеграции с bracket runtime, browser/API проверки и проверки сыгравшего участника на реальном match history, а также полной security матрицы.
+Результаты ниже относятся к slices Agent 1: 37 backend tests повторены на develop `146b2cb` для PR #5/#8; полный backend suite из 47 tests прошёл на кодовом HEAD P1-01 перед интеграцией PR #12. Полные T02/T03/T04/T05/T20 в `docs/quality/mvp-acceptance.md` остаются `NOT_RUN` до browser/API checks, интеграции с runtime, проверки сыгравшего участника и полного security matrix.
 
 | Проверка | Доказательство | Что остаётся вне результата |
 |---|---|---|
@@ -26,11 +26,13 @@
 
 ### Приглашения: текущий backend-срез P1-01
 
-На feature-ветке raw token генерируется через `secrets.token_urlsafe(32)`, в таблице сохраняется только SHA-256, create response показывает token один раз, а list DTO не содержит token/hash. Anonymous preview ограничен `30/minute`, отдаёт только название и UUID турнира, не кэшируется и устанавливает `Referrer-Policy: no-referrer`. Accept имеет явные CSRF/auth/active participant guards. Условное списание use, существующий `assign_participant` (cap/freeze/status) и unique acceptance ledger работают в одной транзакции; ошибки состава откатывают use, SQLite lock retry bounded.
+В интегрированном PR #12 raw token генерируется через `secrets.token_urlsafe(32)`, в таблице сохраняется только SHA-256, create response показывает token один раз, а list DTO не содержит token/hash. Anonymous preview ограничен `30/minute`, отдаёт только название и UUID турнира, не кэшируется и устанавливает `Referrer-Policy: no-referrer`. Accept имеет явные CSRF/auth/active participant guards. Условное списание use, существующий `assign_participant` (cap/freeze/status) и unique acceptance ledger работают в одной транзакции; ошибки состава откатывают use, SQLite lock retry bounded.
 
-Тесты этой feature-ветки покрывают create/list/revoke, ограничители и неизвестные поля, preview 404/410, регистрацию+login+accept, повтор без расхода, CSRF/roles, cap/freeze rollback и параллельные accept при use/cap ограничениях. Это backend evidence для M02/T04 и входной role gate S02, но ещё не full T04/T20 и не интегрированный `develop`. Токен находится в URL по контракту; application-код его не журналирует, а redaction reverse-proxy access logs остаётся задачей P1-03 до публикации ссылок.
+Tests PR #12 покрывают create/list/revoke, ограничения и неизвестные поля, preview/accept 404/410, регистрацию+login+accept, повтор без расхода, CSRF/roles, cap/freeze rollback и parallel accept при use/cap limits. Это backend evidence для M02/T04 и invite role gate S02, но не full T04/T20. Токен находится в URL по контракту; application-код его не журналирует, а redaction reverse-proxy access logs остаётся задачей P1-03 до публикации ссылок.
 
 ## Границы доверия
+
+CI workflow (P1-02) имеет только `contents: read`, actions закреплены на полных commit SHA, а обычный PR job sandbox ограничен unit tests. Real Docker smoke отделён в manual workflow с boolean-подтверждением; secrets не выдаются. Его GitHub dispatch станет доступен после попадания workflow в default branch `main`. Эти настройки снижают полномочия CI, но не подтверждают безопасность образа или выполнения: T18 остаётся за реальными hostile cases владельца sandbox.
 
 Недоверенные данные: HTTP body/query, UUID, email/displayName/description, source, custom stdin, Markdown/TeX/assets, архивы/manifest и remote import responses. Admin-only upload тоже валидируется. Исполняемый source всегда враждебен, даже если пользователь зарегистрирован.
 

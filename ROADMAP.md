@@ -43,13 +43,13 @@ PR #1: документация и PDF. PR #2/#5/#8: backend, аккаунты/C
 
 ## Агент 1 — платформа и запуск
 
-### P1-01 · feature/tournament-invites · READY
+### P1-01 · feature/tournament-invites · MERGED (#12)
 
 Продолжить уже занятый агентом 1 checkout, если он есть. Create/list/revoke, public preview и participant accept. Random token хранится как hash, raw token выдаётся при создании. Expiry/maxUses/cap/repeat/concurrent accept атомарны с roster; freeze и active-role gate не обходятся. Register всегда participant.
 
 Готово: API tests expired/revoked/limited/repeat/race; одно вступление расходует один use, retry не расходует. **Независимо:** готовая app tournaments, без сетки/judge/UI. **CONNECT:** invite browser flow P4-02. M02/S02; T04 backend.
 
-### P1-02 · feature/platform-ci-contracts · READY
+### P1-02 · feature/platform-ci-contracts · IN_REVIEW
 
 PR CI: текущая backend suite/check/migration drift, новые domain suites, package imports, fixture schema. Sandbox unit checks отдельно от real Docker smoke. Минимальную app/URL регистрацию делает владелец вместе с модулем в своём PR; P1-02 проверяет эти shared добавления и подключает остальные порты короткими срезами. Материализовать расширения common/contracts коротким срезом; до этого домен может определить локальный typing Protocol по v1. Подготовить branch protection рекомендации; не выдавать их за включённые правила.
 
