@@ -14,9 +14,9 @@
 
 ## Срез P3-05, начатый до перепланирования v3
 
-- Статус: `IN_PROGRESS` до создания feature PR; ветка `feature/private-drafts-history`.
-- Начальная база: `cad34ea4ddf1171779dc22139f2e1533160b5015`; синхронизирована с `origin/develop=1f60aa9` коммитом `4b6030d887bc41f3eb01d37370a3c9b36651760a`. Текущий fetch `origin/develop=ae0846b22953527d74835febf963169e2093238d` входит в выполняемый merge.
-- Реализация: код/audit commit `fbdb01c`; private storage/history, CAS, common `WorkspaceContext` actions, active participant/CSRF/IDOR guard, своя миграция. Без настоящего A2 provider runtime fail-closed с 503.
-- Проверки на locked dependencies: draft tests 13/13; backend 61/61; check/migration drift/contracts/common imports/compile passed; domain script корректно no-op, suites в ref отсутствуют.
+- Статус: `IN_REVIEW`; [PR #21](https://github.com/D0UP1G/FirsterChuv/pull/21), feature `feature/private-drafts-history` → `develop`.
+- Начальная база: `cad34ea4ddf1171779dc22139f2e1533160b5015`; синхронизации `origin/develop=1f60aa9` (`4b6030d`) и `origin/develop=ae0846b22953527d74835febf963169e2093238d` (`bb33c11`, merge commit). Код/audit commit `fbdb01c`.
+- Реализация: private storage/history, CAS, common `WorkspaceContext` actions, active participant/CSRF/IDOR guard, своя миграция. Без настоящего A2 provider runtime fail-closed с 503. Contract proposal остаётся `PROPOSED`.
+- Проверки на locked dependencies после последней синхронизации: backend 118/118; contracts 9 fixtures; common imports; domain 36/36; sandbox unit 12/12; Django check, migration drift, compileall и diff check прошли. Browser T15/T20 не выполнялись.
 - `context/contracts/agent-3-private-draft-get.md` — `PROPOSED`: уточнить GET run selector и поведение отсутствующей записи. Browser T15 и полная T20 приёмка не выполнены; P4-04 остаётся CONNECT для autosave/history UI. `context/STATE.md` агентом 3 не менялся.
-- Следующий шаг: синхронизировать merge `ae0846b`, опубликовать отдельный P3-05 PR в `develop`, обновить карточку/аудит публикации; затем продолжить по приоритету ROADMAP v3 (сначала P3-04.1, затем P3-03).
+- Следующий шаг: дождаться review/checks PR #21 и решения по contract proposal; затем продолжить очередь ROADMAP v3 с P3-04.1, не изменяя чужую ветку/checkout без проверки владельца.
