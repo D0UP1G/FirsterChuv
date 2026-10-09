@@ -1,5 +1,13 @@
 # Координатор: ревизия и параллельный план
 
+## Три активных владельца, 2026-10-10 — текущая сессия
+
+- Статус IN_PROGRESS. Прямое уточнение команды: активны A3, A4 (прежний A1, включая текущего координатора) и A5; A2 больше не назначать новые задачи.
+- Ветка feature/three-agent-mvp от origin/develop 85e0cd0d2b82fce9996106af3922171dcee17c76. Scope: новый ROADMAP v5, согласованные назначения/контракты/приёмка и проверенные #63/#64 через обычные merge commits. Runtime #53/#57–59 не включать без исправлений.
+- Пути: ROADMAP.md, AGENTS.md, README.md, context/PROJECT.md, STATE, agents/README и датированные назначения в карточках, новый own audit; docs/architecture, requirements, quality, reviews, navigation, history. Чужие аудиты сохраняются без изменения.
+- A4 принимает API/domain/public access/events и бывшую competition дорожку A2. A3 принимает judge/queue/problems/drafts, startup/config/Compose/CI/system acceptance. A5 владеет всем frontend.
+- Приоритет: M0 — реальный матч двух участников с настоящим вердиктом и победителем; полный MVP кейса остаётся отдельной приёмкой. Проверки и merge evidence записываются после фактического выполнения.
+
 ## Подтверждённое слияние и closeout, 2026-10-10T01:36:20+03:00
 
 - Основная ревизия/передача DONE: #60 MERGED в723985f, final head9d7996d, CI5/5 SUCCESS; source21/50–52/54–56 MERGED. Main unchanged; все166 audits base/source/own сохранены.
