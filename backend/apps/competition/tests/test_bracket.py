@@ -102,6 +102,35 @@ class GenerateSingleEliminationTests(unittest.TestCase):
 
                 self.assertCountEqual(first_round_ids, plan.participant_ids)
 
+    def test_no_entrant_appears_twice_in_any_round(self) -> None:
+        for count in range(2, 17):
+            with self.subTest(count=count):
+                plan = generate_single_elimination(entrants(count))
+                round_indices = sorted({node.round_index for node in plan.nodes})
+
+                for round_index in round_indices:
+                    with self.subTest(round_index=round_index):
+                        participant_ids = [
+                            slot.participant_id
+                            for node in plan.nodes
+                            if node.round_index == round_index
+                            for slot in node.slots
+                            if slot.resolution == "PLAYER"
+                        ]
+
+                        self.assertTrue(
+                            all(
+                                isinstance(participant_id, str) and participant_id
+                                for participant_id in participant_ids
+                            ),
+                            f"PLAYER slot has no participant ID in round {round_index}",
+                        )
+                        self.assertEqual(
+                            len(participant_ids),
+                            len(set(participant_ids)),
+                            f"participant appears more than once in round {round_index}",
+                        )
+
     def test_invalid_rosters_are_rejected(self) -> None:
         invalid_rosters = [
             [],
