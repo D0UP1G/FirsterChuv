@@ -1,5 +1,7 @@
 # Контракты v1 для независимой разработки
 
+> Актуальная передача 2026-10-10, ROADMAP v5: A4 (прежний A1) owns API/accounts/tournaments/competition/events/common contracts; A3 owns problems/submissions/drafts/judge/worker + config/Compose/CI/system acceptance; A5 весь frontend. A2 больше не активный producer. Старые датированные назначения ниже — история; поля v1 и принятые additive boundaries не меняются. Missing provider блокирует только CONNECT, не всю роль.
+
 Дата: 2026-10-09. Назначение: реализация пяти дорожек без ожидания соседней feature-ветки. Это спецификация целевых границ; готовность конкретного адаптера подтверждается кодом/PR, а не этим документом. В `common/contracts.py` объявлены immutable DTO и typing Protocol для submission/result/workspace, problem catalog, public access, judge и events; они не содержат provider implementations и не импортируют optional apps. До интеграции конкретных apps доступ к ним остаётся только через готовый adapter, а отсутствие provider закрывает действие.
 
 ## Приоритет и версия

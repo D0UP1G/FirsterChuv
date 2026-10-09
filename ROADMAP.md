@@ -1,186 +1,184 @@
-# ROADMAP v4: пять владельцев до рабочего MVP
+# ROADMAP v5: три агента и первый рабочий матч
 
-Перепланировано координатором 2026-10-10 по прямому запросу команды. Новый Agent 5 полностью принимает frontend и дизайн. Agent 4 принимает public events/SSE и сквозную приёмку. Исторические P-ID сохранены: P4-01–06 остаются UI-задачами, их новый владелец A5. Выполненные cores не переписывать. [План до передачи](docs/history/ROADMAP-2026-10-10-before-frontend-handoff.md), [STATE](context/STATE.md), [ревизия PR](docs/reviews/2026-10-10-mvp-readiness.md), [кейc](docs/source/Кейс_Платформа_соревнований.pdf).
+Прямое уточнение команды 2026-10-10: остались Agent 3, Agent 4 (прежний Agent 1, включая текущего координатора) и Agent 5. A2 больше не является активным исполнителем; его готовые ветки, P-ID и аудиты сохраняются, работу принимает A4. Весь frontend принадлежит A5. [Предыдущий план v4](docs/history/ROADMAP-2026-10-10-before-three-agent-plan.md), [STATE](context/STATE.md), [кейс](docs/source/Кейс_Платформа_соревнований.pdf), [приёмка первого матча](docs/quality/m0-demo.md).
 
-## Фактический этап
+## Что уже есть и что мешает запуску
 
-R0 — интеграционная база и проверенные отдельные модули. R1 — полный рабочий путь — ещё не принят. Auth/roles/CRUD/roster/invites, bracket ORM, clock/score/readiness/ledger/admin cores, queue/worker/outboxes, LocalJudge и React UI в develop. Нормализованный catalog имеется; compiler registry ещё не подтверждён runtime readiness. Брендбук — static reference, не готовая React интеграция.
+В develop 85e0cd0 интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, clock/score/readiness/ledger/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 MERGED. Это готовые части, их не нужно переписывать.
 
-Новая coordinator feature включает проверенные #21 (CAS исправлен), #50 (pairings/reset HTTP), #51 (коррекция SHA), #52 (frontend CI), #54 (дизайн с inert auth preview correction), #55 (publication docs), #56 (Markdown brandbook). До MERGED integration PR — IN_REVIEW; после подтверждённого MERGED/ancestry доступны из fresh develop без отдельного STATE PR. #53 fd79038 не включён: concurrent snapshot write может потерять cursor/дать database is locked; equal cursor допускает другой run/payload. Исправление — первое самостоятельное задание A4. #57–59 проверены, но не включены: SQLite read→write races, old-run participants не frozen в original #58 (fix уже есть в leaf #59 9eb394c), downstream projection не отзывается при rematch (#59), feature-base вместо develop. Их исправление — первый READY A2; 16 happy-path tests не закрывают эти дефекты.
+#63 уточняет static reference по кейсу, #64 переносит токены бренда в React, #65 добавляет минимальные mobile/focus правила и own audit. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — [ревизия](docs/reviews/2026-10-10-mvp-readiness.md).
 
-Подтверждено 2026-10-10T01:36:20+03:00: integration#60 MERGED в723985f, final CI5/5 SUCCESS. #21/#50–52/#54–56 source такжеMERGED. Base#57–59 уже develop; source#58 latest733acc6 добавил finalizing/promotion, но13 tests не закрывают file-backed races. #59 latest9eb394c содержит participant fix; обе ветки sync ordinary merge, сохранять готовые реализации. A5 active после handoff follow-up. [Closing audit](context/audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md).
+Реального сквозного MVP пока нет. Не подключены полностью persisted run/gateway/snapshot/result+failure sinks, actual worker executor/readiness и production API/UI. #53 и #57–59 пока не включены: воспроизведены SQLite races и rematch/downstream defect. Последний #57 5ae4af5 синхронизирован с develop, но runtime.py не изменён относительно проверенного 0073fbd. #58 b66b6cd добавляет clock command; это не исправляет найденные races. В #59 0ba3119 надо сохранить frozen participant fix из 9eb394c, исправив оставшиеся дефекты.
 
-## Ближайший результат, который показываем
+Дополнительный первый приоритет A3: в attempt 1 CI #63 на неизменённом backend concurrent same-key admission дал uncaught SQLite lock в QueueCounter. Attempt 2 зелёный; ошибка записана, не считается исправленной повтором CI.
 
-Админ создаёт турнир → два участника входят по invite → назначен immutable набор задач и оба ready/ручной start → участник видит условие и редактор → API принимает посылку → worker реально компилирует и проверяет её в Docker → durable result меняет score → победитель проходит дальше. Анонимный зритель получает public snapshot/SSE без исходников. Для первого smoke данные задачи импортируются программно в собственном normalized формате, вердикт вычисляется реально. Это R1, не финальная приёмка официального пакета.
+## Три зоны без пересечения файлов
 
-## Пять параллельных дорожек
-
-| Владелец | Первое READY действие | Следующее независимое действие | Пути |
+| Владелец | Вся зона | Первое READY задание | Независимый резерв |
 |---|---|---|---|
-| A1 | P1-02.5 failure DTO + run problem snapshot port, маленький совместимый PR | P1-03 PublicAccess/share/security; P1-04 build/Compose/readiness | common/config/accounts/tournaments/deploy/Compose/start scripts/CI |
-| A2 | Исправить #57–59: full SQLite retry/immutable run participants/GitFlow base | P2-03 get/config/start/ready + gateways; P2-04 failure sink/finalization; P2-05 API | competition и свои migrations |
-| A3 | P3-04.2 real LocalJudge worker executor/factory и smoke импорт без HTTP | P3-02.2 import management/workspace; P3-05 real provider CONNECT; cleanup fencing | problems/submissions/drafts/judge/sandbox |
-| A4 | P4-07 snapshot correctness fix #53 на file-backed SQLite | P2-06.2/3 typed producers/public HTTP/SSE; P4-08 system acceptance harness | events и свои migrations/tests; scripts/acceptance; docs/quality/evidence |
-| A5, новый | P5-01 tokens/layouts из frontend/design + реальный auth/invite/bracket UI | P4-03–06 CONNECT по одному готовому API; P5-02 responsive/accessibility | весь frontend/src/styles/client/editor/map/frontend tests |
+| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | P1-02.5 короткие additive ports; P2-03 безопасный persisted run + config/start/read APIs + gateway | P2-04 ledger/failure/clock; P1-03 access/security; P2-05 admin guards; P4-07 snapshots |
+| A3 | problems/submissions/drafts/judge/sandbox, config/factories/Compose/start scripts/CI, system acceptance | P3-04.1 admission contention; P3-04.2 реальный LocalJudge executor/factory + programmatic smoke import | P3-02 import/assets/compiler probes; P1-04 one-command build; P3-05 private draft access; P4-08 acceptance harness |
+| A5 | весь frontend: React/design/styles/typed clients/editor/map/UI/browser checks | P5-03 подключить готовые auth/invite/admin/bracket API; минимальный бренд из #64 | typed match/workspace clients, loading/error/empty states, draft isolation, keyboard/minimal responsive |
 
-PublicAccess producer A1 → A4 public transport; A2 run/gateway/result → A3 queue/workspace; A3 real judge → A2 score; A4 public HTTP/SSE → A5 UI. Совместимые typed ports/test fixtures позволяют писать свою часть сейчас. Provider absence в production — integration/readiness error, никогда mock verdict.
+A4 владеет backend/apps/common/contracts.py и contract fixtures. A3 владеет backend/config, deploy/Compose, start scripts и общим CI. Каждый backend app owner сам добавляет свой AppConfig/URL include минимальным изменением shared settings/api_urls, сохраняя существующие регистрации. Не ждать отдельного согласования такого include. Общие provider settings/entrypoints согласовать коротким CONNECT, не менять соседние apps. A5 backend не правит; findings передаёт владельцу через own audit/contract request.
 
-## Правило непрерывной работы
+## M0: ближайший демонстрируемый результат
 
-1. Не завершать назначенную дорожку после одного PR, пока есть READY работа.
-2. Для конкретного CONNECT записать producer/consumer/DTO/path/SHA и WAITING_CONNECT; в этой же сессии выбрать следующий READY пункт таблицы. Ожидание review/общего STATE не блокирует весь агент.
-3. Внутренние unit/API/DB tests используют typed test ports; demo использует реальные providers. Новый endpoint публикуется отдельно, UI подключается отдельно.
-4. Свои AppConfig/URL includes разрешены владельцу app без ожидания A1, сохранять остальные регистрации. Shared contracts/config/Compose — A1 короткими PR.
-5. Только отдельные checkout, feature/* от fresh develop, обычный merge при sync, PR→develop, без force push/branch deletion. До изменения own card: задача/branch/base/paths. На сессию новый append-only audit.
-6. При отсутствии всех READY задач записать конкретные блокеры; явный стоп пользователя имеет приоритет. Назначение в Git не меняет незакоммиченный checkout соседнего автора.
-7. Фиксировать implementation / integration / acceptance отдельно. Зелёные unit/CI или статичный экран не закрывают полный кейс.
+Это промежуточный работающий срез. Он не закрывает все обязательные функции блоков 1–3 кейса и не называется полной приёмкой хакатонного MVP.
 
-## A1: платформа, безопасность, сборка
+1. Чистый clone → env/bootstrap → одна документированная команда поднимает frontend/API/worker/clock; normalized demo bundle импортируется программно. Один реально проверенный compiler достаточен для первого smoke; список языков нельзя имитировать.
+2. Admin создаёт турнир/invite; два обычных participant входят по ссылке. Admin выбирает 1–2 normalized задачи, одинаковые immutable rules/duration/languages для обоих и запускает матч вручную.
+3. Участники видят доступное условие, server timer, editor; каждый отправляет код. API сохраняет посылку и возвращает 202. Worker действительно изолированно компилирует/проверяет, отдаёт OK/WA/CE; UI без reload показывает собственную историю, author-only CE и score. Draft не теряется при reload/switch.
+4. Server clock закрывает приём, FINALIZING ждёт ранее принятые посылки, durable ledger выбирает победителя по rules; одинаковый результат не удваивает балл. Если следующий матч есть, winner продвижение атомарно. Инфраструктурный сбой — понятная техническая ошибка/восстановление, не поражение игрока.
+5. После этого подключить минимальный anonymous public snapshot и существующую карту. Polling допустим только как промежуточный CONNECT M0; требование V03/T17 закрывается настоящим SSE позднее. Private code/CE/tests не попадают зрителю.
 
-### P1-01 · invites · DONE backend, acceptance PARTIAL
+Изоляция компиляции и запуска, resource limits, no network/host/secrets, role/object checks, CSRF, immutable accepted-run snapshot, durable queue и честные ошибки обязательны уже в M0. Их нельзя отложить ради первого demo. Official package/README блокирует только официальный importer/относящиеся проверки; normalized programmatic smoke не требует его и не выдаётся за official acceptance.
 
-#12 уже integrated: hashed token/expiry/revoke/use/cap/idempotency. Не повторять. P1-01.1 READY: стабилизировать конкурентные acceptance/retry на file-backed и shared-cache SQLite без ослабления capacity/assertions; прежние intermittent database_busy записаны. M02/S02; T04.
+## Правило работы при зависимости
+
+- Назначена вся дорожка: после одного PR продолжать следующий READY пункт. WAITING_CONNECT/WAITING_EXTERNAL относится только к конкретному adapter/endpoint.
+- В карточке записать producer, consumer, DTO/port, path, свежие source SHA и следующий независимый пункт. В той же сессии перейти к этому пункту. Не заканчивать всю работу из-за ожидания review/STATE/соседа, пока есть READY задания. Явный стоп пользователя имеет приоритет.
+- Pure/service/API tests используют injected typed ports только в tests; production без реального provider отказывает с readiness/integration error. Готовый backend endpoint и его UI consumer выпускаются отдельными небольшими PR.
+- Синхронизироваться с fresh origin/develop после каждого нужного merge. Не ждать завершения всей backend дорожки и не повторять integrated core.
+- feature/* от fresh develop, own isolated checkout, PR→develop, ordinary merge, без force push/удаления чужих веток. До edits own card с branch/base/paths, после сессии новый append-only audit. Документация не запускает чужую остановленную сессию.
+
+## A4: API и логика соревнования
+
+### P1-01 · invites · backend DONE, browser/concurrency acceptance PARTIAL
+
+#12 integrated: hashed token/expiry/revoke/cap/repeat. Не повторять. Резерв P1-01.1: стабилизировать file/shared-cache SQLite acceptance без ослабления cap/assertions; не тратить use повторно. A5 проверяет real invite browser path. M02/T04.
 
 ### P1-02 · common contracts / CI · PARTIAL
 
-Исходный #17 integrated. P1-02.6 #52 добавляет locked npm/typecheck/lint/tests/build; coordinator ограничивает workers=1. После integration MERGED этот implementation DONE. Остаток P1-02.5 READY: frozen InfrastructureFailureReceipt/Sink и отдельный RunProblemSnapshot/Provider без изменения обязательных SubmissionPermit/ResultReceipt/verdicts. [Принятые границы](context/contracts/2026-10-10-mvp-boundaries.md). Common imports без optional apps. Опубликовать этот небольшой PR первым; остальные владельцы до него используют структурно совместимые локальные ports, не останавливаются.
+#17 и #52 CI integrated. Первым коротким PR P1-02.5 материализовать frozen InfrastructureFailureReceipt/Sink и RunProblemSnapshot/Provider из принятых boundaries. Existing v1 SubmissionPermit/ResultReceipt/verdict enum не менять. Common imports без optional apps. A3/A5 уже могут писать consumers на структурно совместимых ports, ждать их ответа не нужно. Общая эксплуатация CI передана A3; P1-02 не делает его зависимым от A4.
 
-### P1-03 · PublicAccess / share / security · READY
+### P1-03 · access/security · READY
 
-Public tournament anonymous read; unlisted — отдельный hashed read-only share token с expiry/revoke, не invite. Admin create/revoke link, private inaccessible. PublicAccessV1 context без source/email/secret. Proxy direct/one-hop/X-Forwarded-For spoof/rate limits; log redaction invite/share, CSRF/cookies/HTTPS и no-store/no-referrer. SQL/role/UUID/IDOR tests. CONNECT A4 SSE; пока ждёт — P1-04. S01/S02/TEAM06; T02/T20.
+PublicAccessV1 для anonymous public и отдельного hashed unlisted share token (expiry/revoke, не invite). Сначала public visibility, полный share далее. Global roles/default participant, IDOR/private source/CSRF/no-store/no-referrer/proxy/rate limits/log redaction. SQL filters/ordering allowlist; unsafe Markdown/URLs/assets не исполняются. S01/S02/TEAM01/02/06; T02/T20. Резерв без judge/frontend.
 
-### P1-04 · one-command build/Compose/runtime · READY по срезам
+### P2-01 · bracket ORM · implementation/integration DONE, acceptance PARTIAL
 
-P1-04.1 frontend multi-stage build + persistent SQLite/WAL/private storage, migrations/readiness/bootstrap, actual sandbox image build. P1-04.2 отдельные clock/worker providers/factories на точных merged SHA. Docker authority только trusted worker; API/solution её не получают. Не запускать фиктивные runtime profiles: до provider понятная readiness error. P1-04.3 restart DB/source/drafts/results и own-container fencing. D01/D03; T01/T19. A4 пишет acceptance harness, не редактирует Compose.
+#7/#44/#46 integrated, BYE/WAITING/frozen rank/history. M03/M04/T05/T06. Не писать core повторно.
 
-### P1-05 · release/demo · после R1/R2
+### P2-02 · bracket pairings/reset · implementation/integration DONE, browser PARTIAL
 
-Полная T01–21 совместно A4, official package и hostile проверки, README/env, demo либо видео ≤5 минут. release/* → main + tag → develop только после приёмки; main bootstrap. До этого выполнять P1-02.5/03/04/01.1. D04–06/T21.
+#50 integrated через #60. Admin PUT full first-round pairs по User UUID, POST reset до первого start, reason/actor/Idempotency-Key/exact receipt. Roster/history не стирать. Подключать A5 сейчас. M04/T06.
 
-## A2: настоящий матч и результат
+### P2-03 · persisted run / clock / gateway · M0 critical, READY
 
-### P2-01 · bracket ORM/registration · DONE implementation/integration, acceptance PARTIAL
+1. Сохранить #57 через обычный merge в собственной feature от develop; убрать read→write race configure (ORM catalog reads до первого write). Write-first/короткая transaction либо bounded retry всей операции только BUSY/LOCKED; exhausted contention → контролируемый retryable ответ. File-backed first configure/update/start concurrency + rollback. Base уже develop, но найденный дефект не исправлен.
+2. Frozen original run participants/problem versions/checksums/rules/languages, reuse participant snapshot fix #59. Минимальные real GET match, PATCH config, POST start; ready/both_ready следующим коротким PR. Trusted server elapsed/deadline, two distinct players, idempotent start; management clock restart, готовые cores использовать.
+3. CompetitionGateway/WorkspaceAccess и RunProblemSnapshot producer: membership/actor/run/problem/time/actions, condition hidden до start. Minimal start+gateway публиковать без ожидания полной admin API, judge/UI/SSE. Доставленная старая посылка использует original run, не current/latest. M05/M06/P03; T07–09.
 
-#7 integrated через #44/#46; BYE/WAITING/frozen rank, generate/private read. Не писать заново. M03/M04; T05/T06.
+### P2-04 · ledger / result / failure / promotion · M0 critical, READY параллельно P2-03
 
-### P2-02 · bracket lifecycle/pairings/reset · PARTIAL acceptance
+Сохранить #58 b66b6cd (clock command/finalization) и frozen participant fix из #59. register_accepted/apply_result не читают до безопасной write/retry boundary; реальные concurrent file-backed tests. Accepted/result/failure sink выполняют exactly-once effects в admission/delivery transaction. Deadline → FINALIZING до завершения accepted queue; delayed accepted OK считается. Infra failure не WA/RE/поражение и не бесконечное молчаливое ожидание. Unique solved/penalty/tie, durable clock, winner/downstream/event атомарны; old run не меняет new score. Публиковать real sinks малым PR. M05/M07/J04; T09/T10/T19.
 
-P2-02.1 lifecycle correction integrated. P2-02.2 #50 — admin PUT full pairs по User UUID→frozen entrant, POST reset, reason/actor/Idempotency-Key/409/SQLite first-write. После integration MERGED implementation/integration DONE; browser/T06 ещё проверяет A5/A4. История played runs не удаляется, roster не размораживается.
+### P2-05 · admin effects/API · обязательный следующий этап, READY резерв
 
-### P2-03 · persisted run / clock / gateway · первое READY, R1 critical
+#59 0ba3119 пока не mergeable: read-before-write same-key race и rematch оставляет старого winner в downstream. Revoke/reopen unstarted downstream атомарно; started downstream запрещает пересмотр. Pause/resume/extend/technical/rematch/replacement, actor/reason/exact receipt/conflicting key409, original run immutable. Готовые guards/command cores уже integrated; не переписывать. Реальные file-backed replay/downstream tests, затем HTTP/UI CONNECT. M08/T11/T20.
 
-P2-03.1 сначала fix #57 0073fbd: catalog ORM read внутри atomic до первого write даёт конкурентный lock error. Короткая безопасная transaction/retry, file-backed first config/update и rollback tests; PR→develop. Config/readiness persistence уже написана, не повторять. Затем configured MatchRun/current_run/immutable run participants/problem versions+checksum+rules; проверенные compiler только для READY/start. Реальные GET match/config/start/ready; manual/both_ready, two distinct players, idempotency, transaction/race, server active elapsed/deadline equality/paused semantics. Нужен durable run_match_clock/restart. Использовать готовые clock/readiness cores.
+### P2-06 · public events/SSE · PARTIAL, owner A4
 
-P2-03.2 CompetitionGateway authorize_submission/authorize_workspace и отдельный run-scoped snapshot resolver; trusted actor/membership/run/problem/time/actions/condition_available. Adapter вызывается внутри admission transaction; старая посылка использует свой run, не current/latest. Публиковать минимальный start+gateway срез сразу, не ждать admin actions или judge/UI. При CONNECT ожидании — P2-04/05. M05/M06/P03; T07–09.
+Event store #16 integrated. P2-06.2 snapshot исправить через P4-07, lifecycle/result/accepted typed producers в той же transaction. P2-06.3 PublicAccess-protected bracket/match snapshots, затем SSE heartbeat/Last-Event-ID/resync/caps/backpressure. Closed public DTO: никаких source/email/private test/CE. A5 отдельно consumer. V01–03/T16/T17/T20.
 
-### P2-04 · durable ledger/finalization/promotion · READY, R1 critical
+### P4-07 · snapshot correctness · READY резерв / следующий public CONNECT
 
-Первое fix #58 1f3fae5: accepted/result reads до write claim дают lock errors; участники historical run восстанавливаются из mutable slots. Fix participant_user_ids уже добавлен в leaf #59 9eb394c и historical late-result probe PASS — сохранить его. Freeze participants на run и сохранять late historical results после replacement; full bounded transaction retry + file-backed admission/result/duplicate tests. Persistence slice уже написан, не повторять. Не повторять pure immutable ledger #38 и score #13. Unique accepted submission_id, original received/elapsed/rules; result/failure sink в DB, dup/out-of-order/SUPERSEDED. FINALIZING ждёт все принятые pending; infrastructure failure не становится WA/автопоражением. Winner/downstream/current score атомарны; full tie→новый run без переноса score. EventWriter producer A4 можно inject в tests. Typed receipt DB tests не требуют Docker/UI. M05/M07/J04; T09/T10/T19.
+#53 fd79038 сохранить ancestry/audits ordinary merge, исправить concurrent first save/update: latest cursor не теряется, equal cursor только identical run+payload идемпотентен, equal conflicting snapshot отклонён. Write-first/bounded whole retry, controlled busy, event+snapshot outer rollback целиком. File-backed first create/update/out-of-order/equal-cursor tests; 13 happy tests недостаточны. После minimal run/sinks подключить anonymous snapshot M0; SSE отдельным PR.
 
-### P2-05 · durable admin effects/API · READY после/параллельно R1 persistence
+## A3: задачи, исполнение и запуск всей системы
 
-Fix #59 latest9eb394c: после rematch завершённого полуфинала downstream хранит старого победителя и новый не может пройти; атомарно revoke/reopen unstarted downstream projection и проверить повторное продвижение. Same-key concurrency даёт uncaught lock error до exact replay; source base retarget develop. Pause/resume/extend/technical/rematch persistence уже написана, но не merged; test downstream guards/old-run history/replay на файле, затем API и replacement. Core guards #20 и receipts #41 integrated. Persist pause/resume/extend/technical/rematch/replacement, reason/actor/history, repeat exact command возвращает исходный receipt, changed intent 409, old run immutable, downstream started запрещает пересмотр. Runtime/API tests на trusted snapshots доступны без judge. M08/T11/T20.
+### P3-01 · sandbox harness · core integrated, acceptance PARTIAL
 
-### P2-06 · public events/SSE · TRANSFERRED → A4
-
-P2-06.1 #16 integrated, OK→WA/CE сохраняет SOLVED+lastVerdict, closed public whitelist. P2-06.2 #53 требует исправления A4 P4-07; не считать integrated. P2-06.3 A4 public transport, heartbeat/cursor/resync/caps/slow client. A2 только вызывает adopted EventWriter из own transition transaction после CONNECT; не редактирует events параллельно A4. V01–03/T16–17/T20.
-
-## A3: задачи, реальные вердикты, durable worker/workspace
-
-### P3-01 · sandbox harness · integrated, full hostile acceptance PARTIAL
-
-Исправленные F01/F07 и task limits уже integrated; prior actual Docker bounded probes сохранены. Не писать harness повторно. Остаток: доказанные ML/OOM/checker/privacy/cleanup/restart и official hostile T18/T20/T21. Все исполнения только bounded isolated container, compilation также внутри него.
+F01/F07/task caps исправлены, исторические real Docker probes сохранены. Подтвердить compile/run/checker resource limits, no network/host/secrets, ML/OOM/output/pids/cleanup на текущем integration SHA. Контейнер на исполнение, компиляция внутри изоляции. M0 basic safety, полный hostile T18/T20/T21 далее.
 
 ### P3-02 · catalog/import/workspace · PARTIAL, READY
 
-Normalized immutable catalog/private split #14, validation #25/admin GET #26 integrated. P3-02.2 normalized import management/upload/status без host extraction/scripts — доступен сейчас. Реальный compiler readiness probe, не manifest verified=true. Workspace statement/assets/languages — run-pinned version/checksum + real A2 access provider, закрытые artifacts не HTTP. Programmatic smoke import можно реализовать независимо от match/frontend. Official adapter отдельно P3-06. P01/P02/E02/T12/T13/T20.
+#14/#25/#26 integrated. P3-02.2: программный normalized demo import command, assets/statements/TeX/images/table/examples/limits, private split; не ручной copy в UI. Runtime compiler probes, не доверять manifest verified=true. Workspace/языки используют pinned run version/checksum и A4 access; public hidden artifacts запрещены. Import/probe работа не зависит от HTTP A4. P01/P02/E02; T12/T13/T20.
 
-### P3-03 · LocalJudge real deployment · core integrated, READY executor
+### P3-03 · LocalJudge deployment · real core integrated, M0 executor READY
 
-#23 provider уже integrated; собственный compile/test/checker и task caps. Собрать актуальный sandbox image, подтвердить фактический compiler в trusted worker, immutable synthetic bundle → реальные OK/WA/TL/ML/RE/CE. Версия только original accepted run. CE/diagnostics author-only, checker/protocol errors — infrastructure. Этот real smoke не требует A2 HTTP/UI и не заменяет official acceptance. J01/J02/E03/T14/T18.
+#23 provider reuse. Production sandbox image/actual compiler, normalized immutable bundle → реальные OK/WA/CE и далее TL/ML/RE. Checker/protocol failure инфраструктурный; CE author-only. Собственный smoke без API/frontend доступен сразу; это не official acceptance. J01/J02/E03/T14/T18.
 
-### P3-04 · queue/worker/providers · PARTIAL, READY, R1 critical
+### P3-04 · queue/worker/providers · PARTIAL, M0 critical
 
-#15 queue admission retry и #37 heartbeat/leases/recovery/result+failure outboxes/adapters integrated. P3-04.2 production executor/factory с LocalJudge и owner/submission/claim-token fencing; runtime startup требует реальные result+failure sinks и trusted snapshot. P3-04.3 real A2 gateway/sinks CONNECT по одному merged SHA. P3-04.4 сохранить immutable version/checksum при admission из RunProblemSnapshot, после rematch worker не обращается к active latest; infra failure outbox durable/retry. [Границы приняты](context/contracts/2026-10-10-mvp-boundaries.md); WAITING теперь implementation/provider, не обсуждение формы. Пока ждёт A2 adapter — real executor/import/cleanup tests. J04/E03/T09/T14/T19/T20.
+P3-04.1 первым устранить observed intermittent admission lock: CI #63 attempt1 concurrent same-key failed QueueCounter. Не лечить простым rerun; bounded full transaction retry/write-first, shared-cache и file-backed cases, exact one submission/receipt/event, original received_at, no source loss, exhausted503. #15/#37 queue/leases/heartbeats/recovery/result+failure outboxes уже integrated.
 
-### P3-05 · private drafts/history · CAS исправлен, runtime PARTIAL
+P3-04.2 actual LocalJudge executor/factory, own owner/submission/claim-token/lease fencing; Docker authority только trusted worker, не API или solution. P3-04.3 real A4 gateway/sinks CONNECT по одному merged SHA. P3-04.4 сохранять trusted version/checksum при admission, immutable accepted run resolution; old run не latest catalog. Startup requires real snapshot/result/failure providers, не mock fallback. Пока A4 endpoint ждёт — import/compiler/cleanup/Compose/recovery. J04/E03/T09/T14/T19/T20.
 
-#21 620f58e: bounded retry whole CAS transaction BUSY/LOCKED, re-read revision, 409 winning draft, exhausted503; file-backed first create/update 18/18 прошли. После integration MERGED P3-05.1 implementation/integration DONE. GET selector принят: runId+languageId query; missing draft404, initial expectedRevision0, PUT runId body unchanged. Real WorkspaceAccess factory+IDOR/CSRF/no-store and actual autosave/reconnect/conflict/logout CONNECT A2/A5; без provider503. E04/S02/T15/T20.
+### P3-05 · drafts/history · CAS integrated, CONNECT READY по provider
+
+#21 исправлен и merged через #60: full bounded retry, 409/current winner, exhausted503, file-backed18 PASS. GET runId+languageId query, missing404, first expectedRevision0; private service source author-only. Real WorkspaceAccess provider A4 → A3 factory/views → A5 autosave/conflict/reload/task/language/logout. Нет provider →503, не allow-all. E04/S02/T15/T20.
+
+### P1-04 · one-command runtime/config/Compose · M0 critical, owner A3
+
+P1-04.1 frontend multi-stage build + API/worker/clock services, persistent SQLite/private storage, migrations/normalized import/bootstrap admin/env без secrets. P1-04.2 реальные factories/settings/readiness на точных provider SHA; минимум одна документированная команда запуска, до provider fail-closed. P1-04.3 worker restart/leases/source/drafts/results/own-container recovery. API без Docker socket, sandbox без mounts/secrets/network; не global prune. A4 apps публикует отдельно, A3 wires runtime короткими PR. D01/D03/T01/T19.
+
+### P4-08 · system acceptance harness · READY независимый резерв, owner A3
+
+Disposable DB/identities, available auth/invite/bracket APIs, compiler/isolation probes, queue recovery checks уже можно писать. M0 script normalized import→run→queue→actual Docker→durable result→score/winner; отмечать missing endpoint NOT_RUN, не fixture pass. A5 browser evidence, A4 API/domain fixes. scripts/acceptance и docs/quality/evidence принадлежат A3; чужую production DB не использовать.
+
+### P4-09 · full case/demo evidence · PARTIAL checks сейчас, после M0
+
+Все T01–21: три отдельные browser identities + anonymous spectator, полуфинал→финал, admin interventions/both_ready/draft, official package, real hostile/restart/private leaks, one command, demo/video≤5min. A3 координирует system evidence, A5 browser и A4 domain. Missing official package блокирует только official subset.
+
+### P1-05 · release/demo · после acceptance, owner A3
+
+README/env/архитектура/вариант Б, demo либо video≤5min, кейс и full checks. release/*→main+tag→develop только после подтверждённой приёмки/поручения выпуска. До того main bootstrap и доступные M0 tasks.
 
 ### P3-06 · official package adapter · WAITING_EXTERNAL только этот пункт
 
-Нужны package/README/checksum/права от организаторов; точный формат не выдумывать. Import statements/TeX/assets/tests/limits/checker/validator/reference программно, scripts на host не исполнять, private package не коммитить. Official T12/T14/T21 повтор после получения. До этого P3-02/03/04/05 READY.
+Нужны официальный package/README/checksum/права. Формат не выдумывать, private пакет не коммитить; scripts/checkers не выполнять на host. Повтор official T12/T14/T21 после получения. До этого P3-02/03/04/P1-04/P4-08 READY.
 
-### P3-07 · Yandex import · DEFERRED после обязательного MVP
+### P3-07 · Yandex import · DEFERRED
 
-Только импорт по проверенным официальным API/правам и SSRF guard, не проверка через Контест. Source-only bundle NOT_READY. TEAM04.
+Только future import по официальным API/правам с SSRF guard, не внешний judge. Source-only bundle NOT_READY. TEAM04; не тормозит M0.
 
-## A4: public backend и сквозная приёмка
+## A5: весь frontend
 
-Исторические P4-01–06 реализованы как UI slices и переданы A5; их исходные audit/card сохранены. Не редактировать frontend/src/tests. Events app теперь единолично A4, competition A2.
+### P5-01 · минимальный бренд/shared components · implementation #64/#65 IN_REVIEW, M0 приоритет
 
-### P4-07 · snapshot fix / events handoff · первое READY
+BLITZ_ARENA tokens/header/admin/auth style, preserve CodeMirror/sanitization/scoped drafts и typed transport. #64 CSS/metadata+brand label прошёл source CI; после coordinator merge available. Не переносить mock actions/data из 13 static screens. Нет необходимости полировать все экраны до real submit.
 
-Сначала сохранить ancestry/audits #53 fd79038 обычным merge в собственной feature от fresh develop, разрешить registration/doc конфликты без потери apps, исправить snapshot concurrency и equal-cursor consistency. File-backed first-create/update и out-of-order interleavings: latest cursor не теряется, same cursor+same run+payload идемпотентны, same cursor с другим run/payload не перезаписывает состояние. Write-first/ограниченный полный retry, понятная transient storage policy; внешний event+snapshot transaction откатывается целиком. После review/CI merge. Не считать green13 existing tests достаточной concurrency приёмкой.
+### P5-02 · minimal responsive/accessibility · READY резерв
 
-Далее P2-06.2 typed producers/snapshot/coherent cursor, P2-06.3 PublicAccess-protected public bracket/match snapshot+SSE, heartbeat/Last-Event-ID/resync/connection caps, strict closed DTO, никаких source/email/CE diagnostics. Runtime без A1 provider закрыт; tests/transport можно писать независимо. V01–03/S02/T16/T17/T20.
+Keyboard/focus/error/loading/empty/retry, 320px basic layout, readable statuses/contrast/reduced motion/font fallback. Browser/visual acceptance на actual SHA, не только DOM tests. Full projector/map polish после M0. Не добавлять shop/chat/rating/profile features.
 
-### P4-08 · system acceptance harness · READY независимый резерв
+### P5-03 · real per-endpoint CONNECT · первое READY
 
-scripts/acceptance и docs/quality/evidence: disposable DB/identities, API auth/CRUD/invite/bracket object/CSRF checks доступных endpoint на exact SHA; независимые registry probes, snapshot/stream sequence tests; никаких запросов к пользовательской production DB. R1 script после каждого provider CONNECT: actual normalized import→run→queue→Docker→receipt→score→promotion. Отсутствие endpoint отмечать NOT_RUN/WAITING, не fake pass. При отсутствии Docker — API/tests/evidence работа продолжается.
+Fresh merged endpoint→typed client→actual disposable browser scenario→own audit/PR. Auth/invite/admin/bracket #50 доступны сейчас; затем config/start/read match, problem/language/draft, submit/history/result, public snapshot, SSE. Missing endpoint WAITING_CONNECT (A4 или A3, точный route/port), в этой же сессии взять доступный endpoint/typed states/драфты/адаптивность.
 
-### P4-09 · полный кейс / demo evidence · после R1, резерв PARTIAL checks сейчас
+### P4-01 · auth shell · integrated, browser acceptance PARTIAL, owner A5
 
-Вести T01–21 runtime/browser/official/restart/hostile evidence с A1/A2/A3/A5. Реальные две participant sessions/admin/anonymous; полуфинал→финал; безопасность/injections/private leaks; demo или видео≤5мин. Не менять production соседних apps для тестов без передачи найденного дефекта владельцу. Официальный пакет блокирует только относящиеся official checks.
+#22 + #62 safe return-path regression, csrf/register/login/logout/me, default participant, read-only anonymous spectator, logout private namespace purge. T02.
 
-## A5: весь frontend, брендбук и UX
+### P4-02 · CRUD/roster/invite UI · integrated, acceptance PARTIAL, owner A5
 
-Новая задача Codex: «Агент 5 — frontend и дизайн BLITZ_ARENA». Own isolated clone, own card/audits; [источник дизайна](frontend/design/README.md). Статичные HTML демонстрируют вид, все runtime данные приходят из API.
+Real admin create/edit/assign/invite/revoke; register/login with safe next→join, expiry/cap/freeze errors. Первое доступное demo начало. T03–05.
 
-### P5-01 · brand tokens/shared components · первое READY
+### P4-03 · bracket/admin match UI · integrated UI, CONNECT PARTIAL, owner A5
 
-Перенести palette/fonts/spacing/layout/status tags из blitz.css в существующий React; header BLITZ_ARENA, accessible focus/errors/loading/empty/retry, статические mock actions не переносить. Сохранить CodeMirror, sanitization, draft scopes и typed transport. Tokens/components/auth/CRUD/invites/bracket готовы независимо от отсутствующего run/SSE provider. Никакого rewrite приложения.
+PUT pairings/reset #50 available; actual config/manual start/readiness/server state по merged endpoints, позже both_ready/admin actions. reason/idempotency не подменять local state. T06–11.
 
-### P5-02 · responsive/projector/accessibility · READY резерв
+### P4-04 · participant workspace · integrated UI, M0 CONNECT critical, owner A5
 
-Desktop/mobile spectator, keyboard/focus/contrast/reduced-motion, projector и status readability; offline font fallback, plain text diagnostics, safe URL/Markdown. Не расширять scope профилем/чатом/магазином/рейтингом/ачивками. UI tests/typecheck/lint/build с bounded workers. Visual/browser checks в disposable sessions.
+Real condition/assets/languages/server clock/editor/submit202/history/verdict/score/winner; safe Markdown/TeX/plain CE. Author/user/run/problem/language drafts, conflicts сохраняют обе версии; reload/switch/logout. Async updates без reload; нельзя показывать неподтверждённый verdict. T07/T12–15/T20.
 
-### P5-03 · real per-endpoint CONNECT · READY по доступным API
+### P4-05 · spectator map · integrated UI, endpoint CONNECT WAITING, owner A5
 
-Fresh merged endpoint SHA→typed HTTP client→реальный browser сценарий→new audit/PR. Сначала auth/invite/admin/bracket #50 и ready catalog; затем match/config/start/ready, problem/language/draft, submission/history/result, public snapshot/SSE. Один WAITING endpoint переключает на P5-01/02/другой CONNECT, не завершает роль. Production без provider показывает конкретную ошибку, не mock data.
+Anonymous snapshot сначала, full SSE/reconnect/dedupe/resync/animations/projector после M0. Arbitrary task order, attempts/leader/time, no private source. V01–04/T16/T17.
 
-### P4-01 · auth shell · UI integrated, owner A5, acceptance PARTIAL
+### P4-06 · browser integration · PARTIAL, owner A5
 
-#22 и regression slices сохранены. Real csrf/register/login/logout/me, participant default/admin only, public spectator без login redirect, logout private namespace purge; T02.
+84 frontend tests и прежний auth/invite subset не full browser acceptance. Минимальный M0 две participant sessions/admin, далее full case с A3 harness и A4 domain. При зависимости продолжать другой CONNECT/typed loading/errors, не заканчивать дорожку.
 
-### P4-02 · CRUD/roster/invite UI · integrated, owner A5, acceptance PARTIAL
+## Контрольные этапы
 
-#24 и prior real disposable browser auth/invite subset сохранены. Full browser CRUD/create/revoke/expiry/cap/register/accept/freeze errors; T03–05. Подключать доступный API сейчас.
-
-### P4-03 · bracket/admin match UI · integrated, owner A5, CONNECT PARTIAL
-
-#27 и каталог integrated; #50 pairings/reset после merge доступны. Ручные пары и admin reason/idempotency, then actual config/start/ready/actions по мере endpoint merge; T06–11. Missing endpoint error остаётся видимой.
-
-### P4-04 · participant workspace/editor · integrated UI, owner A5, CONNECT PARTIAL
-
-#28/editor hotkeys/indent/brackets/language/server validation/private recovery tests integrated. Real condition/time/tasks/submit/verdict/CE/history; user/run/problem/language local+server drafts, both conflict versions, reload/task/language/reconnect/logout. Condition скрыта до start; safe Markdown/TeX/images/examples и plain text diagnostics. T07/T12–15/T20.
-
-### P4-05 · spectator map · integrated UI, owner A5, CONNECT WAITING по endpoint
-
-#29 map/projector/reducer/fixtures готовы. Real A4 HTTP/SSE, анонимный просмотр без login, arbitrary solved task не блокируется A/B sequence, attempt/verdict/time/leader/penalty, dedupe/resync/reconnect/animation once. Private fields никогда не загружаются. T16/T17/T20.
-
-### P4-06 · browser integration · owner A5, implementation PARTIAL
-
-Prior auth/invite browser и 82 UI tests — частичные доказательства. Новый owner продолжает по одному actual endpoint; full R1/R2/R3 с A4 harness. При отсутствии серверного endpoint берёт P5-01/02/другой доступный CONNECT.
-
-## Milestones и критерий остановки
-
-| Этап | Статус | Критерий |
+| Этап | Текущий статус | Что доказываем |
 |---|---|---|
-| R0 | Проверенные cores; новые slices до merge IN_REVIEW | imports/migrations/tests/CI совместно, original ancestry/audits сохранены |
-| R1 | NOT_ACCEPTED | Реальная цепочка UI→API/run→queue→isolated judge→durable ledger→promotion; synthetic programmatic bundle, без mock verdict |
-| R2 | NOT_ACCEPTED | Обязательные manual pairs/both_ready/admin actions/code persistence/recovery/privacy + базовая public map/SSE |
-| R3 | WAITING official subset; остальные checks READY | Official package/checkers, полные T01–21, hostile, one command, demo/video, release/tag |
+| R0, база | integrated отдельные cores/UI | imports/migrate/CI, original ancestry/audits сохранены |
+| M0, первый матч (уточняет прежний R1) | NOT_ACCEPTED | одна команда; реальные два игрока→run→submit→isolated judge→own verdict→score/winner; normalized import |
+| M1, обязательный MVP блоков 1–3 (прежний R2 без public полного покрытия) | NOT_ACCEPTED | manual pairs/byes/both_ready/admin interventions, rich conditions/editor, все verdicts/drafts/recovery/security |
+| M2, полная защита/командный MVP (прежний R3) | NOT_ACCEPTED; official subset WAITING_EXTERNAL | public map/SSE/projector, official tasks/checkers, T01–21/hostile, demo/video/release |
 
-Резерв не отменяет приоритет R1: выпускать короткие реальные provider/API срезы. Нельзя бесконечно расширять pure core/test fixtures и избегать CONNECT. Нет достоверного процента или срока полной готовности до запуска сквозной цепочки. Все [37 требований](docs/requirements.md) и [21 сценарий](docs/quality/mvp-acceptance.md) сохранены.
+Все 30 parent P-ID из v4, 37 требований и 21 acceptance scenario сохранены. Переназначение не закрывает задачи. Нет подтверждённого процента/срока до M0 smoke. Координатор проверяет короткие готовые PR; агенты не ждут завершения всей соседней дорожки.

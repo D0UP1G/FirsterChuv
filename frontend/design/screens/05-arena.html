@@ -49,22 +49,22 @@ a{color:#ccff00}a:hover{color:#00ff66}
             <button class="workspace-task-button is-breached" type="button" data-problem="A">
               <span class="workspace-task-label">NODE A</span>
               <span class="ba-tag ba-tag-breached">BREACHED</span>
-              <span class="workspace-task-name"><small>2 попытки · последний [OK]</small></span>
+              <span class="ba-node-status is-solved" data-field="task.status=SOLVED">решена · 2 попытки</span>
             </button>
             <button class="workspace-task-button" type="button" aria-current="true" data-problem="B">
               <span class="workspace-task-label">NODE B</span>
               <span class="ba-tag ba-tag-active">ACTIVE</span>
-              <span class="workspace-task-name"><small>2 попытки · последний <span style="color: #ff3333">[WA]</span></small></span>
+              <span class="ba-node-status is-tried" data-field="task.status=ATTEMPTED">есть попытки · 2 · [WA]</span>
             </button>
             <button class="workspace-task-button" type="button" data-problem="C">
               <span class="workspace-task-label">NODE C</span>
               <span class="ba-tag ba-tag-active">ACTIVE</span>
-              <span class="workspace-task-name"><small>0 попыток</small></span>
+              <span class="ba-node-status" data-field="task.status=NOT_STARTED">не начата</span>
             </button>
             <button class="workspace-task-button" type="button" data-problem="D">
               <span class="workspace-task-label">NODE D</span>
               <span class="ba-tag ba-tag-active">ACTIVE</span>
-              <span class="workspace-task-name"><small>0 попыток</small></span>
+              <span class="ba-node-status" data-field="task.status=NOT_STARTED">не начата</span>
             </button>
           </div>
 
@@ -77,6 +77,16 @@ a{color:#ccff00}a:hover{color:#00ff66}
             </div>
             <p>[Текст условия — Markdown из пакета. Рендерится безопасно, ссылки и картинки только из разрешённых ассетов задачи.]</p>
             <p>Формулы TeX: <span class="ba-math">1 ≤ n ≤ 10<sup>5</sup></span>, <span class="ba-math">|a<sub>i</sub>| ≤ 10<sup>9</sup></span>.</p>
+            <figure class="problem-figure">
+              <div class="problem-figure-image" role="img" aria-label="Изображение из пакета задачи">[Изображение из пакета — разрешённый ассет задачи]</div>
+              <figcaption>[Подпись к изображению из условия]</figcaption>
+            </figure>
+            <div class="ba-table-wrap">
+              <table class="ba-table problem-table">
+                <thead><tr><th>[Столбец 1]</th><th>[Столбец 2]</th></tr></thead>
+                <tbody><tr><td>[значение]</td><td>[значение]</td></tr><tr><td>[значение]</td><td>[значение]</td></tr></tbody>
+              </table>
+            </div>
             <h3>Входные данные</h3>
             <p>[Формат ввода из пакета]</p>
             <h3>Выходные данные</h3>

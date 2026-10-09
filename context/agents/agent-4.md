@@ -1,4 +1,17 @@
-# Агент 4: React и пользовательские сценарии
+# Агент 4 (прежний 1): API и логика соревнования
+
+## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
+
+- Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
+- Статус назначения READY; actual IN_PROGRESS/branch/base/paths владелец фиксирует перед своими edits. Датированная передача не запускает остановленную сессию.
+- Первое действие: P1-02.5 additive frozen snapshot/failure ports маленьким PR; P2-03 исправить SQLite configure race #57 и выпустить real config/start/read/gateway.
+- Независимый резерв: P2-04 ledger/failure/finalization/clock; P1-03 PublicAccess/auth/IDOR/CSRF; P2-05 admin replay/downstream fix; P4-07 #53 snapshot consistency.
+- Владение: accounts/tournaments/competition/events, backend/apps/common/contracts.py и contract fixtures, свои migrations/URL include. Конфигурация запуска/Compose/CI/system harness теперь A3. Frontend полностью A5.
+- Передача: Принимает всю former A2 дорожку; #57–59 сохранять через ordinary merge, не повторять cores. #59 frozen participant fix сохранить; read→write/equal-key и rematch downstream исправить. A1 и A4 — alias одной активной роли, не два исполнителя.
+- Fresh develop base этой ревизии 85e0cd0d2b82fce9996106af3922171dcee17c76; #60/#61/#62 MERGED. #63/#64 доступны после MERGED coordinator PR; #53/#57–59 пока не integrated. Не ждать отдельный STATE sync.
+- M0 → [ROADMAP v5](../../ROADMAP.md), [приёмка](../../docs/quality/m0-demo.md). При WAITING записать конкретный port/producer/consumer/SHA и в той же сессии взять следующий READY пункт. Explicit user stop имеет приоритет. Ни одна готовая часть/чужой audit не удаляется.
+
+## Исторические записи до ROADMAP v5
 
 ## Назначение координатора 2026-10-10T01:11:53+03:00: Public backend и сквозная приёмка
 

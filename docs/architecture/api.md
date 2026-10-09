@@ -1,4 +1,6 @@
 <!-- Статус реализации: снимок в context/STATE.md. Будущие routes не означают реализованные endpoints. Контракты независимой разработки: parallel-contracts.md. -->
+
+> Актуальная передача 2026-10-10, ROADMAP v5: A4 (прежний A1) owns API/accounts/tournaments/competition/events/common contracts; A3 owns problems/submissions/drafts/judge/worker + config/Compose/CI/system acceptance; A5 весь frontend. A2 больше не активный producer. Старые датированные назначения ниже — история; поля v1 и принятые additive boundaries не меняются. Missing provider блокирует только CONNECT, не всю роль.
 # API и права доступа
 
 Целевой contract DRF API. Match/workspace/public/import endpoints ниже остаются целевыми: текущая ревизия не выдаёт pure cores/catalog за работающие HTTP routes. Их текущий статус — STATE и повторная ревизия. На `develop` интегрированы A1-01/02/03 и invite backend-срез P1-01 (PR #12): платформа, auth, tournament CRUD, directory, roster с capacity/freeze guards и invitations. Браузерный invite flow остаётся CONNECT для P4-02, полный T04 ещё не принят. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.

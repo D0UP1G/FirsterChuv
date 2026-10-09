@@ -32,7 +32,7 @@ P1-01 интегрирован PR #12 и закрывает backend-подпро
 
 P1-02 добавляет PR checks для backend/domain/schema/common-import boundaries, а отдельный manual workflow — запуск реального Docker smoke с явным подтверждением. GitHub dispatch станет доступен после обычной интеграции workflow в default branch `main`; до того времени Docker smoke остаётся отдельной ручной проверкой. Это повторяемый CI и частичная поддержка D02/S01/T20; сам workflow не включает branch protection, а отсутствие private data в полной системе, runtime isolation и полные S02/T20 остаются отдельной приёмкой.
 
-План MVP выбирает ручной посев и одиночное выбывание. Рейтинг и другие форматы не нужны для покрытия минимального требования. Автозапуск реализуется по готовности обоих; расписание можно добавить после него. Диапазоны 3–5 задач и 15–30 минут на стр. 2 описывают обычный блиц, не являются объявленным жёстким лимитом API. Для demo: четыре задачи, 20 минут; короткая длительность для проверки допустима.
+План MVP выбирает ручной посев и одиночное выбывание. Рейтинг и другие форматы не нужны для покрытия минимального требования. Автозапуск реализуется по готовности обоих; расписание можно добавить после него. Диапазоны 3–5 задач и 15–30 минут на стр. 2 описывают обычный блиц, не являются объявленным жёстким лимитом API. Для полной защиты целевой demo: четыре задачи, 20 минут; M0 smoke: 1–2 normalized задачи, короткая длительность в существующем API диапазоне, короткая длительность для проверки допустима.
 
 ## Технические требования и сдача
 
@@ -104,3 +104,19 @@ P-ID выше ведут к ROADMAP v3, старые A-ID сохранены. Co
 ## Новый snapshot покрытия 2026-10-10
 
 ROADMAP v4 сохраняет все37 требований и21 acceptance. Новые#21 CAS/#50 pairings/reset/#52 frontend CI/#54 дизайн проверены в integration feature до MERGED; #53 snapshots исключён с correctness blockers. [Case comparison и exact SHA/проверки](reviews/2026-10-10-mvp-readiness.md). P4 UI задачи теперьA5; A4 public events/SSE и system evidence. GET draft selector и additive snapshot/failure/fencing [приняты](../context/contracts/2026-10-10-mvp-boundaries.md). Полные обязательные блоки1–3/official/hostile/one-command/demo ещё неaccepted; static design/pure tests не закрывают их.
+
+
+## Текущее назначение и приоритет, ROADMAP v5
+
+Последнее уточнение команды: A3, A4 (прежний A1/координатор), A5. A4 API/domain/common/events, A3 tasks/queue/judge + runtime/config/Compose/CI/acceptance, A5 весь frontend. P-ID в матрицах выше сохраняют смысл; бывшие A1/A2 задачи переназначены, не удалены. [Полный план](../ROADMAP.md), [M0](quality/m0-demo.md).
+
+| Область | Реализовано/integrated | Открыто сейчас |
+|---|---|---|
+| M01–04/TEAM01 | auth/CRUD/roster/invites/bracket/manual pairings/reset | full browser/cap/history/permissions acceptance A4+A5 |
+| M05–08/P03 | pure clock/score/readiness/ledger/admin cores | persisted run/gateway/result/failure/finalization/admin API; #57–59 fixes A4 |
+| P01–02/E01–04/J01–04 | normalized catalog, LocalJudge/harness, durable queue/outboxes/draft CAS, editor UI | real import/compiler/worker/provider/workspace CONNECT A3+A4+A5; admission race A3; official adapter отдельно |
+| V01–04/TEAM02 | safe event store, map/reducer/projector UI | #53 snapshot fix/access/public HTTP/SSE A4, real map CONNECT A5 |
+| S01–02/TEAM06 | basic roles/guards/private split/isolation cores | actual full-system IDOR/injections/privacy/hostile/restart evidence A3+A4+A5 |
+| D01–06 | README/env/архитектура/history/CI/case/design | actual one-command runtime A3, M0→full official/demo/video evidence всей команды |
+
+M0 — настоящий normalized demo match, не fake-verdict и не полная приёмка обязательных блоков 1–3. Все 37 требований и 21 сценарий сохранены. Missing official package/README блокирует P3-06/T12/T14/T21 official subset, не весь M0. Базовую изоляцию/CSRF/object/privacy/durable source нельзя отложить. Public snapshot polling промежуточно не закрывает V03/SSE. Старые датированные snapshots выше не описывают активный состав.

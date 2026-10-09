@@ -1,5 +1,7 @@
 # Решение координатора: границы ближайшего MVP
 
+> Актуальная передача 2026-10-10, ROADMAP v5: A4 (прежний A1) owns API/accounts/tournaments/competition/events/common contracts; A3 owns problems/submissions/drafts/judge/worker + config/Compose/CI/system acceptance; A5 весь frontend. A2 больше не активный producer. Старые датированные назначения ниже — история; поля v1 и принятые additive boundaries не меняются. Missing provider блокирует только CONNECT, не всю роль.
+
 Снимок 2026-10-10T01:11:53+03:00, Europe/Moscow. Принято как архитектурное назначение по прямому поручению команды; материализация DTO/provider/runtime ещё не заявляется выполненной. Это ответы на существующие запросы, исходные author records не переписываются. [ROADMAP v4](../../ROADMAP.md).
 
 ## C01: GET private draft selector — ADOPTED

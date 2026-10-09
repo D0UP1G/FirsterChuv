@@ -1,6 +1,6 @@
 # Документация FirsterChuv
 
-Документы задают контракты и приёмку. Платформа/auth/CRUD/roster/invites/CI integrated; проверенные sandbox/pure clock/score/catalog собраны новым integration feature. Полного MVP нет. Сверять GitHub merge и [STATE](../context/STATE.md) с [повторной ревизией](reviews/2026-10-09-integration-review.md); [ROADMAP v3](../ROADMAP.md) задаёт runtime задачи четырёх агентов.
+Документы задают контракты и приёмку. В develop имеются готовые auth/tournament/invite/bracket/draft/queue/judge/UI части, но полная production цепочка ещё не принята. [ROADMAP v5](../ROADMAP.md) распределяет три роли A3/A4(прежний A1)/A5; [M0](quality/m0-demo.md) — первый реальный матч, не полное выполнение кейса. [STATE](../context/STATE.md), [актуальная ревизия](reviews/2026-10-10-mvp-readiness.md).
 
 | Документ | Что в нём |
 |---|---|
@@ -18,10 +18,12 @@
 | [Проверка кода](architecture/judging.md) | Собственный judge, очередь, sandbox, импорт |
 | [События](architecture/realtime.md) | SSE и безопасные публичные DTO |
 | [Безопасность](architecture/security.md) | Авторизация, код, секреты, недоверенные архивы |
-| [GitFlow](operations/gitflow.md) | Ветки, PR, четыре checkout и выпуск |
+| [GitFlow](operations/gitflow.md) | Ветки, PR, изолированные checkout и выпуск |
 | [Запуск и защита](operations/runbook.md) | Целевой запуск, восстановление, демонстрация |
 | [Приёмка](quality/mvp-acceptance.md) | Проверки MVP и доказательства выполнения |
 
-Назначения четырёх агентов: [ROADMAP.md](../ROADMAP.md). Текущая работа и аудиты: [context](../context/README.md).
+Назначения трёх активных агентов: [ROADMAP.md](../ROADMAP.md). Текущая работа и аудиты: [context](../context/README.md).
 
 - [Передача production adapters и infra failure](architecture/runtime-handoffs.md).
+
+- [Приёмка первого матча M0](quality/m0-demo.md).

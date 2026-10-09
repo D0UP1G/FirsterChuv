@@ -1,4 +1,19 @@
-# Состояние проекта: новая ревизия и frontend handoff
+# Состояние проекта: три агента и первый рабочий матч
+
+Снимок 2026-10-10T01:56:32+03:00, Europe/Moscow. Последнее уточнение человека: три активные роли A3, A4 (прежний A1/координатор), A5. Все старые записи ниже — датированная история. [ROADMAP v5](../ROADMAP.md), [M0 demo](../docs/quality/m0-demo.md), [review](../docs/reviews/2026-10-10-mvp-readiness.md).
+
+- Fresh origin/develop: 85e0cd0d2b82fce9996106af3922171dcee17c76 после MERGED #60/#61/#62. #21/#50/#51/#52/#54/#55/#56 source также MERGED. Main e9fc0ef97dcb83d2beffa41f42cb873ebcde71bc, bootstrap.
+- В feature/three-agent-mvp от этого develop сохранены source #63 e116c03f25c0bdbd59abe036c6dc9abfb413debe и #64 dc124bcc7a5d0f8fe3ebb76dc7cce2a970f73c43, #65 881d535b27e5bf70f4121530ef9d25578da275e3 через обычные merge commits. До MERGED coordinator PR — IN_REVIEW, после MERGED/ancestry доступны из fresh develop; новый STATE PR не prerequisite.
+- #63 — reference/кейc/ADR wording, #64 — React brand/CSS/metadata, #65 — minimal responsive/focus. По own audit A5 выполнил DEV-only mobile/focus browser checks; это не real M0/full browser acceptance. Backend/providers/permissions/редактор/HTTP contracts этими PR не меняются. Source CI5/5 SUCCESS у обоих; #63 attempt1 backend admission lock FAIL, attempt2 SUCCESS, дефект не скрыт и передан A3 P3-04.1. Локальный combined frontend typecheck/lint/tests/build PASS, 5 existing lint warnings и chunk warning; full browser/visual acceptance не выполнялась.
+- #53 fd79038 — OPEN, snapshot cursor concurrency/equal-payload blocker. #57 5ae4af5 — OPEN, sync не изменил configure read→write race. #58 b66b6cd — OPEN, register/result SQLite races + frozen participants отсутствуют в этой ветке. #59 0ba3119 — OPEN, сохранить frozen participant fix, исправить replay race/rematch downstream. Их source не включён; свежие детали/границы — report.
+- A4 принимает API/domain/gateway/ledger/PublicAccess/events/common ports и former A2 backlog. A3 — normalized import/real judge/queue/drafts/config/Compose/worker/clock startup/CI/system acceptance. A5 — весь frontend; прямое follow-up о трёх ролях и M0 отправлено в созданную task, compact snapshot подтверждает active. Внешние сессии A3/A4 не запускались и их checkout не менялись.
+
+## Готовность
+
+R0: integrated отдельные cores/UI/auth/tournament/invite/bracket/draft. M0 первый реальный матч ещё NOT_ACCEPTED: отсутствует полная production цепочка run/gateway → queue/worker/isolated judge → result+failure sinks → UI/score/winner и one-command runtime. M1 обязательные блоки 1–3 и M2 public/SSE/projector/official/demo также NOT_ACCEPTED. 37 требований/21 acceptance сохранены; unit/CI/static screens не заменяют real/browser/hostile/official acceptance. Срок/процент готовности не заявлен.
+
+
+## История предыдущих ревизий
 
 Снимок 2026-10-10T01:15:16+03:00, Europe/Moscow. База develop cc204e6 включает code integrations#20/#32/#44/#46 и A4 docs#48/#49. Main e9fc0ef bootstrap. Проверенные новые#21/#50/#51/#52/#54/#55/#56 объединены ordinary merge commits в coordinator feature/mvp-readiness-handoff; до MERGED integration PR статусIN_REVIEW, после фактического MERGED доступны из fresh develop. Отдельный STATE PR не prerequisite. [Report](../docs/reviews/2026-10-10-mvp-readiness.md), [outcome audit](audits/2026-10-10T011516+0300-coordinator-mvp-readiness-review.md), [ROADMAP v4](../ROADMAP.md).
 
@@ -107,3 +122,6 @@ Integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) опубли
 4. A4: продолжать активный browser/API CONNECT; UI срезы уже опубликованы и интегрированы. Catalog #26 совместим с текущим frontend paginated request; подключение проверить по одному endpoint после merge. Карточка и исходники A4 этой проверкой не менялись.
 
 При зависимости WAITING получает подпункт, исполнитель продолжает следующий READY шаг в той же сессии. [ROADMAP v3](../ROADMAP.md), [ревизия всех PR](../docs/reviews/2026-10-09-integration-review.md), [runtime handoffs](../docs/architecture/runtime-handoffs.md). Fetch актуального develop перед стартом; авторские feature refs/старые аудиты сохранены, shared app/CI registrations не заменять старыми полными копиями.
+
+
+Combined #63/#64/#65 frontend final rerun:18 files/84 tests PASS(28.53s), typecheck/lint/build PASS;5 прежних lint warnings и612.88kB chunk warning. Final integrity:170 base context/audits files +5 incoming source audits exact, all3 source heads ancestors; unsafe53/57–59 latest heads excluded; backend/config/CI/scripts/contracts diff zero. Полный browser/hostile/official M0 NOT_RUN.

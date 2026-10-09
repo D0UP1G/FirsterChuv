@@ -9,7 +9,7 @@
 | [data-model.md](data-model.md) | Как хранить аккаунты, сетку, задания, решения и события? |
 | [user-flows.md](user-flows.md) | Как пользователь проходит полный сценарий? |
 | [match-engine.md](match-engine.md) | Как матч начинается, заканчивается и определяет победителя? |
-| [parallel-contracts.md](parallel-contracts.md) | Как писать четыре модуля независимо и подключать по одному? |
+| [parallel-contracts.md](parallel-contracts.md) | Как писать модули трёх владельцев независимо и подключать по одному? |
 | [api.md](api.md) | Какие маршруты, тела, ошибки и права нужны frontend? |
 | [judging.md](judging.md) | Как безопасно и реально проверять код? |
 | [realtime.md](realtime.md) | Как обновлять зрительскую карту без утечки кода? |

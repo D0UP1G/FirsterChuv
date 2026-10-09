@@ -1,4 +1,29 @@
-# Агент 5: полный frontend и дизайн BLITZ_ARENA
+# Агент 5: весь frontend и дизайн BLITZ_ARENA
+
+## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
+
+- Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
+- Статус назначения READY; actual IN_PROGRESS/branch/base/paths владелец фиксирует перед своими edits. Датированная передача не запускает остановленную сессию.
+- Первое действие: P5-03 real auth/invite/admin/bracket #50 CONNECT; #62 safe return path уже merged, #64 минимальный бренд/#65 basic responsive включены в проверяемую coordinator integration.
+- Независимый резерв: typed match/workspace clients/loading/error states, private draft recovery/logout isolation/keyboard/basic responsive; actual config/start/problem/submit/history/result подключать по одному endpoint.
+- Владение: весь frontend/src/styles/design/runtime clients/editor/map/UI/browser checks; backend/code providers не изменять.
+- Передача: A4 API/run/result/public; A3 workspace/task/draft/queue/judge. Приоритет M0 real match, не полировка 13 static screens/projector до submit. Missing endpoint блокирует только CONNECT, не роль.
+- Fresh develop base этой ревизии 85e0cd0d2b82fce9996106af3922171dcee17c76; #60/#61/#62 MERGED. #63/#64 доступны после MERGED coordinator PR; #53/#57–59 пока не integrated. Не ждать отдельный STATE sync.
+- M0 → [ROADMAP v5](../../ROADMAP.md), [приёмка](../../docs/quality/m0-demo.md). При WAITING записать конкретный port/producer/consumer/SHA и в той же сессии взять следующий READY пункт. Explicit user stop имеет приоритет. Ни одна готовая часть/чужой audit не удаляется.
+
+## Исторические записи до ROADMAP v5
+
+## Текущий срез: P5-02 минимальная адаптивность и keyboard focus
+
+- Статус: PR #65 открыт, все 5 CI jobs прошли на code head `c735e675200420479cb3ac285411572b2f45b8ec`; ожидает review/merge. Отдельный P5-01 PR #64 открыт, 5/5 CI jobs прошли на head `dc124bcc7a5d0f8fe3ebb76dc7cce2a970f73c43`.
+- PR: https://github.com/D0UP1G/FirsterChuv/pull/65; ветка `feature/agent-5-p5-02-responsive`; code commit `c735e675200420479cb3ac285411572b2f45b8ec`.
+- База ветки: свежий `origin/develop` `85e0cd0d2b82fce9996106af3922171dcee17c76` после merge PR #62; develop не сдвинулся, дополнительный sync merge не требовался.
+- Пути: `frontend/src/App.tsx`, новый `frontend/src/responsive.css`, `frontend/src/workspace/workspace.css`, `frontend/src/spectator/spectator.css`, эта карточка и append-only audit текущей сессии.
+- Область: mobile shell/forms/admin, workspace и public spectator; видимый keyboard focus, forced-colors outline, перенос длинных названий/ошибок/диагностик и устранение overflow на 320 px. Существующий projector mode сохраняется без специальной новой компоновки. CodeMirror, безопасный Markdown/URL, TeX, локальные черновики и runtime data не менялись.
+- Проверки: `npm test -- --maxWorkers=2` — 18 файлов / 84 теста PASS; `npm run typecheck` PASS; `npm run lint` exit 0 с 5 прежними workspace warnings; `npm run build` PASS с предупреждением о крупных CodeMirror/KaTeX chunks; `git diff --check` PASS.
+- Browser QA в DEV-сценариях: workspace и spectator при 320 px без горизонтального overflow, spectator также просмотрен при 390 px; Tab показывает skip-link с `:focus-visible` и outline 3 px; console errors не наблюдались.
+- Уточнение приоритета команды: отдельную projector-компоновку/полировку отложить до рабочего матча M0.
+- Следующий приоритет: реальный browser M0 путь; доступные endpoints подключать по одному, каждый отсутствующий port фиксировать как `WAITING_CONNECT` и продолжать независимую READY UI-работу.
 
 ## Передача координатором 2026-10-10T01:11:53+03:00
 
@@ -13,16 +38,28 @@
 - Свои audit/card: branch/base/paths перед edits, новый append-only audit после сессии, exact checks/SHA/PR/следующий READY. Только feature/* → develop, merge sync, без force push/удаления чужих branches.
 - [План](../../ROADMAP.md), [границы](../contracts/2026-10-10-mvp-boundaries.md), [история прежнего UI owner](agent-4.md), [дизайн](../../frontend/design/README.md).
 
+## Текущий срез: P5-01 — перенос дизайн-системы в React
+
+- Статус: `IN_PROGRESS`; implementation slice published in open P5-01 design PR #64; CI/review/merge pending.
+- Ветка: `feature/agent-5-p5-01-design`, базовый SHA `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (`origin/develop` после merge #60).
+- Sync: ordinary merge commit `afc4b26fc6934962a976aa53db97d3b000b4d5bd` with fresh `develop` `85e0cd0d2b82fce9996106af3922171dcee17c76`; no conflicts. Auth PR #62 is merged at that develop SHA.
+- PR: https://github.com/D0UP1G/FirsterChuv/pull/64; opened at head `127920d667066cfdc588751f8a284183dd9c6847`, CI was `IN_PROGRESS` at publication snapshot.
+- Paths: `frontend/index.html`, `frontend/src/index.css`, `frontend/src/App.css`, `frontend/src/App.tsx`, `frontend/src/pages/Admin.css`, `context/audits/2026-10-10T014600+0300-agent-5-P5-01-design-system.md`, `context/audits/2026-10-10T014632+0300-agent-5-P5-01-design-sync.md`, `context/audits/2026-10-10T014724+0300-agent-5-P5-01-design-publication.md`, and this card.
+- Цель: применить verified `frontend/design` / brandbook v2.0 tokens, type, grid, spacing and shared status/button/panel language to the existing React shell, auth, invite and bracket views; preserve current logic and HTTP states.
+- Implementation commit: `aa3912b3414c4f9376af76d440e2e45fa5f42a79`; publication audit commit may advance the PR head. This slice is not in develop yet. P5-03 provider status is independent; no new endpoint is needed.
+- Later P5-02 remains a separate feature slice for responsive/projector/accessibility/error-state review.
+
 ## Наблюдение координатора 2026-10-10T01:29:46+03:00
 
 Первая turn задачи завершилась: собственная feature/agent-5-auth-return-path в own clone, auth returnPath/query/hash и84 UI tests по сообщению автора. Код пока uncommitted и не в develop; coordinator не редактировал его. Ожидание card/handoff снимается merge integration #60; далее fresh develop обычным merge и P5-01/02/03 READY, публикация собственного UI slice→develop. Backend provider не prerequisite для brand/auth/responsive work.
 
 ## Текущий срез: P5-01 auth return path
 
-- Статус: `IN_PROGRESS`; узкий auth-flow fix опубликован в открытом PR #62, ждёт CI/review/merge.
+- Статус: auth implementation/integration merged; full T02 acceptance remains partial.
 - PR: https://github.com/D0UP1G/FirsterChuv/pull/62; опубликованный кодовый head `71ca100579fa5081c1dab3cb4172d1619cc60c29`.
+- Merge: `85e0cd0d2b82fce9996106af3922171dcee17c76`; final PR head `abdc12e637005211b83ea095a273f25273636748` passed 5/5 CI jobs.
 - Ветка: `feature/agent-5-auth-return-path`.
 - Исходная база `cc204e62a060eb2ceb16067a1b0693a2e083d9ab`; после handoff выполнен merge commit `aae63faab8b432ce5b608c9fa94530d7e1569afd` с fresh `origin/develop` `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (#60).
 - Пути среза: `frontend/src/App.tsx`, `frontend/src/pages/LoginPage.tsx`, `frontend/src/App.test.tsx`, `context/audits/2026-10-10T011119+0300-agent-5-P4-01-auth-return-path.md`, `context/audits/2026-10-10T013908+0300-agent-5-P5-01-auth-return-path-sync.md` и эта карточка.
 - Implementation: protected-route return path сохраняет pathname/query/hash и проверенный next переживает login→register. Integration: не в develop. Acceptance: 18 frontend test files / 84 tests, typecheck/build PASS; lint exit 0 с 5 прежними workspace warnings; браузерный backend CONNECT не выполнялся.
-- Следующий шаг: после компактного auth PR продолжить P5-01 на merged `frontend/design` tokens/shared layouts/auth/invite/bracket, затем P5-02 responsive/accessibility/projector. P5-03 CONNECT вести отдельно по exact endpoint SHA.
+- Следующий шаг: continue P5-01 design implementation; full browser/backend acceptance remains separate. P5-02 responsive/accessibility/projector and per-endpoint P5-03 CONNECT remain available.

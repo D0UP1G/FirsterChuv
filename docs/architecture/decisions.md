@@ -42,12 +42,20 @@ ADR17, ADOPTED 2026-10-09: готовые pure clock/score/catalog/harness ин�
 
 ## Визуальный стиль
 
-ADR18, CONFIRMED 2026-10-10 по поручению команды: интерфейс оформляется по брендбуку «BLITZ_ARENA // BRANDBOOK & DESIGN SYSTEM v2.0» (Marathon / Cyberpunk: `#000000`, `#CCFF00`/`#00FF66`, `#FF3333`, полупрозрачный `#00E5FF`; Space Mono, Orbitron/Rajdhani, VT323). В интерфейсе продукт называется BLITZ_ARENA, имена репозитория, пакетов и папок не меняются. Эталон — [frontend/design](../../frontend/design/README.md). Разделы брендбука 5–8 (профиль/рейтинг, магазин и CREDITS, чат и «типы», ачивки/комбо, комментаторская панель) остаются вне MVP по PROJECT.md и нарисованы только как концепт. Тотализатор не проектируется. Просмотр исходников соперника после матча не реализуется: противоречит правилу «код посылки доступен только автору». Статусы брендбука сопоставлены с API: SOLVED → `[BREACHED]`, доступная задача → `[ACTIVE]`, до старта → `[LOCKED]`.
+ADR18, CONFIRMED 2026-10-10 по поручению команды: интерфейс оформляется по брендбуку «BLITZ_ARENA // BRANDBOOK & DESIGN SYSTEM v2.0» (Marathon / Cyberpunk: `#000000`, `#CCFF00`/`#00FF66`, `#FF3333`, полупрозрачный `#00E5FF`; Space Mono, Orbitron/Rajdhani, VT323). В интерфейсе продукт называется BLITZ_ARENA, имена репозитория, пакетов и папок не меняются. Эталон — [frontend/design](../../frontend/design/README.md). Разделы брендбука 5–8 (профиль/рейтинг, магазин и CREDITS, чат и «типы», ачивки/комбо, комментаторская панель) остаются вне MVP по PROJECT.md и нарисованы только как концепт. Тотализатор не проектируется. Просмотр исходников соперника после матча не реализуется в MVP. Кейс (стр. 6) допускает его как дополнительную возможность комментаторской панели после окончания матча и запрещает только видеть код соперника во время игры; запрет в MVP — правило проекта «код посылки доступен только автору» (AGENTS.md), а не кейса. Уточнено 2026-10-10. Статусы брендбука сопоставлены с API: SOLVED → `[BREACHED]`, доступная задача → `[ACTIVE]`, до старта → `[LOCKED]`.
+
 
 ## Решения координатора 2026-10-10 по текущему поручению команды
 
-ADR19 — ADOPTED: пять владельцев; новый A5 frontend/design, A4 public events/SSE/system acceptance, A2 competition/run/ledger. P4-01–06 сохраняют UI meaning и передаются A5. Причина: убрать последовательное ожидание всех runtime/frontend частей и дать публичному backend отдельного владельца.
+ADR19 — SUPERSEDED by ADR22: прежний план пяти владельцев; новый A5 frontend/design, A4 public events/SSE/system acceptance, A2 competition/run/ledger. P4-01–06 сохраняют UI meaning и передаются A5. Причина: убрать последовательное ожидание всех runtime/frontend частей и дать публичному backend отдельного владельца.
 
 ADR20 — ADOPTED target boundaries: [MVP handoff](../../context/contracts/2026-10-10-mvp-boundaries.md): separate frozen RunProblemSnapshot/Provider, сохраняемый в accepted submission; additive failure sink; GET draft run selector/404; per-claim container fencing. Причина: закрыть обсуждение формы точными совместимыми contracts и продолжить независимую реализацию. Existing v1 receipt/verdict fields не меняются; implementations/readiness требуют отдельных tests/CI/runtime acceptance.
 
 ADR21 — IMPLEMENTED 2026-10-10, наблюдение координатора: текущий frontend/package-lock и workspace используют CodeMirror 6, TypeScript, безопасный Markdown/TeX renderer. Первоначальная Monaco proposal ADR09 устарела. Проверенные UI tests/build не означают full workspace API/browser acceptance; A5 сохраняет текущий редактор и подключает реальные providers.
+
+
+## Три активные роли и M0, 2026-10-10
+
+ADR22 — CONFIRMED состав / ADOPTED распределение по последнему уточнению команды: A3 runtime/tasks/queue/judge + startup/config/Compose/CI/system acceptance; A4 (прежний A1, включая координатора) API/accounts/tournaments/competition/events/common contracts и former A2 backlog; A5 весь frontend. ADR19 больше не применяется. Старые P-ID/ветки/аудиты сохраняются. Минимальные AppConfig/URL include разрешены владельцу app; остальные config A3, typing A4.
+
+ADR23 — ADOPTED приоритет M0: одна команда, программный normalized import, два participant/invite/manual start, настоящий isolated verdict/history/draft/score/server timer/winner; минимальный public snapshot следующим CONNECT, full SSE после него. Это промежуточный срез, не полное выполнение обязательных блоков 1–3 и не official acceptance. Basic isolation/privacy/CSRF/immutable run/durable queue не откладываются. Детали и per-port резерв — ROADMAP v5, docs/quality/m0-demo.md.
