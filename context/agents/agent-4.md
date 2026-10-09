@@ -1,5 +1,16 @@
 # Агент 4: React и пользовательские сценарии
 
+## Назначение координатора 2026-10-10T01:11:53+03:00: Public backend и сквозная приёмка
+
+- Источник: прямое поручение команды перераспределить оставшийся MVP и создать нового frontend owner. Это текущее назначение; прежние author checkpoints ниже сохранены как история.
+- Статус назначения: READY; фактический IN_PROGRESS выставляет владелец при начале edits в своём изолированном checkout.
+- Первое действие: P4-07 исправить оба snapshot дефекта #53; file-backed concurrent first-create/update + equal cursor consistency.
+- Независимый резерв: P2-06 public producers/HTTP/SSE tests; P4-08 scripts/acceptance доступных APIs, P4-09 case evidence.
+- Владение: events/migrations/tests, scripts/acceptance, docs/quality/evidence; frontend/src передан A5.
+- Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
+- [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
+
+
 Перепланировано координатором по поручению команды 2026-10-09. Frontend не найден в опубликованных refs/PR; неопубликованную работу своего checkout проверить перед созданием нового.
 
 ## Текущая задача

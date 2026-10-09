@@ -1,17 +1,17 @@
 # Runtime handoffs: ближайший рабочий сценарий
 
-Спецификация повторной ревизии 2026-10-09, ADOPTED планом команды. [Common v1](parallel-contracts.md) уже материализован в backend/apps/common/contracts.py, но реализаций CompetitionGateway/PublicAccess/JudgeProvider пока нет. Этот документ фиксирует передачу между четырьмя владельцами; наличие Protocol не означает runnable provider.
+Спецификация повторной ревизии 2026-10-09, ADOPTED планом команды. [Common v1](parallel-contracts.md) уже материализован в backend/apps/common/contracts.py, но реализаций CompetitionGateway/PublicAccess/JudgeProvider пока нет. Этот документ фиксирует передачу между пятью владельцами; наличие Protocol не означает runnable provider.
 
 ## Владельцы и независимые выходы
 
 | Граница | Производитель | Потребитель | Что писать до CONNECT |
 |---|---|---|---|
-| PublicAccessV1 | A1: public/unlisted token/expiry/revoke | A2: public snapshot/SSE | Store/projector/transport с test access; production без provider закрыт |
+| PublicAccessV1 | A1: public/unlisted token/expiry/revoke | A4: public snapshot/SSE | Store/projector/transport с test access; production без provider закрыт |
 | CompetitionGatewayV1 | A2: trusted actor/run/time/workspace/ledger/result | A3: submissions/drafts/problem views | A2 tests с typed receipts; A3 queue/draft services с injected ports |
 | ProblemCatalogV1 | A3: normalized immutable catalog | A2: task snapshots/start; A3 judge | Catalog core уже в #14; verified compiler остаётся runtime gate |
 | JudgeProvider + LanguageRegistry | A3: реальный compile/test/checker | A3 worker, A1 startup | Нормализованная программно импортированная smoke-задача, настоящие verdicts |
-| EventWriter | A2: allowlisted durable events | A2 lifecycle/result, A3 queue | Event store/validation tests; source/CE запрещены |
-| Browser transport | A4: typed client + real available endpoints | Все UI | Auth/CRUD/invites подключать сейчас; будущие fixtures только dev/test |
+| EventWriter | A4: allowlisted durable events | A2 lifecycle/result, A3 queue | Event store/validation tests; source/CE запрещены |
+| Browser transport | A5: typed client + real available endpoints | Все UI | Auth/CRUD/invites подключать сейчас; будущие fixtures только dev/test |
 
 Владельцы apps сами добавляют AppConfig/URL include в своих PR, сохраняя все ранее integrated apps/CI. Остальное shared factory/config wiring — A1 и принимающий владелец коротким срезом. Не ждать всю дорожку соседа.
 
@@ -55,4 +55,8 @@ A1 добавляет DTO/Protocol/import tests. A2 реализует idempoten
 - R2: обязательные actions/code persistence/recovery/privacy и public map/SSE.
 - R3: official package/README/checkers, T01–21, hostile probes, одна команда и demo/видео/release.
 
-Короткий CONNECT содержит producer SHA, consumer SHA, adapter path/config, реальный сценарий и следующий независимый подпункт. WAITING относится к подключению, не ко всей роли. [ROADMAP v3](../../ROADMAP.md) задаёт порядок.
+Короткий CONNECT содержит producer SHA, consumer SHA, adapter path/config, реальный сценарий и следующий независимый подпункт. WAITING относится к подключению, не ко всей роли. [ROADMAP v4](../../ROADMAP.md) задаёт порядок.
+
+## Принятые уточнения 2026-10-10
+
+[Ответы координатора](../../context/contracts/2026-10-10-mvp-boundaries.md): immutable RunProblemSnapshot/Provider отдельным additive портом, snapshot version/checksum сохраняется при admission; InfrastructureFailureReceipt/Sink без изменения verdict enum; GET draft runId selector и missing404; registry owner/submission/claim-token/lease для own orphan cleanup. A1 материализует common typing, A2 producer run/gateway/ledger, A3 actual executor/consumer, A4 public transport/system acceptance, A5 frontend. Tests до CONNECT используют typed injections; production без реального provider отказывает.

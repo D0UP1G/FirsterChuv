@@ -1,5 +1,37 @@
 # Координатор: ревизия и параллельный план
 
+## Подтверждённое слияние и closeout, 2026-10-10T01:36:20+03:00
+
+- Основная ревизия/передача DONE: #60 MERGED в723985f, final head9d7996d, CI5/5 SUCCESS; source21/50–52/54–56 MERGED. Main unchanged; все166 audits base/source/own сохранены.
+- Ветка feature/mvp-readiness-closeout от fresh origin/develop723985f. Scope docs-only: own closing audit/card/STATE/report/roadmap checkpoints, latest58 review. Production/tests/config/CI/contracts/чужие cards не меняются.
+- #57–59 base retarget develop выполнен без изменения code refs. Latest58 source733acc6 tests13 PASS, реальные races/history FAIL; latest59 participant fix сохранить, rematch downstream исправить.
+- A5 follow-up отправлен в созданную по поручению команды задачу; active progress подтверждает продолжение. У остальных назначения в Git, чужие сессии/checkout не переключались.
+- [Closing audit](../audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md). Оставшийся шаг этой docs сессии: publish closeout→develop, exact-head CI, remote verification. Отдельный STATE sync не prerequisite ни одного владельца.
+
+## Публикация и final gate, 2026-10-10T01:29:46+03:00
+
+- [PR #60](https://github.com/D0UP1G/FirsterChuv/pull/60) опубликован/attached; первый head014c98f remote verified и5/5 CI SUCCESS. Последние source54/doc checkpoints требуют повторного exact-head CI до merge.
+- #54 latest94d42a0 retained ordinary merge. #59 latest9eb394c проверен отдельно: historical participant fix PASS,19 source tests PASS;4 real races и rematch/downstream probe FAIL, source не включён. A2 первым исправляет эти persistence slices, A4 snapshot#53.
+- A5 завершил локальный auth slice, ждёт handoff доступности в develop; после code merge эта зависимость снимается, доступны P5-01/02/03 и собственный PR. Невлитые84 tests автора не приписываются coordinator suite.
+- [Publication audit](../audits/2026-10-10T012946+0300-coordinator-readiness-publication.md). Следующее: final push/CI/merge/fresh remote verification и frontend continuation, без source force push/deletion/main изменений.
+
+## Проверенные результаты перед публикацией, 2026-10-10T01:24:06+03:00
+
+- Статус IN_REVIEW, feature/mvp-readiness-handoff от cc204e6. #21/#50/#51/#52/#54 latest86208d5/#55/#56 сохранены ordinary merge commits; #53/#57/#58/#59 latest7465a9c исключены с воспроизведёнными correctness findings.
+- Backend255/4skips, drafts18 и bracket24 file-backed, frontend82/typecheck/lint/build, schema/common/domain/sandbox/check/drift PASS. Runtime source #57–59 tests16 PASS, реальные race/history probes FAIL; ни один failed head не merged.
+- ROADMAP v4: A1 contracts/access/build, A2 reviewed persistence fixes→run/gateway/ledger, A3 actual judge/worker, A4 public events/SSE/system acceptance, A5 весь frontend. Новая задача A5 active в изолированном clone.
+- Все148 audits текущей base сохранены byte-for-byte; source-only audits сохранены. Более старый blob одного audit в #51 отличается от current develop уже до этой ревизии; выбран current base, старый source blob сохранён в ancestry.
+- [Полная ревизия](../../docs/reviews/2026-10-10-mvp-readiness.md), [late audit](../audits/2026-10-10T012406+0300-coordinator-late-pr-review.md). Следующее: feature push/PR→develop, combined exact-head CI, merge commit и remote/source verification. main bootstrap.
+
+## Новая ревизия и передача frontend, 2026-10-10T01:01:49+03:00
+
+- Статус: IN_PROGRESS. Прямой запрос команды: проверить исправленные/новые PR, сверить кейс и roadmap, создать нового владельца frontend и распределить остаток MVP.
+- Ветка: feature/mvp-readiness-handoff; база origin/develop cc204e62a060eb2ceb16067a1b0693a2e083d9ab.
+- Scope: exact heads #21/#50/#51/#52/#53/#54/#55, новые author audits и source case. Готовые PR сохраняются ordinary merge commits через проверенную integration feature.
+- Планируемые пути: ROADMAP.md, AGENTS.md, context/PROJECT.md, context/STATE.md, context/agents/README.md и карточки с явным coordinator handoff, новый frontend owner card, новые audits/review report/operations handoff. Runtime source только из проверенных PR; shared registration conflicts — union без потери apps.
+- Чужие checkout/feature refs не переключать, не переписывать и не удалять. Работа новых владельцев — изолированные checkout; frontend handoff не требует повторной реализации готового UI.
+- Проверки и финальные статусы будут записаны после фактического результата; сквозной MVP заранее не объявляется готовым.
+
 ## Завершение слияний после PR #44, 2026-10-10
 
 - Статус: IN_REVIEW; ветка feature/mvp-review-closeout от develop 03a463650828774d5767e086a69183f83c38006b.

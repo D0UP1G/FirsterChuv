@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — Spectator Track</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.ba-anim-frames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.ba-anim-frame{padding:16px;border:1px solid rgba(0,229,255,.22);background:#000;display:flex;flex-direction:column;gap:10px}
+@media (max-width:900px){.ba-anim-frames{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/watch/:tournamentId/matches/:matchId" data-api="public snapshot (PublicMatchV1, lastEventId) → SSE afterEventId / Last-Event-ID">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация"><a class="nav-link active" href="#">Зрителям</a></nav>
+    <div class="account-nav"><a class="nav-link" href="#">Войти</a><a class="button button-small" href="#">Создать аккаунт</a></div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="spectator-page page-section" style="padding-top: 32px">
+      <header class="spectator-page-heading">
+        <div>
+          <p class="eyebrow"><span class="live-dot"></span> SPECTATOR TRACK · ПУБЛИЧНЫЙ ПРОСМОТР</p>
+          <h1>Блиц 2026</h1>
+        </div>
+        <div class="spectator-view-actions">
+          <a class="button button-outline button-small" href="#">Все турниры</a>
+          <a class="button button-quiet button-small" href="#">Режим проектора</a>
+        </div>
+      </header>
+
+      <div class="spectator-live-status" data-connection="live" role="status" aria-live="polite"><span class="spectator-status-dot" aria-hidden="true"></span>LIVE · событие #42</div>
+
+      <div class="spectator-layout">
+        <nav class="spectator-bracket" aria-label="Сетка турнира">
+          <div class="spectator-section-heading"><span>СЕТКА</span><strong>4 места</strong></div>
+          <div class="spectator-bracket-rounds">
+            <section class="spectator-round" aria-label="Полуфинал">
+              <h2>Полуфинал</h2>
+              <button class="spectator-bracket-match is-selected" type="button"><span class="spectator-bracket-pairing"><span>Ира</span><span>Максим</span></span><span class="ba-tag ba-tag-live">RUNNING</span></button>
+              <button class="spectator-bracket-match" type="button"><span class="spectator-bracket-pairing"><span class="is-winner">Алина</span><span class="is-out">Денис</span></span><span class="ba-tag ba-tag-ok">FINISHED</span></button>
+            </section>
+            <section class="spectator-round" aria-label="Финал">
+              <h2>Финал</h2>
+              <button class="spectator-bracket-match" type="button"><span class="spectator-bracket-pairing"><span class="ba-mono-muted">Победитель M-1</span><span>Алина</span></span><span class="ba-tag ba-tag-neutral">WAITING</span></button>
+            </section>
+          </div>
+          <div class="ba-mt-5 spectator-section-heading"><span>ЛЕНТА СОБЫТИЙ</span><strong>LIVE</strong></div>
+          <ol class="ba-feed" aria-label="Лента событий матча">
+            <li><time>07:13</time><span>Ира → B · отправка</span></li>
+            <li><time>06:10</time><span class="is-ok">Максим → C [OK]</span></li>
+            <li><time>06:10</time><span class="is-lead">Лидер: Максим</span></li>
+            <li><time>05:40</time><span class="is-bad">Ира → B [WA]</span></li>
+            <li><time>02:15</time><span class="is-ok">Ира → A [OK]</span></li>
+            <li><time>00:00</time><span>Матч начался</span></li>
+          </ol>
+        </nav>
+
+        <div class="spectator-main-column">
+          <section class="spectator-match-card ba-frame" aria-label="Текущий матч">
+            <div class="spectator-match-topline">
+              <div><span class="spectator-match-key">M-1 · ПОЛУФИНАЛ</span><span class="ba-tag ba-tag-live">RUNNING</span></div>
+              <span>Задачи A–D · штраф 60 с</span>
+            </div>
+            <div class="spectator-scoreboard">
+              <div class="spectator-score-player">
+                <span class="ba-badge"><span class="ba-badge-avatar" aria-hidden="true">И</span><span class="ba-badge-name"><b>Ира</b><small>штраф 01:00</small></span></span>
+                <strong>1</strong>
+              </div>
+              <div class="spectator-clock" aria-label="Осталось 12 минут 47 секунд"><span class="ba-timer">12:47</span><small>ОСТАЛОСЬ</small></div>
+              <div class="spectator-score-player spectator-score-player-right">
+                <span class="ba-badge is-p2"><span class="ba-badge-name" style="text-align: right"><b>Максим</b><small>штраф 00:00</small></span><span class="ba-badge-avatar" aria-hidden="true">М</span></span>
+                <strong>1</strong>
+              </div>
+            </div>
+
+            <div class="spectator-map" aria-label="Карта прогресса участников">
+              <article class="spectator-lane" aria-label="Ира: 1 задача, штраф 01:00">
+                <div class="spectator-lane-heading">
+                  <div class="spectator-player-name"><span class="ba-badge"><span class="ba-badge-avatar" aria-hidden="true" style="width: 28px; height: 28px; font-size: 11px">И</span><span class="ba-badge-name"><b style="font-size: 15px">Ира</b></span></span></div>
+                  <div class="spectator-player-score">решено 1 · штраф 01:00 · с последней попытки 05:34</div>
+                </div>
+                <div class="spectator-track-labels" aria-hidden="true"><span>СТАРТ</span><span>1</span><span>2</span><span>3</span><span>4</span></div>
+                <div class="spectator-track">
+                  <span class="spectator-track-line" aria-hidden="true"></span>
+                  <span class="spectator-track-progress" style="width: 25%" aria-hidden="true"></span>
+                  <span class="spectator-checkpoint checkpoint-solved" data-label="A" style="left: 25%" aria-hidden="true"></span>
+                  <span class="spectator-runner" style="left: 25%" aria-hidden="true">И</span>
+                </div>
+                <ol class="spectator-task-grid" aria-label="Задачи: Ира">
+                  <li class="spectator-task-state task-solved"><span class="spectator-task-label">A</span><span class="ba-tag ba-tag-breached" style="align-self: flex-start">BREACHED</span><span class="spectator-task-attempts">Попытки: 2</span></li>
+                  <li class="spectator-task-state task-attempted"><span class="spectator-task-label">B</span><span class="ba-tag ba-tag-wa" style="align-self: flex-start">WA</span><span class="spectator-task-attempts">Попытки: 2</span></li>
+                  <li class="spectator-task-state"><span class="spectator-task-label">C</span><span class="ba-mono-muted">не начата</span><span class="spectator-task-attempts">Попытки: 0</span></li>
+                  <li class="spectator-task-state"><span class="spectator-task-label">D</span><span class="ba-mono-muted">не начата</span><span class="spectator-task-attempts">Попытки: 0</span></li>
+                </ol>
+              </article>
+
+              <article class="spectator-lane is-p2" aria-label="Максим: 1 задача, штраф 00:00, лидер">
+                <div class="spectator-lane-heading">
+                  <div class="spectator-player-name"><span class="ba-badge is-p2"><span class="ba-badge-avatar" aria-hidden="true" style="width: 28px; height: 28px; font-size: 11px">М</span><span class="ba-badge-name"><b style="font-size: 15px">Максим</b></span></span><span class="spectator-leader-badge">ЛИДЕР</span></div>
+                  <div class="spectator-player-score">решено 1 · штраф 00:00 · с последней попытки 07:03</div>
+                </div>
+                <div class="spectator-track-labels" aria-hidden="true"><span>СТАРТ</span><span>1</span><span>2</span><span>3</span><span>4</span></div>
+                <div class="spectator-track">
+                  <span class="spectator-track-line" aria-hidden="true"></span>
+                  <span class="spectator-track-progress" style="width: 25%" aria-hidden="true"></span>
+                  <span class="spectator-checkpoint checkpoint-solved" data-label="C" style="left: 25%" aria-hidden="true"></span>
+                  <span class="spectator-runner" style="left: 25%" aria-hidden="true">М</span>
+                </div>
+                <ol class="spectator-task-grid" aria-label="Задачи: Максим">
+                  <li class="spectator-task-state"><span class="spectator-task-label">A</span><span class="ba-mono-muted">не начата</span><span class="spectator-task-attempts">Попытки: 0</span></li>
+                  <li class="spectator-task-state"><span class="spectator-task-label">B</span><span class="ba-mono-muted">не начата</span><span class="spectator-task-attempts">Попытки: 0</span></li>
+                  <li class="spectator-task-state task-solved"><span class="spectator-task-label">C</span><span class="ba-tag ba-tag-breached" style="align-self: flex-start">BREACHED</span><span class="spectator-task-attempts">Попытки: 1</span></li>
+                  <li class="spectator-task-state"><span class="spectator-task-label">D</span><span class="ba-mono-muted">не начата</span><span class="spectator-task-attempts">Попытки: 0</span></li>
+                </ol>
+              </article>
+            </div>
+
+            <div class="ba-mt-5 spectator-match-summary">
+              <span>Лидер: Максим — решено поровну, у него меньше штраф.</span>
+              <span>Правило: решено ↓ · штраф ↑ · последнее принятое ↑</span>
+            </div>
+          </section>
+
+          <p class="ba-indent-1 spectator-scope-note">Позиция фишки — подтверждённое число решённых задач. Неуспешная попытка или ожидание проверки не двигают фишку, по времени она не движется.</p>
+
+          <section aria-label="Кадры анимаций событий">
+            <div class="spectator-section-heading"><span>КАДРЫ СОБЫТИЙ · ИГРАЮТ ОДИН РАЗ НА НОВОЕ СОБЫТИЕ</span><strong>SSE</strong></div>
+            <div class="ba-anim-frames">
+              <div class="ba-anim-frame"><span class="ba-kicker">score.changed · задача решена</span><span class="ba-tag ba-tag-breached ba-anim-solve" style="align-self: flex-start">C · BREACHED</span><p class="ba-indent-1 ba-mono-muted">Узел вспыхивает Toxic Acid, фишка сдвигается на следующую позицию.</p></div>
+              <div class="ba-anim-frame"><span class="ba-kicker">смена лидера · обгон</span><span class="spectator-leader-badge ba-anim-overtake" style="align-self: flex-start">ЛИДЕР → МАКСИМ</span><p class="ba-indent-1 ba-mono-muted">Бейдж «Лидер» переходит к новому игроку с импульсом.</p></div>
+              <div class="ba-anim-frame" style="border-color: #00ff66"><span class="ba-kicker">match.finished · победа</span><span class="spectator-winner">SYSTEM BREACHED · АЛИНА</span><p class="ba-indent-1 ba-mono-muted">Победитель и переход в следующий слот сетки.</p></div>
+            </div>
+          </section>
+
+          <div class="spectator-reconnect-banner" role="alert" data-state="stale"><span class="ba-tag ba-tag-warn">STALE</span><span>Соединение потеряно, переподключаемся. Данные могут быть устаревшими.</span><button class="text-button" type="button">Перезагрузить снимок</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

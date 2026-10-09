@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — приглашение</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.ba-states{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.invite-preview-card{padding:28px;display:flex;flex-direction:column;gap:24px}
+.ba-state-label{color:#5d7c82;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+@media (max-width:760px){.ba-states{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/invites/:token" data-api="GET /api/v1/invites/{token} · POST /api/v1/invites/{token}/accept">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация"><a class="nav-link" href="#">Зрителям</a></nav>
+    <div class="account-nav"><a class="nav-link" href="#">Войти</a><a class="button button-small" href="#">Создать аккаунт</a></div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="page-section invite-page">
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">INVITE // ДОСТУП К ТУРНИРУ</p>
+          <h1>Присоединиться по ссылке</h1>
+          <p class="page-lede">Ссылка показывает только название турнира и срок действия. Состав и задачи откроются после входа в турнир.</p>
+        </div>
+      </div>
+
+      <div class="ba-states">
+        <div class="invite-preview-card ba-frame" data-state="valid-anonymous">
+          <span class="ba-state-label">Состояние · гость</span>
+          <div class="ba-copy">
+            <p class="ba-kicker">Турнир</p>
+            <h2 data-field="tournament.title">Блиц 2026</h2>
+            <p class="ba-mono-muted">Действует до <time data-field="expiresAt">12.10.2026, 18:00</time></p>
+            <p>Чтобы принять приглашение, войдите или создайте аккаунт участника.</p>
+          </div>
+          <div class="invite-preview-actions ba-actions">
+            <a class="button" href="#">Создать аккаунт</a>
+            <a class="button button-outline" href="#">Войти</a>
+          </div>
+        </div>
+
+        <div class="invite-preview-card ba-frame" data-state="valid-participant">
+          <span class="ba-state-label">Состояние · участник вошёл</span>
+          <div class="ba-copy">
+            <p class="ba-kicker">Турнир</p>
+            <h2>Блиц 2026</h2>
+            <p class="ba-mono-muted">Действует до 12.10.2026, 18:00</p>
+          </div>
+          <div class="invite-preview-actions ba-actions">
+            <button class="button" type="button">Присоединиться</button>
+            <a class="button button-quiet" href="#">В кабинет</a>
+          </div>
+        </div>
+
+        <div class="success-panel" data-state="accepted" style="display: flex; flex-direction: column; gap: 24px; padding: 28px">
+          <div class="ba-head"><span class="ba-state-label">Состояние · принято (200/201)</span><span class="ba-tag ba-tag-ok">ACCESS GRANTED</span></div>
+          <div class="ba-copy">
+            <h2 class="ba-h2">Вы в составе турнира</h2>
+            <p class="ba-mono-muted">Повторное открытие ссылки не тратит ещё одну активацию.</p>
+          </div>
+          <a class="text-link" href="#">Перейти в кабинет ↗</a>
+        </div>
+
+        <div class="invite-preview-card invite-error-panel" data-state="unavailable" style="border-color: rgba(255,51,51,.55); background-color: rgba(255,51,51,.08)">
+          <div class="ba-head"><span class="ba-state-label">Состояние · 404 / 410 / 409</span><span class="ba-tag ba-tag-locked">LOCKED</span></div>
+          <div class="ba-copy">
+            <h2>Приглашение недоступно</h2>
+            <ul class="ba-list ba-mono-muted">
+              <li>Срок ссылки истёк или её отозвали.</li>
+              <li>Лимит активаций исчерпан.</li>
+              <li>Состав турнира уже заморожен.</li>
+            </ul>
+          </div>
+          <button class="button button-outline" type="button">Проверить ещё раз</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>
