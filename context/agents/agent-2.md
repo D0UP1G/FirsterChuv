@@ -91,3 +91,10 @@
 - P2-06.2 durable public snapshots is published in [PR #53](https://github.com/D0UP1G/FirsterChuv/pull/53), latest head `fd79038`.
 - P3-05.1 draft CAS retry is already included in open [PR #21](https://github.com/D0UP1G/FirsterChuv/pull/21), latest head `620f58e`, with four successful CI checks.
 - Next independent implementation remains P2-03 persisted runtime; P2-06.3 public HTTP/SSE stays gated on PublicAccessV1.
+
+## PR closeout refresh, 2026-10-10
+
+- PR #58 (`feature/a2-p2-04-result-persistence`) was synced with `origin/develop` `85e0cd0` using ordinary merge commit `7ad8073`; one documentation-card conflict was resolved by retaining both sides' entries. No feature-code conflict occurred.
+- On the synchronized branch: full backend suite 271 passed, 4 skipped; Django check passed; `makemigrations --check --dry-run` reported no changes; `compileall` and `git diff --check` passed.
+- GitHub CI for the synced head is pending publication. P2-04 deployment supervisor, trusted result/queue adapter and infra-failure recovery remain explicit integration work; do not count them complete here.
+- Session audit: [P2-04 PR synchronization](../audits/2026-10-10T023500+0300-agent-2-P2-04-pr-sync.md).
