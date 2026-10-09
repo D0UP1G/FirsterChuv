@@ -227,6 +227,7 @@ class MatchRun(models.Model):
         default=StartMode.MANUAL,
     )
     problem_versions = models.JSONField(default=list)
+    participant_user_ids = models.JSONField(default=list)
     score_snapshot = models.JSONField(default=dict)
     finished_at = models.DateTimeField(null=True, blank=True)
     winner = models.ForeignKey(

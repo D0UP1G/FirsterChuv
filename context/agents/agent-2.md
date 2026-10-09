@@ -61,3 +61,12 @@
 - Added migration `competition.0002_bracketcommandreceipt`, API/domain regression coverage, and same-key concurrency coverage.
 - Verification on this branch: targeted bracket API plus persistence tests `23 passed`; same-key concurrency test `1 passed`; full backend suite `237 passed, 2 skipped`; Django system check clean; migration drift check clean; `git diff --check` clean.
 - Branch includes fresh `origin/develop` sync at merge commit `7815160`; P2-02.2 implementation remains ready to publish as a follow-up PR after merged PR #7.
+
+## P2-05 persisted admin actions checkpoint, 2026-10-10
+
+- Status: `IN_REVIEW` — [PR #59](https://github.com/D0UP1G/FirsterChuv/pull/59), stacked after #58 → #57 → #50. PR includes durable pause/resume/extend, technical result with downstream winner advancement, rematch, and participant replacement.
+- Participant replacement writes a durable command receipt; updates the tournament roster and selected slot; clears the replaced participant's readiness signal; updates a READY run's frozen roster, or supersedes an active run and creates an empty-score READY run. Historical runs retain their original participant snapshot.
+- `MatchRun.participant_user_ids` was persisted to make each ledger and run's roster immutable across later bracket-slot changes. Migration `competition.0006_matchrun_participant_user_ids` included.
+- Verification on the updated head: focused admin tests 10 passed; full backend 256 passed, 2 skipped; Django check, migration drift, compileall, domain suites and `git diff --check` clean.
+- Remaining P2-05 work: trusted HTTP request adapter/endpoint and coordinated FINALIZING/downstream/event effects. Do not expose production admin endpoint without access adapter.
+- Session audit: [P2-05 replacement and immutable run roster](../audits/2026-10-10T012500+0300-agent-2-P2-05-participant-replacement.md).

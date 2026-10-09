@@ -143,6 +143,7 @@ def configure_match_run(
             and current.start_mode == normalized_mode
             and current.score_rule == rules_snapshot
             and current.problem_versions == problems
+            and current.participant_user_ids == [str(slot.participant.user_id) for slot in slots]
         ):
             return current
         raise MatchRuntimeError("match already has a configured run")
@@ -158,6 +159,7 @@ def configure_match_run(
         score_rule=rules_snapshot,
         start_mode=normalized_mode,
         problem_versions=problems,
+        participant_user_ids=[str(slot.participant.user_id) for slot in slots],
     )
     match.current_run = run
     match.status = Match.Status.READY

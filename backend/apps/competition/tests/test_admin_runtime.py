@@ -11,7 +11,7 @@ from backend.apps.competition.admin_runtime import (
 from backend.apps.competition.models import Match, MatchAdminCommandReceipt, MatchRun, MatchSlot
 from backend.apps.competition.runtime import configure_match_run, start_match_run
 from backend.apps.competition.services import generate_bracket
-from backend.apps.tournaments.models import Tournament
+from backend.apps.tournaments.models import Tournament, TournamentParticipant
 from backend.apps.tournaments.services import assign_participant
 from backend.apps.competition.tests.test_runtime import TestCatalog
 
@@ -59,7 +59,10 @@ class PersistedAdminClockCommandsTests(TestCase):
         )
         start_match_run(self.run.pk, now=START)
 
-    def command(self, *, key, action, reason=None, seconds=None, winner_user_id=None, actor=None, now=None):
+    def command(
+        self, *, key, action, reason=None, seconds=None, winner_user_id=None,
+        old_user_id=None, replacement_user_id=None, actor=None, now=None,
+    ):
         return execute_match_admin_command(
             actor_user_id=(actor or self.admin).pk,
             match_id=self.match.pk,
@@ -68,6 +71,8 @@ class PersistedAdminClockCommandsTests(TestCase):
             reason=reason,
             seconds=seconds,
             winner_user_id=winner_user_id,
+            old_user_id=old_user_id,
+            replacement_user_id=replacement_user_id,
             now=now,
         )
 
@@ -213,4 +218,103 @@ class PersistedAdminClockCommandsTests(TestCase):
         )
         self.assertEqual(downstream_slot.participant.user_id, winner_id)
         self.assertEqual(downstream_slot.resolution, MatchSlot.Resolution.PLAYER)
+
+    def test_running_replacement_preserves_old_run_identity_and_starts_clean_run(self):
+        old_slot = self.match.slots.select_related("participant").get(slot_index=0)
+        old_user_id = old_slot.participant.user_id
+        replacement = User.objects.create_user(
+            email="replacement-running@example.test",
+            display_name="Replacement",
+            password="test-password-123456",
+        )
+        original_ids = list(self.run.participant_user_ids)
+        self.run.score_snapshot = {"old": "score"}
+        self.run.save(update_fields=("score_snapshot",))
+
+        result = self.command(
+            key="replace-running-1",
+            action="replace_participant",
+            reason="Participant withdrew",
+            old_user_id=old_user_id,
+            replacement_user_id=replacement.pk,
+            now=START + timedelta(seconds=10),
+        )
+
+        self.run.refresh_from_db()
+        self.match.refresh_from_db()
+        slot = self.match.slots.get(slot_index=0)
+        replacement_entry = TournamentParticipant.objects.get(
+            tournament=self.match.tournament,
+            user=replacement,
+        )
+        self.assertEqual(self.run.status, MatchRun.Status.SUPERSEDED)
+        self.assertEqual(self.run.participant_user_ids, original_ids)
+        self.assertEqual(slot.participant_id, replacement_entry.pk)
+        self.assertEqual(replacement_entry.status, TournamentParticipant.Status.ACTIVE)
+        self.assertEqual(result["status"], MatchRun.Status.READY)
+        self.assertEqual(result["runId"], str(self.match.current_run_id))
+        self.assertEqual(self.match.current_run.participant_user_ids[0], str(replacement.pk))
+        self.assertEqual(self.match.current_run.score_snapshot, {})
+        self.assertEqual(
+            TournamentParticipant.objects.get(tournament=self.match.tournament, user_id=old_user_id).status,
+            TournamentParticipant.Status.REMOVED,
+        )
+
+    def test_ready_replacement_updates_frozen_roster_and_exact_replay(self):
+        self.run.status = MatchRun.Status.READY
+        self.run.started_at = None
+        self.run.save(update_fields=("status", "started_at"))
+        self.match.status = Match.Status.READY
+        self.match.save(update_fields=("status",))
+        old_user_id = self.match.slots.get(slot_index=1).participant.user_id
+        replacement = User.objects.create_user(
+            email="replacement-ready@example.test",
+            display_name="Replacement Ready",
+            password="test-password-123456",
+        )
+        args = dict(
+            key="replace-ready-1",
+            action="replace_participant",
+            reason="Scheduling conflict",
+            old_user_id=old_user_id,
+            replacement_user_id=replacement.pk,
+        )
+
+        response = self.command(**args)
+        replay = self.command(**args)
+
+        self.run.refresh_from_db()
+        self.assertEqual(response, replay)
+        self.assertEqual(self.run.status, MatchRun.Status.READY)
+        self.assertEqual(self.run.participant_user_ids[1], str(replacement.pk))
+        self.assertEqual(
+            self.match.slots.get(slot_index=1).participant.user_id,
+            replacement.pk,
+        )
+        self.assertEqual(MatchAdminCommandReceipt.objects.filter(command_id=args["key"]).count(), 1)
+
+    def test_waiting_replacement_without_run_persists_nullable_receipt(self):
+        self.match.current_run = None
+        self.match.status = Match.Status.WAITING
+        self.match.save(update_fields=("current_run", "status"))
+        old_user_id = self.match.slots.get(slot_index=0).participant.user_id
+        replacement = User.objects.create_user(
+            email="replacement-waiting@example.test",
+            display_name="Replacement Waiting",
+            password="test-password-123456",
+        )
+
+        response = self.command(
+            key="replace-waiting-1",
+            action="replace_participant",
+            reason="Unavailable before match",
+            old_user_id=old_user_id,
+            replacement_user_id=replacement.pk,
+        )
+
+        receipt = MatchAdminCommandReceipt.objects.get(command_id="replace-waiting-1")
+        self.assertIsNone(response["runId"])
+        self.assertIsNone(receipt.run_id)
+        self.assertEqual(response["status"], MatchRun.Status.WAITING)
+        self.assertEqual(self.match.slots.get(slot_index=0).participant.user_id, replacement.pk)
 

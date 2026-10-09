@@ -17,11 +17,13 @@ from backend.apps.competition.domain.admin_actions import (
     AdminActor,
     AdminCommand,
     MatchAdminSnapshot,
+    ReplacementParticipant,
     RunStatus,
     plan_extension,
     plan_pause,
     plan_resume,
     plan_rematch,
+    plan_replacement,
     plan_technical_result,
 )
 from backend.apps.competition.domain.clock import (
@@ -33,8 +35,10 @@ from backend.apps.competition.models import (
     Match,
     MatchAdminCommandReceipt,
     MatchRun,
+    MatchRunReady,
     MatchSlot,
 )
+from backend.apps.tournaments.models import TournamentParticipant
 
 
 MAX_EXTENSION_SECONDS = 600
@@ -50,6 +54,8 @@ class AdminCommandPersistenceError(RuntimeError):
 def _fingerprint(
     *, actor_id: UUID, action: AdminAction, reason: str | None,
     seconds: int | None, winner_user_id: UUID | str | None,
+    old_user_id: UUID | str | None = None,
+    replacement_user_id: UUID | str | None = None,
 ) -> str:
     intent = {
         "actorId": str(actor_id),
@@ -57,6 +63,8 @@ def _fingerprint(
         "reason": reason,
         "seconds": seconds,
         "winnerUserId": str(winner_user_id) if winner_user_id is not None else None,
+        "oldUserId": str(old_user_id) if old_user_id is not None else None,
+        "replacementUserId": str(replacement_user_id) if replacement_user_id is not None else None,
     }
     canonical = json.dumps(intent, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -88,6 +96,8 @@ def execute_match_admin_command(
     reason: str | None = None,
     seconds: int | None = None,
     winner_user_id: UUID | str | None = None,
+    old_user_id: UUID | str | None = None,
+    replacement_user_id: UUID | str | None = None,
     now: datetime | None = None,
 ) -> dict:
     """Apply a command and its durable replay receipt in one transaction."""
@@ -101,6 +111,7 @@ def execute_match_admin_command(
         AdminAction.EXTEND,
         AdminAction.TECHNICAL_RESULT,
         AdminAction.REMATCH,
+        AdminAction.REPLACE_PARTICIPANT,
     ):
         raise AdminCommandPersistenceError("this command is outside the persisted admin-actions slice")
     if not isinstance(command_id, str) or not command_id.strip() or len(command_id) > 128:
@@ -115,6 +126,11 @@ def execute_match_admin_command(
             raise AdminCommandPersistenceError("technical result requires a winner")
     elif winner_user_id is not None:
         raise AdminCommandPersistenceError("winner is accepted only by technical_result")
+    if normalized_action is AdminAction.REPLACE_PARTICIPANT:
+        if old_user_id is None or replacement_user_id is None:
+            raise AdminCommandPersistenceError("participant replacement requires old and replacement user IDs")
+    elif old_user_id is not None or replacement_user_id is not None:
+        raise AdminCommandPersistenceError("participant IDs are accepted only by replace_participant")
     try:
         actor_id = UUID(str(actor_user_id))
     except (TypeError, ValueError, AttributeError) as error:
@@ -134,6 +150,8 @@ def execute_match_admin_command(
         reason=reason,
         seconds=seconds if normalized_action is AdminAction.EXTEND else None,
         winner_user_id=winner_user_id if normalized_action is AdminAction.TECHNICAL_RESULT else None,
+        old_user_id=old_user_id if normalized_action is AdminAction.REPLACE_PARTICIPANT else None,
+        replacement_user_id=replacement_user_id if normalized_action is AdminAction.REPLACE_PARTICIPANT else None,
     )
 
     previous = MatchAdminCommandReceipt.objects.filter(match_id=match_id, command_id=command_id).first()
@@ -144,12 +162,11 @@ def execute_match_admin_command(
     if match_state is None:
         raise AdminCommandPersistenceError("match was not found")
     current_run_id = match_state["current_run_id"]
-    if current_run_id is None:
-        raise AdminCommandPersistenceError("match has no current run")
     # Run → match is the shared write-lock order used by readiness and ledger services.
-    locked_run = MatchRun.objects.filter(pk=current_run_id).update(revision=models.F("revision"))
-    if not locked_run:
-        raise AdminCommandPersistenceError("current match run was not found")
+    if current_run_id is not None:
+        locked_run = MatchRun.objects.filter(pk=current_run_id).update(revision=models.F("revision"))
+        if not locked_run:
+            raise AdminCommandPersistenceError("current match run was not found")
     changed = Match.objects.filter(pk=match_id).update(updated_at=models.F("updated_at"))
     if not changed:
         raise AdminCommandPersistenceError("match was not found")
@@ -160,19 +177,21 @@ def execute_match_admin_command(
     if previous is not None:
         return _replay(previous, actor_id=actor_id, fingerprint=fingerprint)
 
-    run = MatchRun.objects.get(pk=current_run_id)
-    receipt_run_id = run.pk
-    participant_ids = tuple(
-        MatchSlot.objects.filter(match=match, resolution=MatchSlot.Resolution.PLAYER)
-        .order_by("slot_index")
-        .values_list("participant__user_id", flat=True)
-    )
-    participants = (*participant_ids, *([None] * (2 - len(participant_ids))))[:2]
+    run = MatchRun.objects.get(pk=current_run_id) if current_run_id is not None else None
+    if run is None and normalized_action is not AdminAction.REPLACE_PARTICIPANT:
+        raise AdminCommandPersistenceError("match has no current run")
+    receipt_run_id = run.pk if run is not None else None
+    participants_by_slot: list[UUID | None] = [None, None]
+    for slot_index, user_id in MatchSlot.objects.filter(
+        match=match,
+        resolution=MatchSlot.Resolution.PLAYER,
+    ).values_list("slot_index", "participant__user_id"):
+        participants_by_slot[slot_index] = user_id
     snapshot = MatchAdminSnapshot(
         match_id=match.pk,
-        run_id=run.pk,
-        run_status=run.status,
-        participant_user_ids=participants,
+        run_id=run.pk if run is not None else None,
+        run_status=run.status if run is not None else MatchRun.Status.WAITING,
+        participant_user_ids=tuple(participants_by_slot),
         downstream_started=_downstream_started(match),
     )
     try:
@@ -197,13 +216,93 @@ def execute_match_admin_command(
                 winner_user_id=winner_user_id,
             )
             updated_clock = _clock(run)
-        else:
+        elif normalized_action is AdminAction.REMATCH:
             plan = plan_rematch(snapshot, command)
             updated_clock = _clock(run)
+        else:
+            try:
+                old_id = UUID(str(old_user_id))
+                replacement_id = UUID(str(replacement_user_id))
+                replacement_record = User.objects.get(pk=replacement_id)
+                replacement_snapshot = ReplacementParticipant(
+                    user_id=replacement_record.pk,
+                    role=replacement_record.role,
+                    is_active=replacement_record.is_active,
+                )
+            except (TypeError, ValueError, AttributeError) as error:
+                raise AdminCommandPersistenceError("participant IDs must be valid UUIDs") from error
+            except User.DoesNotExist as error:
+                raise AdminCommandPersistenceError("replacement participant was not found") from error
+            plan = plan_replacement(
+                snapshot,
+                command,
+                old_user_id=old_id,
+                replacement=replacement_snapshot,
+            )
+            updated_clock = _clock(run) if run is not None else None
     except (TypeError, ValueError) as error:
         raise AdminCommandPersistenceError(str(error)) from error
 
-    if normalized_action is AdminAction.PAUSE:
+    if normalized_action is AdminAction.REPLACE_PARTICIPANT:
+        slot = MatchSlot.objects.select_for_update().get(
+            match=match,
+            slot_index=plan.slot_index,
+            resolution=MatchSlot.Resolution.PLAYER,
+            participant__user_id=plan.replaced_user_id,
+        )
+        tournament = match.tournament
+        TournamentParticipant.objects.filter(
+            tournament=tournament,
+            user_id=plan.replaced_user_id,
+            status=TournamentParticipant.Status.ACTIVE,
+        ).update(status=TournamentParticipant.Status.REMOVED, removed_at=now or timezone.now())
+        replacement_entry, _created = TournamentParticipant.objects.get_or_create(
+            tournament=tournament,
+            user_id=plan.replacement_user_id,
+            defaults={"seed": None, "status": TournamentParticipant.Status.ACTIVE},
+        )
+        if replacement_entry.status != TournamentParticipant.Status.ACTIVE:
+            replacement_entry.status = TournamentParticipant.Status.ACTIVE
+            replacement_entry.removed_at = None
+            replacement_entry.seed = None
+            replacement_entry.save(update_fields=("status", "removed_at", "seed"))
+        if MatchSlot.objects.filter(
+            match__tournament=tournament,
+            participant=replacement_entry,
+        ).exclude(pk=slot.pk).exists():
+            raise AdminCommandPersistenceError("replacement participant already occupies another match slot")
+        slot.participant = replacement_entry
+        slot.save(update_fields=("participant",))
+        if run is not None:
+            MatchRunReady.objects.filter(run=run, participant__user_id=plan.replaced_user_id).delete()
+            participant_ids = list(run.participant_user_ids)
+            if len(participant_ids) != 2:
+                raise AdminCommandPersistenceError("current run has no frozen participant snapshot")
+            participant_ids[plan.slot_index] = str(plan.replacement_user_id)
+            if plan.new_run_required:
+                run.status = MatchRun.Status.SUPERSEDED
+                run.revision += 1
+                run.save(update_fields=("status", "revision"))
+                run = MatchRun.objects.create(
+                    match=match,
+                    sequence=run.sequence + 1,
+                    status=MatchRun.Status.READY,
+                    allowed_duration_ms=run.allowed_duration_ms,
+                    score_rule=run.score_rule,
+                    scoring_version=run.scoring_version,
+                    start_mode=run.start_mode,
+                    problem_versions=run.problem_versions,
+                    participant_user_ids=participant_ids,
+                    score_snapshot={},
+                )
+                match.current_run = run
+                match.status = Match.Status.READY
+                match.save(update_fields=("current_run", "status", "updated_at"))
+            else:
+                run.participant_user_ids = participant_ids
+                run.revision += 1
+                run.save(update_fields=("participant_user_ids", "revision"))
+    elif normalized_action is AdminAction.PAUSE:
         run.status = updated_clock.status.value
         run.paused_at = updated_clock.paused_at
     elif normalized_action is AdminAction.RESUME:
@@ -240,6 +339,7 @@ def execute_match_admin_command(
             scoring_version=run.scoring_version,
             start_mode=run.start_mode,
             problem_versions=run.problem_versions,
+            participant_user_ids=run.participant_user_ids,
             score_snapshot={},
         )
         match.current_run = replacement
@@ -254,20 +354,26 @@ def execute_match_admin_command(
         ))
         match.status = run.status
         match.save(update_fields=("status", "updated_at"))
-    elif normalized_action not in (AdminAction.TECHNICAL_RESULT, AdminAction.REMATCH):  # defensive
+    elif normalized_action not in (
+        AdminAction.TECHNICAL_RESULT,
+        AdminAction.REMATCH,
+        AdminAction.REPLACE_PARTICIPANT,
+    ):  # defensive
         raise AdminCommandPersistenceError("unsupported match admin action")
     response = {
         "matchId": str(match.pk),
-        "runId": str(run.pk),
+        "runId": str(run.pk) if run is not None else None,
         "commandId": command_id,
         "action": normalized_action.value,
-        "status": run.status,
-        "revision": run.revision,
-        "allowedDurationMs": run.allowed_duration_ms,
-        "pausedAt": run.paused_at.isoformat() if run.paused_at else None,
-        "accumulatedPauseMs": run.accumulated_pause_ms,
+        "status": run.status if run is not None else MatchRun.Status.WAITING,
+        "revision": run.revision if run is not None else 0,
+        "allowedDurationMs": run.allowed_duration_ms if run is not None else None,
+        "pausedAt": run.paused_at.isoformat() if run is not None and run.paused_at else None,
+        "accumulatedPauseMs": run.accumulated_pause_ms if run is not None else 0,
         "reason": reason,
         "winnerUserId": str(winner_user_id) if winner_user_id is not None else None,
+        "replacedUserId": str(old_user_id) if old_user_id is not None else None,
+        "replacementUserId": str(replacement_user_id) if replacement_user_id is not None else None,
     }
     try:
         with transaction.atomic():
