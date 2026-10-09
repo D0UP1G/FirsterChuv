@@ -44,3 +44,9 @@ Doc checker: 82 Markdown, 147 local links, 24 P-задачи, 37 requirements, 2
 2026-10-09T19:55:37+03:00: опубликован [PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20), feature/mvp-integration-review-2 → develop. gh pr view и git ls-remote подтвердили первый HEAD `5194baca132ba5516ee569b5b905322ebee29046`, base `dd80c933083eea8ac234a17593a6a54a09ded53d`, OPEN/MERGEABLE. Четыре jobs contracts-and-common-imports/backend/domain/sandbox-unit IN_PROGRESS, pass пока не заявлен. PR #20 и все рассматриваемые PR attached к задаче.
 
 Этот завершающий doc checkpoint дополняет тот же integration PR. До merge нужно подтвердить итоговый HEAD и 4 SUCCESS jobs; после операции проверить actual MERGED/merge SHA/develop remote/ancestry и state исходных PR #3/#11/#13/#14. Отдельный docs closeout PR не является prerequisite. Прошедшие commands/checks описаны выше; real provider/MVP/browser/official acceptance не подменяются CI.
+
+## Проверенный CI перед merge
+
+2026-10-09T19:57:20+03:00: для опубликованного HEAD `0b13172217de7fdc8a211722c586193086b5f83d` все четыре GitHub jobs **SUCCESS**: contracts-and-common-imports (16s), backend (36s), domain (10s), sandbox-unit (13s). [CI run 37962723530](https://github.com/D0UP1G/FirsterChuv/actions/runs/37962723530). gh pr view подтвердил OPEN/MERGEABLE/CLEAN, base dd80c93; worktree clean. Real Docker workflow на GitHub не dispatch-ился, actual Docker checks выполнялись локально и описаны отдельно.
+
+В завершающем commit добавляется только эта проверенная запись CI; application code остаётся побайтно совпадающим с пятью принятыми source heads. Перед операцией координатор ещё раз проверяет четыре SUCCESS на последнем PR HEAD и использует match-head-commit. Факт MERGED/final merge SHA не записывается до выполнения операции: он проверяется GitHub/remote refs после неё и сообщается команде. Далее четыре агента fetch/merge develop и продолжают READY runtime задачи; source heads и остальные PR сохранены.
