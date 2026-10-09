@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from django.http import JsonResponse
+from backend.apps.common.responses import api_error_response
 
 
 class RequestIdMiddleware:
@@ -15,16 +15,13 @@ class RequestIdMiddleware:
         if response.status_code == 404 and (
             request.path == "/api/v1" or request.path.startswith("/api/v1/")
         ):
-            response = JsonResponse(
-                {
-                    "error": {
-                        "code": "not_found",
-                        "message": "Not found.",
-                        "fields": None,
-                    },
-                    "requestId": str(request.request_id),
-                },
+            response = api_error_response(
+                request,
+                code="not_found",
+                message="Not found.",
                 status=404,
             )
+        if request.path.startswith("/api/v1/auth/") or request.path == "/api/v1/me":
+            response["Cache-Control"] = "no-store"
         response["X-Request-ID"] = str(request.request_id)
         return response

@@ -3,7 +3,7 @@
 import re
 from collections.abc import Mapping
 
-from rest_framework.exceptions import ErrorDetail
+from rest_framework.exceptions import AuthenticationFailed, ErrorDetail, NotAuthenticated
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 
@@ -59,6 +59,10 @@ def exception_handler(exc, context):
     response = drf_exception_handler(exc, context)
     if response is None:
         return None
+    if isinstance(exc, (NotAuthenticated, AuthenticationFailed)):
+        # SessionAuthentication has no WWW-Authenticate header; preserve 401 for
+        # missing/invalid credentials and keep denied roles at 403.
+        response.status_code = 401
 
     details = response.data
     fields = details if isinstance(details, (dict, list)) and not (isinstance(details, dict) and "detail" in details) else None

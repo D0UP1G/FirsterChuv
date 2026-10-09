@@ -4,11 +4,11 @@
 
 ## Текущее состояние
 
-В репозитории начата платформа на Django/DRF: добавлены настройки, custom User, health endpoint и начальная схема SQLite. Ограниченный smoke backend уже проверен, но полная приёмка запуска и безопасности не пройдена. UI, auth/tournament endpoints, сетка, judge, worker commands и сквозной сценарий ещё не готовы; это не demo-версия. Целевую инструкцию запуска добавит агент 1 после проверки полного сценария.
+В репозитории начата платформа на Django/DRF: добавлены настройки, custom User, health endpoint и начальная схема SQLite. Account endpoints register/login/logout/me с CSRF, глобальные application-role permissions и защищённая management command первоначального admin реализованы в feature-ветке `feature/account-roles`; feature ещё не интегрирована в `develop`. Ограниченные backend/auth checks прошли, но полная приёмка запуска и безопасности не пройдена. UI, tournament endpoints, сетка, judge, worker commands и сквозной сценарий ещё не готовы; это не demo-версия. Целевую инструкцию запуска добавит агент 1 после проверки полного сценария.
 
-Для локальной разработки backend-каркаса нужны Python 3.14 и uv. Скопируйте `.env.example` в `.env`, затем запустите `./scripts/dev.sh`. На feature-ветке Agent 1 проверены зависимости, миграции, SQLite WAL, dev server, сборка API image и health после запуска/перезапуска Compose. Это ограниченный smoke, а не полная T01 или проверка безопасности: auth, турнирные сценарии, UI, workers, official package и sandbox ещё не готовы. Полный запуск через Compose, `web` и профили `runtime` пока не готов.
+Для локальной разработки backend-каркаса нужны Python 3.14 и uv. Скопируйте `.env.example` в `.env`, затем запустите `./scripts/dev.sh`. На feature-ветках Agent 1 проверены зависимости, миграции, SQLite WAL, dev server, API image/health и account auth tests. Это ограниченный smoke, а не полная T01 или проверка безопасности: admin/roster flows, UI, workers, official package и sandbox ещё не готовы. Полный запуск через Compose, `web` и профили `runtime` пока не готов.
 
-У аккаунта одна глобальная роль: `participant` или `admin`. Планируется, что после регистрации сервер назначает `participant`; auth endpoints пока не реализованы. Создавать и редактировать турниры сможет только `admin`. Просмотр публичного турнира будет доступен любому человеку без регистрации.
+У аккаунта одна глобальная роль: `participant` или `admin`. Регистрация всегда выдаёт `participant`; public role promotion запрещён. Начальный admin создаётся через `./scripts/manage.sh create_admin` с интерактивным паролем или защищённой secret injection; повторный запуск не меняет пароль существующего admin. По целевому правилу только `admin` сможет создавать и редактировать турниры. Публичный просмотр турнира будет доступен без регистрации.
 
 ## Начать работу
 

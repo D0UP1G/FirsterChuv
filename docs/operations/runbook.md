@@ -16,7 +16,9 @@
 
 ## Первоначальные данные
 
-Первый admin создаётся защищённой management command; никаких стандартных общедоступных admin/admin. Идемпотентный bootstrap не меняет пароль существующего пользователя при каждом restart. Официальный пакет импортируется программно, checksum/format/readiness фиксируются.
+Первый application admin создаётся командой `./scripts/manage.sh create_admin --email admin@example.org --display-name "Tournament Admin"`. В интерактивном terminal пароль запрашивается скрыто дважды. Для automation передайте `DJANGO_ADMIN_PASSWORD` через secret manager/защищённую конфигурацию только этого процесса; не помещайте пароль в аргумент команды, inline shell command, общий `.env`, Compose env API, Git или логи. Значение читается и удаляется из окружения процесса команды. Если нет ни secret injection, ни TTY, команда завершится ошибкой.
+
+Команда проверяет настроенные Django password validators. При повторном запуске для уже активного application admin она оставляет аккаунт и пароль без изменений; существующий participant не повышается, неактивный admin автоматически не включается. Созданный application admin имеет `role=admin`, но `is_staff=False` и `is_superuser=False`; Django superuser не требуется для продуктовых admin endpoints. Для изменения роли или состояния используйте отдельную контролируемую процедуру, не bootstrap повторный запуск. Никаких стандартных общедоступных admin/admin. Официальный пакет импортируется программно, checksum/format/readiness фиксируются.
 
 Для demo нужны четыре participant: два новых присоединяются по ссылке, ещё два могут быть назначены заранее. Admin строит полуфиналы/финал. Для быстрой проверки поставить небольшую duration, для показательного матча — 20 минут. Не выдавать smoke fixtures собственного автора за единый пакет организаторов.
 

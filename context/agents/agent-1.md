@@ -1,11 +1,11 @@
 # Агент 1: платформа и интеграция
 
-- Статус: `IN_PROGRESS` — интеграционный state sync для завершённой `A1-01`; затем начать `A1-02`.
+- Статус: `IN_PROGRESS` — начата `A1-02`.
 - Назначенный исполнитель: Codex, agent 1.
-- Текущая задача/ветка/база: `A1-01-state-sync` / `feature/a1-01-state-sync` / `2484d86` (`origin/develop`).
+- Текущая задача/ветка/база: `A1-02` / `feature/account-roles` / `be0323c` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-01 bootstrap audit](../audits/2026-10-09T134327+0300-agent-1-A1-01.md), четыре follow-up; [verification audit](../audits/2026-10-09T144549+0300-agent-1-A1-01-verification.md); [state-sync audit](../audits/2026-10-09T145210+0300-agent-1-A1-01-state-sync.md). PR #2 merged в `develop` (`2484d86`).
+- Последний аудит/PR/проверки: [A1-02.4 T02/T20 cross-check](../audits/2026-10-09T150954+0300-agent-1-A1-02-4-security-cross-check.md); [A1-02.3 admin bootstrap audit](../audits/2026-10-09T150813+0300-agent-1-A1-02-3-bootstrap.md); [PR #5](https://github.com/D0UP1G/FirsterChuv/pull/5) открыт в `develop`; PR #2 merged at `2484d86`, state-sync PR #4 at `be0323c`.
 
 ## Разбивка задач на малые шаги
 
@@ -22,12 +22,12 @@
 - [x] A1-01.7 Проверить `.env.example`, `scripts/manage.sh check` и реальный `scripts/dev.sh` startup/health.
 - [x] A1-01.8 Diff reviewed; common tests, Django checks, migration checks, Compose config/build и API smoke выполнены. Полные T01/T02/T20 остаются `NOT_RUN`.
 
-### A1-02 · `feature/account-roles` · `TODO`
+### A1-02 · `feature/account-roles` · `IN_PROGRESS`
 
-- [ ] A1-02.1 Реализовать register/login/logout/me и явную защиту CSRF для auth mutations.
-- [ ] A1-02.2 Назначать участнику роль только сервером; закрыть admin actions role/object permissions.
-- [ ] A1-02.3 Добавить защищённую management command для начального admin без пароля в argv/logs.
-- [ ] A1-02.4 Сверить T02/T20 и обновить контракт, если реализация выявит расхождение.
+- [x] A1-02.1 Реализовать register/login/logout/me и явную CSRF protection; тесты покрывают session, token rotation, ошибки, inactive user и rate limit.
+- [x] A1-02.2 Добавить `IsApplicationAdmin`/`IsParticipant` по active global role; проверено, что `is_staff`/`is_superuser` не заменяют роль. Турнирные actions и object ownership останутся владельцам A1-03/A2.
+- [x] A1-02.3 Добавить защищённую management command для начального admin без пароля в argv/logs; TTY prompt/confirmation, secret injection, idempotency, refusal to promote и отсутствие Django superuser покрыты тестами.
+- [x] A1-02.4 Сверить все критерии T02/T20 с PDF кейса, requirements, API/security contracts и фактическими тестами; непокрытые domain/UI/sandbox сценарии оставлены явно открытыми.
 
 ### A1-03 · `feature/tournament-roster` · `TODO`
 
@@ -62,4 +62,4 @@
 - Владею: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/` (включая invites/participants), root tooling, Compose/CI, общей цепочкой миграций, интеграцией и релизом.
 - Не менять пути агентов 2–4 без согласованной передачи. Общие контракты и миграции сверять с потребителями до изменения.
 - Передача агентам 2–4: стабильные пути, auth dependency, ID-модели, конфигурация, миграционная база и локальный запуск.
-- Следующий шаг: подтвердить обновлённый STATE через этот feature PR, затем начать `A1-02` от актуального `origin/develop` в `feature/account-roles`. Auth/CSRF/role API остаются вне A1-01.
+- Следующий шаг: завершить review/check gate PR #5, влить merge commit’ом при отсутствии новых дефектов; проверить remote merge и повторить checks на интегрированном SHA, затем обновить `context/STATE.md` отдельным GitFlow PR.
