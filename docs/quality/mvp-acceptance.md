@@ -1,6 +1,6 @@
 # Приёмка MVP
 
-Статус всех полных сценариев: **NOT_RUN**. Backend/auth/roster срезы Agent 1 уже integrated PR #2/#5/#8; 37 tests повторены ревизией на develop 146b2cb. Алгоритм PR #7 и sandbox PR #3 ещё не integrated. Harness имеет F01/F07; 4 diagnostic smoke cases после временного исправления не являются PASS исходного PR, official package или T18. Полные T02/T03/T05/T20 требуют domain/browser/history/security проверки. Команды, среда и SHA — в [ревизии](../reviews/2026-10-09-repository-audit.md). Новый план задач P1–P4 — ROADMAP v2; acceptance ID T01–21 сохранены.
+Статус всех полных сценариев: **NOT_RUN**. Backend/auth/roster срезы Agent 1 уже integrated PR #2/#5/#8; 37 tests повторены ревизией на develop 146b2cb. В `feature/tournament-invites` добавлен backend-срез P1-01 и его отдельные API/concurrency tests; он не интегрирован и не меняет статус `develop`. Алгоритм PR #7 и sandbox PR #3 ещё не integrated. Harness имеет F01/F07; 4 diagnostic smoke cases после временного исправления не являются PASS исходного PR, official package или T18. Полные T02/T03/T04/T05/T20 требуют domain/browser/history/security проверки. Команды, среда и SHA — в [ревизии](../reviews/2026-10-09-repository-audit.md). Новый план задач P1–P4 — ROADMAP v2; acceptance ID T01–21 сохранены.
 
 Готовность по кейсу требует блоки 1–3; команда также включает базовую визуализацию. Первый working slice — промежуточный результат, не повод пропускать обязательные строки.
 
@@ -29,6 +29,8 @@
 | T21 | Полный browser scenario раздельных sessions и anonymous spectator, реальные official tests, продвижение, video ≤5 min, repo/README/env/история/variant Б | Все; A1 координатор | D02–06 |
 
 ## Как проверять
+
+P1-01 покрывает backend-подпроверки T04: create/list/revoke, срок/лимит, hashed token, registration+login+accept, repeat, concurrency и отказ при full/frozen roster. Полный T04 остаётся открытым до подключения интерфейса, browser-сценария и проверки интегрированного SHA; feature-тесты не переводят строку T04 в PASS.
 
 Unit/domain checks для score/tie/bracket/clock/guards. API integration checks для role/object permissions, invite cap/idempotency/drafts/transactional events. Real executor integration для compile/run/checker/limits. Browser checks для conditions/editor/autosave/SSE/projector. Изолированные mocks допустимы в unit tests, но не являются доказательством J01/J03/T14/T18.
 

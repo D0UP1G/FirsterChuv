@@ -7,6 +7,7 @@ from rest_framework import serializers
 
 from backend.apps.accounts.models import User
 from backend.apps.tournaments.models import (
+    Invite,
     Tournament,
     TournamentParticipant,
     default_match_config,
@@ -275,4 +276,43 @@ class AdminUserOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "display_name")
+        read_only_fields = fields
+
+
+class InviteCreateSerializer(StrictInputSerializer):
+    expires_at = serializers.DateTimeField(required=False, allow_null=True)
+    max_uses = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        min_value=1,
+        max_value=2147483647,
+    )
+
+    def validate(self, attrs):
+        if attrs.get("expires_at") is None and attrs.get("max_uses") is None:
+            raise serializers.ValidationError(
+                "Укажите срок действия или положительный лимит активаций."
+            )
+        expires_at = attrs.get("expires_at")
+        if expires_at is not None and expires_at <= timezone.now():
+            raise serializers.ValidationError(
+                {"expires_at": "Срок действия должен быть в будущем."}
+            )
+        return attrs
+
+
+class InviteMetadataSerializer(serializers.ModelSerializer):
+    tournament_id = serializers.UUIDField(read_only=True)
+    uses = serializers.IntegerField(source="used_count", read_only=True)
+
+    class Meta:
+        model = Invite
+        fields = (
+            "id",
+            "tournament_id",
+            "expires_at",
+            "max_uses",
+            "uses",
+            "revoked_at",
+        )
         read_only_fields = fields

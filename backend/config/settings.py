@@ -141,6 +141,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "auth_login": "10/minute",
         "auth_register": "20/hour",
+        "invite_preview": "30/minute",
     },
     "DATETIME_FORMAT": "iso-8601",
 }

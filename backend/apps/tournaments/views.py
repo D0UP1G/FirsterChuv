@@ -10,22 +10,35 @@ from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import (
+    AllowAny,
+    BasePermission,
+    IsAuthenticated,
+    SAFE_METHODS,
+)
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
 
 from backend.apps.accounts.models import User
-from backend.apps.accounts.permissions import IsApplicationAdmin
-from backend.apps.tournaments.models import Tournament, TournamentParticipant
+from backend.apps.accounts.permissions import IsApplicationAdmin, IsParticipant
+from backend.apps.tournaments.models import Invite, Tournament, TournamentParticipant
 from backend.apps.tournaments.serializers import (
     AdminUserOptionSerializer,
     AssignParticipantSerializer,
+    InviteCreateSerializer,
+    InviteMetadataSerializer,
     ParticipantSeedSerializer,
     TournamentParticipantSerializer,
     TournamentSerializer,
 )
 from backend.apps.tournaments.services import (
+    InviteMutationError,
     RosterMutationError,
+    accept_invite,
     assign_participant,
+    create_invite,
+    invite_for_token,
     remove_participant,
     set_participant_seed,
 )
@@ -82,6 +95,145 @@ def raise_roster_error(error: RosterMutationError):
 class AdminUserPagination(LimitOffsetPagination):
     default_limit = 50
     max_limit = 100
+
+
+class InvitePagination(LimitOffsetPagination):
+    default_limit = 25
+    max_limit = 100
+
+
+class InviteMutationResponse(APIException):
+    status_code = 409
+    default_code = "invite_conflict"
+
+    def __init__(self, error):
+        self.status_code = error.status_code
+        self.default_code = error.code
+        super().__init__(detail=str(error), code=error.code)
+
+
+def raise_invite_error(error: InviteMutationError):
+    if error.status_code == 404:
+        raise NotFound(str(error))
+    raise InviteMutationResponse(error)
+
+
+class PrivateInviteAPIView(APIView):
+    """Apply private/no-referrer response headers to every invite response."""
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Cache-Control"] = "no-store"
+        response["Referrer-Policy"] = "no-referrer"
+        return response
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class TournamentInvitesView(PrivateInviteAPIView):
+    permission_classes = [IsApplicationAdmin]
+    pagination_class = InvitePagination
+
+    def get_tournament(self):
+        try:
+            return Tournament.objects.get(pk=self.kwargs["tournament_id"])
+        except Tournament.DoesNotExist as exc:
+            raise NotFound("Турнир не найден.") from exc
+
+    def get(self, request, tournament_id):
+        tournament = self.get_tournament()
+        invites = Invite.objects.filter(tournament=tournament)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(invites, request, view=self)
+        return paginator.get_paginated_response(
+            InviteMetadataSerializer(page, many=True).data
+        )
+
+    def post(self, request, tournament_id):
+        tournament = self.get_tournament()
+        serializer = InviteCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            invite, token = create_invite(
+                tournament,
+                request.user,
+                expires_at=serializer.validated_data.get("expires_at"),
+                max_uses=serializer.validated_data.get("max_uses"),
+            )
+        except RosterMutationError as error:
+            raise_roster_error(error)
+        metadata = InviteMetadataSerializer(invite).data
+        return Response(
+            {
+                "invite": metadata,
+                "token": token,
+                "url": f"/invites/{token}",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class TournamentInviteRevokeView(PrivateInviteAPIView):
+    permission_classes = [IsApplicationAdmin]
+
+    def delete(self, request, tournament_id, invite_id):
+        invite = Invite.objects.filter(
+            pk=invite_id,
+            tournament_id=tournament_id,
+        ).first()
+        if invite is None:
+            raise NotFound("Приглашение не найдено.")
+        if invite.revoked_at is None:
+            Invite.objects.filter(pk=invite.pk, revoked_at__isnull=True).update(
+                revoked_at=timezone.now()
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class InvitePreviewView(PrivateInviteAPIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "invite_preview"
+
+    def get(self, request, token):
+        try:
+            invite = invite_for_token(token)
+        except InviteMutationError as error:
+            raise_invite_error(error)
+        return Response(
+            {
+                "tournament": {
+                    "id": invite.tournament_id,
+                    "title": invite.tournament.title,
+                },
+                "valid": True,
+                "expires_at": invite.expires_at,
+            }
+        )
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class InviteAcceptView(PrivateInviteAPIView):
+    permission_classes = [IsAuthenticated, IsParticipant]
+
+    def post(self, request, token):
+        if request.data not in ({}, None):
+            raise ValidationError({"detail": "Тело запроса должно быть пустым."})
+        try:
+            invite, _created = accept_invite(token, request.user)
+        except InviteMutationError as error:
+            raise_invite_error(error)
+        except RosterMutationError as error:
+            raise_roster_error(error)
+        return Response(
+            {
+                "tournament_id": invite.tournament_id,
+                "user_id": request.user.id,
+                "joined": True,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class AdminUserDirectoryView(generics.ListAPIView):
