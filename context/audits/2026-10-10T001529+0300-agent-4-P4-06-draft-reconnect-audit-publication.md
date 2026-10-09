@@ -17,6 +17,12 @@
 - PR ограничен Agent 4 card и audit-записями; contracts, application code и `context/STATE.md` не изменяются.
 - Artifact PR #47 прикреплён к текущей задаче.
 
+## Синхронизация свежего develop перед финальными checks
+
+- Пока PR #47 был открыт, develop продвинулся через PR #46 до `585de6a43fb4c1106e5f5d7a8ed960392f0b476f`. По GitFlow `origin/develop` включён в feature обычным merge commit `45556c5815406b427eebf319a1fedca2fccec9ce`, родители: feature `61f6f5d` и develop `585de6a`; conflicts не возникли.
+- Входящие coordinator/Agent 2 файлы сохранены без изменений. `git diff --name-only origin/develop...HEAD` после sync показывает только Agent 4 card и audit-файлы.
+- Новый checkpoint уточняет доступные после интеграции #7 приватные bracket generate/read routes. Исходный PR #7 остаётся OPEN, #21 остаётся OPEN с CAS race; public HTTP/SSE route по-прежнему не зарегистрирован. Browser CONNECT в этой сессии не начинался.
+
 ## Следующий шаг
 
-Опубликовать этот publication checkpoint в той же feature-ветке, проверить base/head и дождаться четырёх `SUCCESS` jobs на final PR head. После этого выполнить обычный merge commit, обновить локальный develop fast-forward и проверить чистое/синхронное состояние. Новую функциональную задачу не начинать по прямому указанию пользователя.
+Опубликовать этот base-sync/publication update в той же feature-ветке, проверить base/head и дождаться четырёх `SUCCESS` jobs на final PR head. После этого выполнить обычный merge commit, обновить локальный develop fast-forward и проверить чистое/синхронное состояние. Новую функциональную задачу не начинать по прямому указанию пользователя.
