@@ -2,11 +2,13 @@
 
 ## Новая ревизия активных PR, 2026-10-09T23:48+03:00
 
-- Статус: `IN_PROGRESS`; прямое поручение команды — проверить новые PR и безопасно слить готовые срезы, сохранив работу активных агентов.
+- Статус: `IN_REVIEW`; прямое поручение команды — проверить новые PR и безопасно слить готовые срезы, сохранив работу активных агентов.
 - Ветка: `feature/mvp-integration-review-3`, база `origin/develop` `623a17912efa55fd00550565fdfc0ac06d41607a`.
 - Scope: #7/#16 исправления, #34 readiness, #37 worker/outboxes, #38 ledger, #41 command receipts; #21 повторно проверить актуальный SHA известного CAS blocker.
 - Пути: собственная карточка/новые аудиты/актуальный STATE; исходные code heads объединяются обычными merge commits, общие регистрации и docs-конфликты разрешаются в этой feature.
 - Чужие branches/checkout не изменять; проверить combined tests/CI и fresh develop перед remote merge. Новые реализации core не считать runtime или полной приёмкой MVP.
+- Результат: #7/#16/#34/#37/#38/#41 объединены обычными merge commits, #42 включён; #21 unchanged/CAS blocker остаётся OPEN. Django 230/2 skips, file-backed submissions 49, domain 68, sandbox 15, frontend 80/build, schema/common/check/drift PASS. [Новый аудит](../audits/2026-10-09T235434+0300-coordinator-new-pr-review.md); 136 source audits и latest A4 bytes сохранены.
+- Следующий шаг: combined PR → develop, exact HEAD CI и fresh refs перед merge, затем remote/ancestry verification. После MERGED A2 продолжает persistence/API на готовом #7, A3 — runtime CONNECT и независимые import/CAS tasks.
 
 ## Разблокирование агента 3, 2026-10-09
 

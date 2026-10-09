@@ -97,3 +97,5 @@ Frontend `ApiTransport` имеет HTTP implementation и отдельный dev
 ## Передача runtime после повторной ревизии
 
 [Runtime handoffs](runtime-handoffs.md) задаёт production owners/queue receipt adapters, immutable job snapshots и отдельный additive infrastructure failure port. Core не заменяет provider. #7 lifecycle и #16 SOLVED.lastVerdict требуют исправлений; детали — [отчёт](../reviews/2026-10-09-integration-review.md). Старые ссылки a89b8fc выше фиксируют происхождение serializer/rank, не последний HEAD (#7 сейчас 1952244).
+
+Обновление 2026-10-09T23:54+03:00: исправления #7 `1a2b54a` и #16 `a0b1dcc` проверены в новой coordinator integration feature. #34/#38/#41 дают pure readiness/ledger/command receipts; #37 даёт worker/common adapters и local technical-failure outbox. Существующий common v1/HTTP contract не менялся; production providers и additive common failure port ещё нужны. После фактического MERGED integration PR продолжать CONNECT по [STATE](../../context/STATE.md); исторические blockers выше не выполнять повторно.
