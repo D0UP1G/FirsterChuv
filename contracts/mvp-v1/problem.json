@@ -1,0 +1,23 @@
+{
+  "problemId": "00000000-0000-0000-0000-000000000040",
+  "version": "synthetic-v1",
+  "label": "A",
+  "title": "Сумма двух чисел — пример разработки",
+  "statementMarkdown": "Найдите сумму $a+b$.\n\n| Ввод | Вывод |\n|---|---|\n| 2 3 | 5 |\n",
+  "assetIds": [],
+  "examples": [
+    {
+      "input": "2 3\n",
+      "output": "5\n"
+    }
+  ],
+  "timeLimitMs": 2000,
+  "memoryLimitBytes": 536870912,
+  "languages": [
+    {
+      "id": "cpp20",
+      "name": "C++20",
+      "template": "#include <iostream>\nint main() {\n    return 0;\n}\n"
+    }
+  ]
+}

@@ -4,17 +4,17 @@
 
 ## Текущее состояние
 
-В `develop` есть backend bootstrap, custom User, health endpoint, account endpoints register/login/logout/me с CSRF, глобальные application-role permissions и защищённая management command первоначального admin. В текущей feature-ветке `feature/tournament-roster` добавлены A1-03.1–.3: admin-only tournament CRUD, directory, roster API, capacity guards и bracket freeze hook; изменения ещё не интегрированы, invites не завершены. Ограниченные backend checks прошли, но полная приёмка запуска и безопасности не пройдена. UI, сетка, judge, worker commands и сквозной сценарий ещё не готовы; это не demo-версия. Целевую инструкцию запуска добавит агент 1 после проверки полного сценария.
+На проверенном develop `146b2cb` интегрированы backend, custom User, auth/CSRF/roles/bootstrap admin и tournament CRUD/roster/freeze (PR #2/#5/#8). 37 backend tests прошли при ревизии. Invites, интегрированный match/runtime, полноценный judge/worker, frontend и сквозное demo пока не integrated. Open PR #7 на a89b8fc содержит алгоритм/ORM/построение сетки, ещё без штатного подключения, PR #3 — sandbox harness с найденными дефектами запуска/протокольной границы. Полная приёмка MVP и безопасности не пройдена.
 
-Для локальной разработки backend нужны Python 3.14 и uv. Скопируйте `.env.example` в `.env`, затем запустите `./scripts/dev.sh`. Для текущего feature среза прошли backend tests, Django checks и migration drift check; ранее на feature-ветках Agent 1 проверены SQLite WAL, dev server, API image/health и account auth. Это ограниченные проверки, а не полная T01 или security acceptance: roster, UI, workers, official package и sandbox ещё не готовы. Полный запуск через Compose, `web` и профили `runtime` пока не готов.
+Точный снимок: [STATE](context/STATE.md). Все 9 PR, аудиты, команды и замечания: [ревизия 2026-10-09](docs/reviews/2026-10-09-repository-audit.md). Новый [план четырёх агентов](ROADMAP.md) даёт независимые READY задачи и отдельные CONNECT-шаги; [контракты v1](docs/architecture/parallel-contracts.md) позволяют писать UI/домены без ожидания соседних feature branches.
 
-У аккаунта одна глобальная роль: `participant` или `admin`. Регистрация всегда выдаёт `participant`; public role promotion запрещён. Начальный admin создаётся через `./scripts/manage.sh create_admin` с интерактивным паролем или защищённой secret injection; повторный запуск не меняет пароль существующего admin. По целевому правилу только `admin` сможет создавать и редактировать турниры. Публичный просмотр турнира будет доступен без регистрации.
+Локальный backend: Python 3.14 + uv, `.env.example` → `.env`, `./scripts/dev.sh`. Полный Compose запуск web/clock/judge пока не готов. У аккаунта global participant/admin; регистрация всегда participant. Только admin управляет турнирами. Первый admin: `./scripts/manage.sh create_admin` с защищённым вводом пароля; anonymous spectator будет смотреть через public API.
 
 ## Начать работу
 
 1. Прочитать [инструкции для агентов](AGENTS.md).
 2. Проверить [контекст проекта](context/PROJECT.md), [актуальное состояние](context/STATE.md) и собственную карточку в [context/agents](context/agents/README.md).
-3. Выбрать задачу из [роадмапа для четырёх агентов](ROADMAP.md), проверить её зависимости и занять её в своей карточке.
+3. Выбрать задачу из [роадмапа для четырёх агентов](ROADMAP.md), прочитать контракт v1 и занять READY задание в своей карточке.
 4. Создать `feature/<краткое-название>` от актуальной `develop`. Работа идёт строго по [GitFlow](docs/operations/gitflow.md).
 5. После работы записать отдельный [аудит](context/audits/README.md), обновить свою карточку и создать PR в `develop`.
 
