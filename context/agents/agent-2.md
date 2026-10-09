@@ -54,3 +54,12 @@
 - [Оригинальный sync audit](../audits/2026-10-10T000400+0300-agent-2-P2-02-1-develop-sync.md) сохранён без изменений. Исторический source card доступен в ancestry f300150.
 - Автор продолжает независимый P2-06.2 в собственной event feature во время review #7. Прежние readiness/ledger/command checkpoints этой карточки сохранены.
 - Код P2-01/P2-02.1 уже в develop через MERGED #44 (03a4636); текущий coordinator closeout объединяет поздний source sync и audit. После его MERGED обновить свою ветку из fresh develop и продолжить готовый подпункт.
+
+## Current publication closeout (2026-10-10)
+
+- P2-02.2 manual pairing/reset API is published in [PR #50](https://github.com/D0UP1G/FirsterChuv/pull/50).
+- P2-03 base-SHA audit correction is published in [PR #51](https://github.com/D0UP1G/FirsterChuv/pull/51).
+- P1-02.6 frontend CI is published in [PR #52](https://github.com/D0UP1G/FirsterChuv/pull/52).
+- P2-06.2 durable public snapshots is published in [PR #53](https://github.com/D0UP1G/FirsterChuv/pull/53), latest head `fd79038`.
+- P3-05.1 draft CAS retry is already included in open [PR #21](https://github.com/D0UP1G/FirsterChuv/pull/21), latest head `620f58e`, with four successful CI checks.
+- Next independent implementation remains P2-03 persisted runtime; P2-06.3 public HTTP/SSE stays gated on PublicAccessV1.
