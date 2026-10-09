@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, type ReactNode } from 'react'
-import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router'
+import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { ApiError, type UserRole } from './api/client'
 import { AuthProvider } from './auth/AuthContext'
 import { useAuth } from './auth/useAuth'
@@ -12,24 +12,28 @@ import { InvitePage } from './pages/InvitePage'
 import './App.css'
 
 const ParticipantWorkspacePage = lazy(() => import('./pages/ParticipantWorkspacePage').then((module) => ({ default: module.ParticipantWorkspacePage })))
+const SpectatorMapPage = lazy(() => import('./spectator/SpectatorMapPage').then((module) => ({ default: module.SpectatorMapPage })))
 
 function App() {
   return <AuthProvider><BrowserRouter><AppFrame /></BrowserRouter></AuthProvider>
 }
 
 function AppFrame() {
+  const location = useLocation()
+  const isProjector = location.pathname.startsWith('/watch/') && new URLSearchParams(location.search).get('projector') === '1'
   return (
-    <div className="app-frame">
+    <div className={isProjector ? 'app-frame app-frame-projector' : 'app-frame'}>
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
-      <Header />
-      <AuthStatusNotice />
+      {!isProjector && <Header />}
+      {!isProjector && <AuthStatusNotice />}
       <main id="main-content" className="main-content">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/watch" element={<PublicViewerPage />} />
-          <Route path="/watch/:tournamentId" element={<PublicViewerPage />} />
+          <Route path="/watch/:tournamentId" element={<Suspense fallback={<LoadingState label="Загружаем зрительскую карту…" />}><SpectatorMapPage /></Suspense>} />
+          <Route path="/watch/:tournamentId/matches/:matchId" element={<Suspense fallback={<LoadingState label="Загружаем зрительскую карту…" />}><SpectatorMapPage /></Suspense>} />
           <Route path="/invites/:token" element={<InvitePage />} />
           <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
           <Route path="/admin" element={<RequireRole role="admin"><AdminTournamentsPage /></RequireRole>} />
@@ -39,7 +43,7 @@ function AppFrame() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
-      <Footer />
+      {!isProjector && <Footer />}
     </div>
   )
 }
@@ -143,18 +147,17 @@ function HomePage() {
 }
 
 function PublicViewerPage() {
-  const { tournamentId } = useParams()
   return (
     <section className="page-section public-page">
       <div className="page-heading">
         <p className="eyebrow"><span className="live-dot" /> Открытый просмотр</p>
-        <h1>{tournamentId ? 'Страница турнира' : 'Публичные турниры'}</h1>
+        <h1>Публичные турниры</h1>
         <p>Зрительский просмотр доступен без аккаунта. Код участников здесь не показывается.</p>
       </div>
       <div className="empty-state">
         <div className="empty-orbit" aria-hidden="true"><span>Б</span></div>
         <h2>Открытых турниров пока нет</h2>
-        <p>{tournamentId ? 'Публичная карта этого турнира пока недоступна.' : 'Открытые трансляции появятся здесь.'}</p>
+        <p>Открытые трансляции появятся здесь после подключения списка публичных турниров.</p>
         <Link className="text-link" to="/">На главную <span aria-hidden="true">↗</span></Link>
       </div>
     </section>
