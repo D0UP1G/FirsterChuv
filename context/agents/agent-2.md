@@ -2,7 +2,7 @@
 
 Перепланировано координатором по ROADMAP v2. Исторические A-ID оставлены в старых аудитах.
 
-- Статус: `IN_REVIEW` — P2-04.1 PR [#13](https://github.com/D0UP1G/FirsterChuv/pull/13) открыт, ready, `CLEAN`; P2-04 целиком остаётся `IN_PROGRESS`.
+- Статус: `IN_REVIEW` — P2-04.1 PR [#13](https://github.com/D0UP1G/FirsterChuv/pull/13) открыт и ready; при публикации был `CLEAN`, последнее GitHub состояние — `UNKNOWN`; P2-04 целиком остаётся `IN_PROGRESS`.
 - Исполнитель: Codex в роли агента 2.
 - Текущая задача/ветка: `P2-04.1` / `feature/match-scoring-results`.
 - База перед публикацией: feature создана от `origin/develop` `d9488e3`, затем синхронизирована обычным fast-forward до `cad34ea` после merge PR #12 (`P1-01`).
