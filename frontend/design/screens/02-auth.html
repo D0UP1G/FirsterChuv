@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — вход и регистрация</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.auth-layout{display:flex;flex-wrap:wrap;gap:24px;padding-top:56px}
+.auth-card{flex:1 1 420px;min-width:0;padding:32px;display:flex;flex-direction:column;gap:20px}
+.auth-form{display:flex;flex-direction:column;gap:16px}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/login · /register">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация"><a class="nav-link" href="#">Зрителям</a></nav>
+    <div class="account-nav"><a class="nav-link active" href="#">Войти</a><a class="button button-small" href="#">Создать аккаунт</a></div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <div class="auth-layout">
+      <section class="auth-card ba-frame" aria-labelledby="login-heading" data-route="/login" data-api="GET /api/v1/auth/csrf → POST /api/v1/auth/login">
+        <div class="auth-card-heading">
+          <p class="eyebrow">ACCESS // LOGIN</p>
+          <h1 id="login-heading" class="ba-h1" style="font-size: 32px">Вход</h1>
+        </div>
+        <form class="auth-form">
+          <label class="form-field"><span>E-mail</span><input type="email" name="email" autocomplete="email" value="ira@example.org"></label>
+          <label class="form-field"><span>Пароль</span><input type="password" name="password" autocomplete="current-password" value="••••••••••"></label>
+          <div class="form-alert" role="alert">Неверный e-mail или пароль.</div>
+          <button class="button auth-submit" type="submit">Войти</button>
+        </form>
+        <p class="auth-footer ba-mono-muted">Нет аккаунта? <a href="#">Зарегистрироваться</a></p>
+      </section>
+
+      <section class="auth-card ba-frame" aria-labelledby="register-heading" data-route="/register" data-api="POST /api/v1/auth/register">
+        <div class="auth-card-heading">
+          <p class="eyebrow">ACCESS // NEW OPERATOR</p>
+          <h2 id="register-heading" class="ba-h1" style="font-size: 32px">Регистрация</h2>
+        </div>
+        <form class="auth-form">
+          <label class="form-field"><span>Отображаемое имя</span><input name="displayName" autocomplete="nickname" value="Ира"><small class="field-help">Видно сопернику и зрителям.</small></label>
+          <label class="form-field"><span>E-mail</span><input type="email" name="email" autocomplete="email" value="ira@example.org"><small class="field-help">Не показывается другим участникам и зрителям.</small></label>
+          <label class="form-field has-error"><span>Пароль</span><input type="password" name="password" autocomplete="new-password" value="•••"><small class="field-error">Пароль слишком короткий.</small></label>
+          <p class="role-note ba-mono-muted"><span class="role-pill">участник</span> Новый аккаунт всегда получает роль участника.</p>
+          <button class="button auth-submit" type="submit">Создать аккаунт</button>
+        </form>
+        <p class="auth-footer ba-mono-muted">Уже есть аккаунт? <a href="#">Войти</a></p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

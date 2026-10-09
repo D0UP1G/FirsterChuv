@@ -39,3 +39,7 @@ ADR16, **ADOPTED**: по поручению команды ROADMAP v2 даёт R
 ## Повторная ревизия и runtime приоритет
 
 ADR17, ADOPTED 2026-10-09: готовые pure clock/score/catalog/harness интегрировать как малые срезы, далее production MatchRun/gateway/ledger/JudgeProvider/worker/UI; не повторять helpers. При зависимости продолжать резервную очередь ROADMAP v3. Для exhausted infrastructure failures принят отдельный additive failure DTO/sink по runtime-handoffs; existing v1 ResultReceipt/verdicts неизменны. Причина: queue освобождает capacity без verdict, accepted ledger требует понятного восстановления без автоматического поражения. Это спецификация, не уже реализованный provider.
+
+## Визуальный стиль
+
+ADR18, CONFIRMED 2026-10-10 по поручению команды: интерфейс оформляется по брендбуку «BLITZ_ARENA // BRANDBOOK & DESIGN SYSTEM v2.0» (Marathon / Cyberpunk: `#000000`, `#CCFF00`/`#00FF66`, `#FF3333`, полупрозрачный `#00E5FF`; Space Mono, Orbitron/Rajdhani, VT323). В интерфейсе продукт называется BLITZ_ARENA, имена репозитория, пакетов и папок не меняются. Эталон — [frontend/design](../../frontend/design/README.md). Разделы брендбука 5–8 (профиль/рейтинг, магазин и CREDITS, чат и «типы», ачивки/комбо, комментаторская панель) остаются вне MVP по PROJECT.md и нарисованы только как концепт. Тотализатор не проектируется. Просмотр исходников соперника после матча не реализуется: противоречит правилу «код посылки доступен только автору». Статусы брендбука сопоставлены с API: SOLVED → `[BREACHED]`, доступная задача → `[ACTIVE]`, до старта → `[LOCKED]`.
