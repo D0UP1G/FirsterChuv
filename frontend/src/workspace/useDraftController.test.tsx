@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, type DraftSnapshot } from '../api/client'
+import { readLocalDraft } from './localDrafts'
 import type { WorkspaceTransport } from './transport'
 import { useDraftController } from './useDraftController'
 
@@ -122,6 +123,57 @@ describe('useDraftController', () => {
     await waitFor(() => expect(afterReload.result.current.status).toBe('unavailable'))
 
     expect(afterReload.result.current.source).toBe('unsynced solution')
+  })
+
+  it('retries the local draft after the server recovers when the page becomes visible', async () => {
+    const offline = new ApiError('Server drafts unavailable', 503, 'integration_unavailable')
+    let serverAvailable = false
+    const saveDraft = vi.fn<WorkspaceTransport['saveDraft']>(async (_matchId, problemId, languageId, input) => {
+      if (!serverAvailable) throw offline
+      return {
+        runId: input.runId,
+        problemId,
+        languageId,
+        source: input.source,
+        revision: input.expectedRevision + 1,
+        updatedAt: '2026-10-09T18:00:00Z',
+      }
+    })
+    const transport = makeTransport({
+      draft: vi.fn().mockRejectedValue(offline),
+      saveDraft,
+    })
+    const { result } = renderHook(() => useDraftController({ ...baseProps, transport }))
+
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+    act(() => result.current.changeSource('solution retained while offline'))
+    await waitFor(() => expect(saveDraft).toHaveBeenCalledOnce())
+    await waitFor(() => expect(result.current.syncError).toContain('Синхронизация с сервером не удалась'))
+    expect(readLocalDraft({ userId: 'user-1', runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20' })).toMatchObject({
+      source: 'solution retained while offline',
+      localRevision: 1,
+      serverRevision: 0,
+    })
+
+    serverAvailable = true
+    act(() => document.dispatchEvent(new Event('visibilitychange')))
+
+    await waitFor(() => expect(result.current.status).toBe('saved'))
+    expect(saveDraft).toHaveBeenCalledTimes(2)
+    expect(saveDraft).toHaveBeenLastCalledWith('match-1', 'problem-1', 'cpp20', {
+      runId: 'run-1',
+      source: 'solution retained while offline',
+      expectedRevision: 0,
+    })
+    expect(result.current.draft).toMatchObject({
+      source: 'solution retained while offline',
+      serverSource: 'solution retained while offline',
+      serverRevision: 1,
+    })
+    expect(readLocalDraft({ userId: 'user-1', runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20' })).toMatchObject({
+      source: 'solution retained while offline',
+      serverRevision: 1,
+    })
   })
 
   it('stops autosave on a revision conflict and exposes both copies', async () => {
