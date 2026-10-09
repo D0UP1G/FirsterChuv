@@ -488,7 +488,15 @@ export const api = {
   },
 
   readyProblems(): Promise<Page<ProblemCatalogEntry>> {
-    return request<Page<ProblemCatalogEntry>>('/problems?limit=100&offset=0')
+    return request<Page<ProblemCatalogEntry>>('/problems?limit=100&offset=0').then((page) => ({
+      ...page,
+      results: page.results.map(({ problemId, label, version, readiness }) => ({
+        problemId,
+        label,
+        version,
+        readiness,
+      })),
+    }))
   },
 
   bracket(tournamentId: string): Promise<Bracket> {

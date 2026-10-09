@@ -141,6 +141,74 @@ describe('auth API client', () => {
     expect(acceptInit?.body).toBeUndefined()
   })
 
+  it('preserves catalog pagination while projecting only match selection fields', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      count: 2,
+      next: '/api/v1/problems?limit=100&offset=100',
+      previous: null,
+      results: [
+        {
+          problemId: '00000000-0000-4000-8000-000000000040',
+          label: 'A',
+          version: 'ready-v1',
+          readiness: 'READY',
+          isActive: true,
+          title: 'Тестовая задача',
+          timeLimitMs: 1000,
+          memoryLimitBytes: 65536,
+          languages: [{ id: 'cpp20', name: 'C++20', template: 'int main() {}' }],
+          createdAt: '2026-10-09T17:00:00Z',
+        },
+        {
+          problemId: '00000000-0000-4000-8000-000000000041',
+          label: 'B',
+          version: 'not-ready-v2',
+          readiness: 'NOT_READY',
+          isActive: false,
+          title: 'Черновая задача',
+          timeLimitMs: 1000,
+          memoryLimitBytes: 65536,
+          languages: [],
+          createdAt: '2026-10-09T17:01:00Z',
+        },
+      ],
+    }))
+
+    const page = await api.readyProblems()
+
+    expect(page).toEqual({
+      count: 2,
+      next: '/api/v1/problems?limit=100&offset=100',
+      previous: null,
+      results: [
+        { problemId: '00000000-0000-4000-8000-000000000040', label: 'A', version: 'ready-v1', readiness: 'READY' },
+        { problemId: '00000000-0000-4000-8000-000000000041', label: 'B', version: 'not-ready-v2', readiness: 'NOT_READY' },
+      ],
+    })
+
+    const [catalogUrl, catalogInit] = fetchMock.mock.calls[0]
+    expect(catalogUrl).toBe('/api/v1/problems?limit=100&offset=0')
+    expect(catalogInit?.credentials).toBe('include')
+    expect(catalogInit?.cache).toBe('no-store')
+  })
+
+  it('preserves admin-only catalog errors instead of returning an empty catalog', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      error: { code: 'permission_denied', message: 'Каталог доступен только организатору.', fields: null },
+      requestId: 'req-catalog-403',
+    }, 403))
+
+    await expect(api.readyProblems()).rejects.toMatchObject({
+      status: 403,
+      code: 'permission_denied',
+      requestId: 'req-catalog-403',
+      message: 'Каталог доступен только организатору.',
+    } satisfies Partial<ApiError>)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
   it('sends bracket and match commands as CSRF-protected idempotent v1 requests', async () => {
     const fetchMock = vi.mocked(fetch)
     const bracket = { tournamentId: 'tournament-1', bracketSize: 2, rosterFrozenAt: '2026-10-09T17:00:00Z', matches: [] }
