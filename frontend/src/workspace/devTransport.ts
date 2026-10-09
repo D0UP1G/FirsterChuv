@@ -12,6 +12,10 @@ const languages: MatchProblemLanguage[] = [
   { id: 'python3', name: 'Python 3', template: 'def main():\n    pass\n\nif __name__ == "__main__":\n    main()\n' },
 ]
 
+const plainTextCompilerFixture: MatchProblemLanguage[] = [
+  { id: 'rust2024', name: 'Rust 2024', template: 'fn main() {\n    println!("Hello, world!");\n}\n' },
+]
+
 const problems: MatchProblemDetails[] = [
   {
     problemId: taskIds[0], version: 'synthetic-v1', label: 'A', title: 'Сумма двух чисел · пример',
@@ -92,7 +96,9 @@ export function createDevWorkspaceTransport(search: URLSearchParams): WorkspaceT
       if (!problem) throw new ApiError('Задача не найдена в dev-сценарии.', 404, 'not_found')
       return structuredClone(problem)
     },
-    async languages() { return structuredClone(languages) },
+    async languages() {
+      return structuredClone(search.get('compiler') === 'rust-fixture' ? plainTextCompilerFixture : languages)
+    },
     async draft(_matchId, problemId, runId, languageId) {
       return storedDrafts.get(scopeKey(problemId, runId, languageId)) ?? null
     },
