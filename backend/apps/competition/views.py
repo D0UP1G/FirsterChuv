@@ -19,6 +19,11 @@ from backend.apps.competition.bracket_commands import (
     execute_bracket_command,
 )
 from backend.apps.competition.domain.bracket import BracketInputError
+from backend.apps.competition.domain.admin_actions import AdminAction
+from backend.apps.competition.admin_runtime import (
+    AdminCommandPersistenceError,
+    execute_match_admin_command,
+)
 from backend.apps.competition.models import Match
 from backend.apps.competition.serializers import TournamentBracketSerializer
 from backend.apps.competition.services import (
@@ -122,6 +127,44 @@ class ResetBracketRequestSerializer(serializers.Serializer):
                 {"non_field_errors": "Ожидается только поле reason."}
             )
         return super().to_internal_value(data)
+
+
+class StrictAdminActionRequestSerializer(serializers.Serializer):
+    """Reject unknown fields so clients cannot supply trusted actor/state data."""
+
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping) or set(data) != set(self.fields):
+            allowed = ", ".join(sorted(self.fields)) or "no fields"
+            raise ValidationError({"non_field_errors": f"Expected exactly: {allowed}."})
+        return super().to_internal_value(data)
+
+
+class PauseMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class ResumeMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    pass
+
+
+class ExtendMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    seconds = StrictPositionField(min_value=1, max_value=600)
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class TechnicalResultRequestSerializer(StrictAdminActionRequestSerializer):
+    winner_user_id = serializers.UUIDField()
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class ReasonOnlyMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class ReplaceParticipantRequestSerializer(StrictAdminActionRequestSerializer):
+    old_user_id = serializers.UUIDField()
+    new_user_id = serializers.UUIDField()
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
 
 
 def bracket_payload(tournament: Tournament, matches: list[Match]) -> dict:
@@ -292,6 +335,93 @@ class ResetBracketView(APIView):
         response = Response(payload, status=status.HTTP_200_OK)
         response["Cache-Control"] = "no-store"
         return response
+
+
+class MatchAdminActionRequestError(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_code = "admin_command_conflict"
+
+    def __init__(self, error):
+        self.status_code = getattr(error, "status_code", self.status_code)
+        self.default_code = getattr(error, "code", self.default_code)
+        super().__init__(detail=str(error), code=self.default_code)
+
+
+class MatchAdminActionView(APIView):
+    permission_classes = [IsApplicationAdmin]
+    action = None
+    serializer_class = None
+
+    def command_arguments(self, values):
+        if self.action is AdminAction.EXTEND:
+            return {"seconds": values["seconds"], "reason": values["reason"]}
+        if self.action is AdminAction.TECHNICAL_RESULT:
+            return {
+                "winner_user_id": values["winner_user_id"],
+                "reason": values["reason"],
+            }
+        if self.action is AdminAction.REPLACE_PARTICIPANT:
+            return {
+                "old_user_id": values["old_user_id"],
+                "replacement_user_id": values["new_user_id"],
+                "reason": values["reason"],
+            }
+        if self.action in (AdminAction.PAUSE, AdminAction.REMATCH):
+            return {"reason": values["reason"]}
+        return {}
+
+    def post(self, request, match_id):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = execute_match_admin_command(
+                actor_user_id=request.user.pk,
+                match_id=match_id,
+                command_id=_idempotency_key(request),
+                action=self.action,
+                **self.command_arguments(serializer.validated_data),
+            )
+        except AdminCommandPersistenceError as error:
+            raise MatchAdminActionRequestError(error) from error
+        response = Response(payload, status=status.HTTP_200_OK)
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class PauseMatchView(MatchAdminActionView):
+    action = AdminAction.PAUSE
+    serializer_class = PauseMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ResumeMatchView(MatchAdminActionView):
+    action = AdminAction.RESUME
+    serializer_class = ResumeMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ExtendMatchView(MatchAdminActionView):
+    action = AdminAction.EXTEND
+    serializer_class = ExtendMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class TechnicalResultView(MatchAdminActionView):
+    action = AdminAction.TECHNICAL_RESULT
+    serializer_class = TechnicalResultRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class RematchView(MatchAdminActionView):
+    action = AdminAction.REMATCH
+    serializer_class = ReasonOnlyMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ReplaceParticipantView(MatchAdminActionView):
+    action = AdminAction.REPLACE_PARTICIPANT
+    serializer_class = ReplaceParticipantRequestSerializer
 
 
 class TournamentBracketView(APIView):

@@ -67,8 +67,10 @@
 - Status: `IN_REVIEW` — [PR #59](https://github.com/D0UP1G/FirsterChuv/pull/59), stacked after #58 → #57 → #50. PR includes durable pause/resume/extend, technical result with downstream winner advancement, rematch, and participant replacement.
 - Participant replacement writes a durable command receipt; updates the tournament roster and selected slot; clears the replaced participant's readiness signal; updates a READY run's frozen roster, or supersedes an active run and creates an empty-score READY run. Historical runs retain their original participant snapshot.
 - `MatchRun.participant_user_ids` was persisted to make each ledger and run's roster immutable across later bracket-slot changes. Migration `competition.0006_matchrun_participant_user_ids` included.
-- Verification on the updated head: focused admin tests 10 passed; full backend 256 passed, 2 skipped; Django check, migration drift, compileall, domain suites and `git diff --check` clean.
-- Remaining P2-05 work: trusted HTTP request adapter/endpoint and any coordinator-authorized integration follow-up.
+- Verification on the updated head: focused admin persistence 10 passed; API 3 passed; full backend 263 passed, 2 skipped; Django check, migration drift, compileall, domain suites and `git diff --check` clean.
+- The branch includes merge `f12ab03` from updated P2-04 PR #58 head `733acc6`.
+- Admin API routes from `docs/architecture/api.md` now require active admin session, CSRF, exact input fields and `Idempotency-Key`; actor is taken from the authenticated request.
+- Remaining P2-05 integration: typed public lifecycle event variants and full live browser/access acceptance are outside current score.changed event contract.
 - Session audit: [P2-05 replacement and immutable run roster](../audits/2026-10-10T012500+0300-agent-2-P2-05-participant-replacement.md).
 
 ## P2-04 finalization continuation, 2026-10-10
@@ -78,3 +80,9 @@
 - Verification on updated head: focused ledger persistence 8 passed; full backend 250 passed, 2 skipped; Django check, migration drift, compileall, four competition domain suites and `git diff --check` clean.
 - Session audit: [P2-04 FINALIZING drain and atomic score event](../audits/2026-10-10T013100+0300-agent-2-P2-04-finalizing-drain.md).
 - Residual full P2-04: deadline service is not yet scheduled/called by a production timer worker; result/queue adapter is CONNECT; infrastructure failure sink and audited recovery are separate; public events remain limited to allowlisted `score.changed`.
+
+### P2-05 authenticated API adapter — IN_REVIEW
+
+- Branch: `feature/a2-p2-05-pause-resume-extend`, PR #59. Use existing session auth, `IsApplicationAdmin`, CSRF and the server-resolved request actor.
+- Implemented routes: pause, resume, extend, technical result, rematch and participant replacement. Strict API body serializers match `docs/architecture/api.md`; role, CSRF, idempotency, exact replay/conflict and mutation responses are covered.
+- Session audit: [P2-05 authenticated admin API](../audits/2026-10-10T014100+0300-agent-2-P2-05-admin-api.md).
