@@ -4,6 +4,8 @@
 
 ## Текущая задача
 
+- Текущий checkpoint: оформить merge audit для уже слитого PR #45 и актуализировать собственную карточку без начала следующей функциональной задачи. Документационная ветка `feature/agent-4-p4-06-draft-reconnect-merge-audit`, база `origin/develop` `03a463650828774d5767e086a69183f83c38006b`.
+
 - `P4-02` — `DONE` по интеграции: [PR #24](https://github.com/D0UP1G/FirsterChuv/pull/24) merged commit `505a2bc0cee82281becb431996bf3a62827edac8`; merge checkpoint — `context/audits/2026-10-09T210237+0300-agent-4-P4-02-merge.md`. Полный T03–T05 остаётся частично принят по ограничениям implementation audit.
 
 - `P4-03` — `DONE` по интеграции: PR [#27](https://github.com/D0UP1G/FirsterChuv/pull/27) влит merge commit `15e3edf4fdfe7910f0984f97f26eee8589d5319b`; merge checkpoint — `context/audits/2026-10-09T212320+0300-agent-4-P4-03-merge.md`. Полные M04–M08/T06–T11 и API/browser CONNECT остаются частичными до runtime integration.
