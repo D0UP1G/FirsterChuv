@@ -4,9 +4,9 @@
 
 ## Текущее состояние
 
-На проверенном develop `146b2cb` интегрированы backend, custom User, auth/CSRF/roles/bootstrap admin и tournament CRUD/roster/freeze (PR #2/#5/#8). 37 backend tests прошли при ревизии. Invites, интегрированный match/runtime, полноценный judge/worker, frontend и сквозное demo пока не integrated. Open PR #7 на a89b8fc содержит алгоритм/ORM/построение сетки, ещё без штатного подключения, PR #3 — sandbox harness с найденными дефектами запуска/протокольной границы. Полная приёмка MVP и безопасности не пройдена.
+Повторная ревизия 2026-10-09: в develop уже есть платформа/auth/roles/CRUD/roster/invites и CI. В текущий интеграционный feature объединены проверенные sandbox, pure clock/scoring и normalized catalog (#3/#11/#13/#14); после MERGED общего PR они доступны всем. Совместно прошли 93 Django tests, 24 standalone domain и 12 sandbox unit tests, реальный Docker smoke. Полного рабочего MVP пока нет: frontend, persisted match/gateway/ledger, LocalJudge/worker/drafts и public SSE остаются задачами.
 
-Точный снимок: [STATE](context/STATE.md). Все 9 PR, аудиты, команды и замечания: [ревизия 2026-10-09](docs/reviews/2026-10-09-repository-audit.md). Новый [план четырёх агентов](ROADMAP.md) даёт независимые READY задачи и отдельные CONNECT-шаги; [контракты v1](docs/architecture/parallel-contracts.md) позволяют писать UI/домены без ожидания соседних feature branches.
+Точный снимок и факт merge: [STATE](context/STATE.md). Все 19 исходных PR/53 аудита/замечания: [повторная ревизия](docs/reviews/2026-10-09-integration-review.md). [ROADMAP v3](ROADMAP.md) даёт очереди четырёх агентов до рабочего сценария; [контракты v1](docs/architecture/parallel-contracts.md) и [runtime handoffs](docs/architecture/runtime-handoffs.md) задают границы. #7/#15/#16 требуют коротких fixes, старые дефекты запуска sandbox уже исправлены и перепроверены.
 
 Локальный backend: Python 3.14 + uv, `.env.example` → `.env`, `./scripts/dev.sh`. Полный Compose запуск web/clock/judge пока не готов. У аккаунта global participant/admin; регистрация всегда participant. Только admin управляет турнирами. Первый admin: `./scripts/manage.sh create_admin` с защищённым вводом пароля; anonymous spectator будет смотреть через public API.
 

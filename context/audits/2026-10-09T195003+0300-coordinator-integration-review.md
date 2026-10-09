@@ -1,0 +1,30 @@
+# Аудит: повторная ревизия и интеграция MVP
+
+- Автор: координатор, Codex; прямой запрос команды на review всех PR/merge готовых веток/обновление задач четырёх агентов.
+- Начальный checkpoint: 2026-10-09T19:31:45+03:00; конец/публикация фиксируются ниже после операций.
+- Ветка: feature/mvp-integration-review-2, исходная база origin/develop dd80c933083eea8ac234a17593a6a54a09ded53d.
+- Статус: IN_PROGRESS checkpoint перед завершающим integration/CI. Состояние после merge определяется GitHub/remote refs.
+
+## Уже выполнено
+
+Получены metadata/files/commits/comments/reviews/checks всех PR #1–19, refs/CI/protection, сверены 53 уникальных исторических audits (нет разных contents для одного filename), кейс и checksum PDF совпали. Три read-only reviewers выполнили изолированные code/tests/runtime probes; общий source checkout и чужие refs они не меняли. Прежний отчёт и owner audits сохранены.
+
+Merge commits в этой coordinator-owned feature уже сохраняют exact heads #3 6950f10, #11 28d6cda, #13 19bbf88, #14 9234951. Conflicts только карточек A2/A3 разрешены consolidated status. Code/CI/common/devlock/P1 audits сохранены. Готовая дополнительная ветка admin guards 8f5b762 прошла полный read-only review и 12 unit tests; будет включена через этот integration PR, а не напрямую в develop.
+
+#7/#15/#16 не включаются: lifecycle bracket F08; SQLite concurrent admission uncaught busy→500; SOLVED.lastVerdict event rejection после OK→WA. У каждого есть короткая fix-task P2-02.1/P3-04.1/P2-06.1. Queue/source атомарность не опровергнута, bogus verdict/security leak не заявлены без evidence.
+
+## Проверки текущего checkpoint
+
+- develop dd80c93: 48 Django tests / 46.127s, migration drift none, 9 fixture schemas/common imports pass.
+- Integration четырёх heads: 93 Django tests / 32.121s, check clean, migration drift none; 24 standalone clock/score; 12 sandbox units pass. Эти suites пересекаются, число уникальных checks не суммировать.
+- Root rebuilt standard Docker tag firsterchuv/sandbox-cpp:0.1.0 из integration checkout; image01612130490586197d5f03f834dd590042d6ac6f17eababbea11f4053dfd5fbc. Existing real smoke все пять PASS: OK/WA/TIME_LIMIT/OUTPUT_LIMIT/protocol-write BLOCKED.
+- Exact #3 reviewer real bounded namespace/resource/fd/network/host/env/output/watchdog/compile/cleanup probes и next normal job OK; full official expert isolation не выполнена, signal9 не объявлен ML.
+- #7 58 tests, #16 57 tests, совместный temporary #7/#11/#13/#16 103 tests pass, но дополнительные reproductions подтвердили blockers; такой temporary merge не опубликован.
+- #14 68 tests, #15 66 tests, check/drift pass; two-thread file-backed admission probe подтверждает database locked/uncaught error.
+- PDF unchanged/sourcechecksum совпадает, application roles/team stack/case scope сохранены. Submitted code исполнялся только Docker; source в queue probe только сохранялся, host flood/real secrets отсутствуют.
+
+## Документация и следующее действие
+
+ROADMAP v3 сохраняет 24 P-ID, фиксирует готовые cores и priority runtime subtasks; назначение дорожки требует продолжать доступную работу при WAITING подпункте. Старый v2 сохранён docs/history. Новые report/STATE/cards/README/API/security/requirements/acceptance/handoffs синхронизируются с реальным code scope. Additive failure sink принят как спецификация, не реализованный provider; старый v1 ResultReceipt/verdict не изменён. Явный стоп пользователя отдельной сессии сохраняет приоритет.
+
+Далее: включить guards slice, повторить combined suite/docs checks, опубликовать integration PR→develop, дождаться 4 CI jobs, merge commit и проверить ancestry/ref/source PR states. Фактические результаты и URL будут дописаны перед merge. Полные T01–21/browser/official import/LocalJudge/worker/frontend/demo/release не выполнены и не объявлены PASS.

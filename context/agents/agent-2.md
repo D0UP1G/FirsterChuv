@@ -1,12 +1,13 @@
 # Агент 2: сетка и live backend
 
-Карточка объединена координатором при повторной ревизии 2026-10-09 по запросу команды. Собственные аудиты исполнителя сохранены.
+Перепланировано координатором по поручению команды 2026-10-09; audit history владельца сохранена.
 
-- В feature/mvp-integration-review-2 собраны pure clock PR #11 (28d6cda) и scoring PR #13 (19bbf88). Это проверенные малые срезы, до интеграции общего PR не являются кодом develop.
-- PR #7 (1952244) остаётся открытым: archived/running/completed допускают generate/reset/pairing. Нужен lifecycle guard и regression до merge.
-- PR #16 (8340014) остаётся открытым: SOLVED с lastVerdict WA после OK ошибочно отвергается; contract v1 допускает этот результат.
-- Pure admin guards опубликованы в feature/match-admin-actions (8f5b762), отдельный PR пока отсутствует. ORM/HTTP/idempotency/event effects этим не реализованы.
-- Следующие задачи: исправления #7/#16, затем persisted MatchRun/clock/API, CompetitionGatewayV1 ledger/results, public snapshots/SSE. Pure core не заменяет этот runtime.
-- При зависимости продолжать следующую доступную задачу в своей зоне, оставлять WAITING_CONNECT только у конкретного подключения. Не завершать дорожку из-за отсутствия judge/UI.
+- Проверены/integration feature: pure clock #11 28d6cda и score #13 19bbf88, по 12 tests. Доступность в develop — после MERGED общего integration PR; cores не заменяют persistence/API.
+- Первое READY P2-02.1: fix #7 1952244 generate/reset/pairings только draft/scheduled, SQLite transactional lifecycle guard + regression. Ordinary registration/rank/import уже готовы. Затем merge #7 и P2-02.2 HTTP/idempotency/reason/full pairings.
+- Второй короткий READY P2-06.1: fix #16 8340014 SOLVED/lastVerdict WA/CE roundtrip без ослабления public whitelist.
+- Следом P2-03 persisted MatchRun/config/manual/both_ready/gateway/workspace/clock command и P2-04 accepted ledger/results/FINALIZING/downstream/failure sink. Не писать готовые clock/score повторно.
+- Резерв во время CONNECT: P2-05 published pure guards 8f5b762 → PR/command store/effects, P2-06 projector/snapshot/SSE tests. Не ждать живой judge/importer/frontend для своих domain/DB/API slices.
+- Пути: competition/events, свои migrations/tests; common wiring кратким CONNECT. При sync сохранить all app registrations, CI и чужие audits.
+- Runtime без реального catalog/access provider отказывает. Full T05–11/T16–17/T19–20 не пройдены; own cards/audits фиксируют implementation/integration/acceptance отдельно.
 
-[ROADMAP](../../ROADMAP.md), [v1](../../docs/architecture/parallel-contracts.md). Итог интеграции проверяется по GitHub MERGED и свежим refs; далее карточка будет дополнена общим планом ревизии.
+[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
