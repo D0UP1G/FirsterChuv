@@ -1,3 +1,38 @@
+# Состояние проекта: новая ревизия и frontend handoff
+
+Снимок 2026-10-10T01:15:16+03:00, Europe/Moscow. База develop cc204e6 включает code integrations#20/#32/#44/#46 и A4 docs#48/#49. Main e9fc0ef bootstrap. Проверенные новые#21/#50/#51/#52/#54/#55/#56 объединены ordinary merge commits в coordinator feature/mvp-readiness-handoff; до MERGED integration PR статусIN_REVIEW, после фактического MERGED доступны из fresh develop. Отдельный STATE PR не prerequisite. [Report](../docs/reviews/2026-10-10-mvp-readiness.md), [outcome audit](audits/2026-10-10T011516+0300-coordinator-mvp-readiness-review.md), [ROADMAP v4](../ROADMAP.md).
+
+## Подтверждённый результат 2026-10-10T01:36:20+03:00
+
+[PR #60](https://github.com/D0UP1G/FirsterChuv/pull/60) MERGED: develop723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa, родители cc204e6 и final head9d7996d. [Final CI37999734345](https://github.com/D0UP1G/FirsterChuv/actions/runs/37999734345) 5/5 SUCCESS. #21/#50/#51/#52/#54 latest94d42a0/#55/#56 имеют GitHub MERGED; их heads доступны в develop, 166 audits сохранены. Main e9fc0ef unchanged. Предыдущий IN_REVIEW текст выше — snapshot до операции, не текущее ожидание.
+
+#53/#57/#58/#59 OPEN. Координатор перевёл base #57–59 в develop, source refs не менялись; #58/#59 сейчас требуют merge fresh develop/conflict resolution, кроме correctness fixes. Latest #58 733acc6 добавил FINALIZING drain/winner promotion/events:13 source tests PASS, file-backed accepted/result/config races FAIL, historical participants fix есть только в leaf #59. Синхронизировать обе ветки ordinary merge, сохранять оба среза; готовые cores не повторять. Latest #59 9eb394c19 tests PASS, historical result теперь сохраняется; race/rematch downstream blockers остаются. Полный R1 ещёNOT_ACCEPTED.
+
+A5 получил follow-up о реальном MERGED и active snapshot подтвердил fetch/merge/продолжение auth slice и новой READY очереди. Его84 tests/local code не часть coordinator255/82 evidence. Назначения A1–A4 записаны в Git; наблюдение не означает, что внешние сессии сейчас запущены. Explicit stop конкретной сессии учитывается. [Новый closing audit](audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md).
+
+## Что изменилось
+
+- Прежний draft CAS blocker#21 исправлен на620f58e: file-backed concurrent first-create/update PASS, stale409, lock exhaustion503; production WorkspaceAccess отсутствует, полныйT15 открыт.
+- #50 даёт настоящий admin pairings/reset HTTP с User UUID mapping, CSRF/reason/idempotency/lifecycle/SQLite first-write. Match/config/start/ready/clock/ledger/promotion пока не runtime.
+- #52 добавляет frontend CI вместе с существующими4 jobs; combined feature ограничивает worker1.
+- #54 брендбук BLITZ_ARENA:13 HTML screens/tokens и собственный inert auth preview fix. React styling переносит новый A5, production UI ещё не branded этим PR.
+- #56 Markdown brandbook доступен как reference; #54 latest94d42a0 сохраняет grid/text rhythm и inert auth correction.
+- #57/#58/#59 не включены: реальные file-backed configure/admission/result/admin lock errors; historical participants в original #58 mutable, latest #59 9eb394c исправляет snapshot (late result PASS). 19 tests PASS, четыре race probes и rematch downstream probe FAIL; первое READY A2 — исправления и PR base develop.
+- #53fd79038 не включён: concurrent snapshot SQLite500/cursor loss и same-cursor different run overwrite. FixA4P4-07 READY, source PR остаётсяOPEN.
+- A5 создан в отдельной Codex задаче; первый локальный auth срез завершил, ожидает handoff merge, затем продолжает READY очередь; frontend/P4-01–06 переданы ему. A4 владеет events/SSE/system acceptance. A1 common/access/build, A2 competition/run/ledger, A3 real judge/worker/workspace.
+
+## Проверенный этап и остаток
+
+R0 — совместимые модули; полныйR1 ещёNOT_ACCEPTED. Backend255 PASS/4skips first attempt, file-backed draft18/bracket24, domain68/sandbox15/schema9/import/check/drift, frontend82/typecheck/build PASS; lint5 прежних warnings/editor chunk warning. Combined remote CI публикуется на финальном SHA и отдельно gate перед merge. Actual Docker/hostile/official/full browser pipeline в этой ревизииNOT_RUN.
+
+R1 critical: persisted configured run/gateway → immutable accepted version/checksum → actual worker/LocalJudge providers → durable result/failure ledger → score/winner/promotion → real React endpoints. Для spectator дополнительноPublicAccess/fixed snapshots/producers/HTTP/SSE. R2: полные admin actions/server draft browser persistence/recovery/privacy. R3: official package/README/checkers, полныеT01–21, hostile, одна команда/demo/video/release. Отсутствие пакета блокирует official subset, не независимую normalized smoke разработку.
+
+## Следующая работа параллельно
+
+A1 — P1-02.5 common failure/snapshot typing, затем PublicAccess/build. A2 — fix #57–59 SQLite/frozen participants и base develop, затем P2-03 HTTP/gateway; reserve failure/finalization/admin API. A3 — real worker executor/factory+programmatic bundle, reserve import/drafts/fencing. A4 — snapshotfix#53, reserve public transport/system harness. A5 — branded shared UI+доступныеauth/invite/bracket, reserve responsive/editor/real CONNECT по одному endpoint. WAITING у конкретного adapter не завершает всю роль.
+
+## Предыдущие датированные snapshots
+
 # Состояние проекта после новой проверки PR
 
 Снимок 2026-10-10T00:10:11+03:00, Europe/Moscow. Основной integration #44 MERGED; develop `03a463650828774d5767e086a69183f83c38006b` включает также A4 #45. Closeout feature `feature/mvp-review-closeout` сохраняет поздний sync/audit source #7; production/tests не меняются. Main `e9fc0ef` остаётся bootstrap.

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — главная</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.ba-hero{display:flex;flex-wrap:wrap;align-items:center;gap:48px;padding:88px 0 64px}
+.ba-hero-copy{flex:1 1 480px;min-width:0}
+.ba-hero-title{font-family:Orbitron,sans-serif;font-size:clamp(40px,6vw,84px);line-height:1;font-weight:900;letter-spacing:.02em;text-transform:uppercase}
+.ba-hero-board{flex:1 1 440px;min-width:0}
+.ba-pillars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:32px 0 0;border-top:1px solid rgba(0,229,255,.22)}
+@media (max-width:760px){.ba-pillars{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/" data-auth="anonymous|participant|admin">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация">
+      <a class="nav-link" href="#">Зрителям</a>
+    </nav>
+    <div class="account-nav">
+      <a class="nav-link" href="#">Войти</a>
+      <a class="button button-small" href="#">Создать аккаунт</a>
+    </div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="ba-hero">
+      <div class="ba-hero-copy">
+        <p class="eyebrow"><span class="live-dot"></span> SPEED PROGRAMMING PLATFORM</p>
+        <h1 class="ba-hero-title">Взломай систему<br><span class="brand-accent">за 20 минут</span></h1>
+        <p class="ba-mt-5 ba-lede" style="font-size: 16px">Поединки 1 × 1 по спортивному программированию: одинаковые задачи, реальная проверка кода и живая карта матча для зрителей.</p>
+        <div class="ba-mt-6" style="display: flex; flex-wrap: wrap; gap: 12px">
+          <a class="button" href="#" data-when="anonymous">Стать участником</a>
+          <a class="button button-outline" href="#">Смотреть турниры</a>
+        </div>
+      </div>
+
+      <div class="ba-hero-board ba-panel ba-frame" style="padding: 24px" aria-label="Схема карты матча, не трансляция">
+        <div class="spectator-section-heading"><span>ПРИНЦИП КАРТЫ</span><strong>2 ДОРОЖКИ</strong></div>
+        <div class="spectator-map" style="padding-top: 8px">
+          <div class="spectator-lane">
+            <div class="spectator-lane-heading"><span class="ba-badge"><span class="ba-badge-avatar" aria-hidden="true">1</span><span class="ba-badge-name"><b>Участник 1</b></span></span></div>
+            <div class="spectator-track">
+              <span class="spectator-track-line" aria-hidden="true"></span>
+              <span class="spectator-track-progress" style="width: 50%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint checkpoint-solved" data-label="A" style="left: 25%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint checkpoint-solved" data-label="C" style="left: 50%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint" data-label="B" style="left: 75%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint" data-label="D" style="left: 96%" aria-hidden="true"></span>
+              <span class="spectator-runner" style="left: 50%" aria-hidden="true">1</span>
+            </div>
+          </div>
+          <div class="spectator-lane is-p2">
+            <div class="spectator-lane-heading"><span class="ba-badge is-p2"><span class="ba-badge-avatar" aria-hidden="true">2</span><span class="ba-badge-name"><b>Участник 2</b></span></span></div>
+            <div class="spectator-track">
+              <span class="spectator-track-line" aria-hidden="true"></span>
+              <span class="spectator-track-progress" style="width: 25%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint checkpoint-solved" data-label="B" style="left: 25%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint checkpoint-attempted" data-label="A" style="left: 50%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint" data-label="C" style="left: 75%" aria-hidden="true"></span>
+              <span class="spectator-checkpoint" data-label="D" style="left: 96%" aria-hidden="true"></span>
+              <span class="spectator-runner" style="left: 25%" aria-hidden="true">2</span>
+            </div>
+          </div>
+        </div>
+        <p class="ba-mt-4 ba-indent-1 spectator-scope-note">Схема механики: позиция — число подтверждённо решённых задач, задачи решаются в любом порядке.</p>
+      </div>
+    </section>
+
+    <section class="ba-pillars">
+      <div><p class="ba-kicker">01</p><p class="ba-h3">Один на один</p><p class="ba-mono-muted">Одинаковые задачи, общий таймер, побеждает больше решённых.</p></div>
+      <div><p class="ba-kicker">02</p><p class="ba-h3">Реальная проверка</p><p class="ba-mono-muted">Код компилируется и запускается в изолированной песочнице.</p></div>
+      <div><p class="ba-kicker">03</p><p class="ba-h3">Матч на экране</p><p class="ba-mono-muted">Зритель видит счёт, попытки и обгоны без регистрации.</p></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

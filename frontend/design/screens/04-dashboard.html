@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — кабинет участника</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.ba-dash{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.ba-dash-main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.ba-dash-side{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.ba-versus{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:24px;padding:24px 0}
+.ba-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ba-rules div{padding:12px;border:1px solid rgba(0,229,255,.10);background:#000}
+@media (max-width:760px){.ba-versus{grid-template-columns:minmax(0,1fr)}.ba-rules{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/dashboard" data-api="GET /api/v1/me · GET /api/v1/tournaments · GET /api/v1/matches/{id}">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация">
+      <a class="nav-link" href="#">Зрителям</a>
+      <a class="nav-link active" href="#">Кабинет</a>
+    </nav>
+    <div class="account-nav">
+      <span class="account-name" data-field="me.displayName">Ира</span>
+      <span class="role-pill role-participant">участник</span>
+      <button class="button button-quiet button-small" type="button">Выйти</button>
+    </div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="page-section dashboard-page">
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">OPERATOR // КАБИНЕТ</p>
+          <h1>Привет, Ира</h1>
+          <p class="page-lede">Ваши турниры и ближайший матч. Условия задач откроются после старта.</p>
+        </div>
+      </div>
+
+      <div class="ba-dash">
+        <div class="ba-dash-main">
+          <article class="ba-panel ba-frame" aria-labelledby="next-match-heading" data-api="GET /api/v1/matches/{id}">
+            <div class="panel-heading">
+              <div>
+                <p class="ba-kicker">Ближайший матч · Блиц 2026 · Полуфинал</p>
+                <h2 id="next-match-heading" class="ba-h2">Матч M-1</h2>
+              </div>
+              <span class="ba-tag ba-tag-active">READY</span>
+            </div>
+            <div class="ba-versus">
+              <span class="ba-badge"><span class="ba-badge-avatar" aria-hidden="true">И</span><span class="ba-badge-name"><b>Ира</b><small>вы</small></span></span>
+              <span class="ba-terminal" style="font-size: 36px; color: #5d7c82">VS</span>
+              <span class="ba-badge is-p2" style="justify-content: flex-end"><span class="ba-badge-name" style="text-align: right"><b>Максим</b><small>соперник</small></span><span class="ba-badge-avatar" aria-hidden="true">М</span></span>
+            </div>
+            <div class="ba-rules">
+              <div><p class="ba-kicker">Длительность</p><p class="ba-terminal" style="font-size: 30px">20:00</p></div>
+              <div><p class="ba-kicker">Задачи</p><p class="ba-terminal" style="font-size: 30px">4 · A–D</p></div>
+              <div><p class="ba-kicker">Штраф за попытку</p><p class="ba-terminal" style="font-size: 30px">60 с</p></div>
+            </div>
+            <p class="ba-mt-4 ba-indent-1 ba-mono-muted">Победа: больше решённых → меньше штраф → раньше последнее принятое решение. Полное равенство — переигровка.</p>
+            <div class="form-actions" style="align-items: center">
+              <button class="button" type="button" data-action="POST /api/v1/matches/{id}/ready">Готов</button>
+              <span class="ba-mono-muted">Режим «готовность обоих»: матч начнётся, когда подтвердят оба. Соперник: <span class="ba-tag ba-tag-neutral">ЖДЁМ</span></span>
+            </div>
+          </article>
+
+          <section class="ba-panel" aria-labelledby="my-tournaments-heading">
+            <div class="panel-heading"><h2 id="my-tournaments-heading" class="ba-h2">Мои турниры</h2></div>
+            <div class="ba-table-wrap">
+              <table class="ba-table">
+                <thead><tr><th>Турнир</th><th>Статус</th><th>Даты</th><th>Мой матч</th></tr></thead>
+                <tbody>
+                  <tr><td><b>Блиц 2026</b></td><td><span class="ba-tag ba-tag-live">RUNNING</span></td><td class="ba-mono-muted">09.10 12:00 – 15:00</td><td><a class="text-link" href="#">Открыть матч ↗</a></td></tr>
+                  <tr><td><b>Осенний отбор</b></td><td><span class="ba-tag ba-tag-neutral">SCHEDULED</span></td><td class="ba-mono-muted">18.10 10:00 – 13:00</td><td class="ba-mono-muted">Сетка ещё не создана</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <aside class="ba-dash-side">
+          <div class="dashboard-card ba-panel">
+            <span class="card-kicker">Ваша роль</span>
+            <p class="ba-h3">Участник</p>
+            <p class="ba-mono-muted">Присоединиться к турниру можно по ссылке-приглашению от организатора.</p>
+          </div>
+          <div class="ba-panel">
+            <span class="card-kicker">Пусто</span>
+            <p class="ba-indent-1 ba-mono-muted">Если турниров нет: «Откройте ссылку-приглашение, чтобы попасть в состав».</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — публичные турниры</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.ba-watch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.ba-watch-card{display:flex;flex-direction:column;gap:16px;padding:20px}
+@media (max-width:1000px){.ba-watch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.ba-watch-grid{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/watch" data-api="[список публичных турниров — endpoint не определён в api.md, PublicAccessV1]">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация"><a class="nav-link active" href="#">Зрителям</a></nav>
+    <div class="account-nav"><a class="nav-link" href="#">Войти</a><a class="button button-small" href="#">Создать аккаунт</a></div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="page-section public-page">
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow"><span class="live-dot"></span> SPECTATOR // ОТКРЫТЫЙ ПРОСМОТР</p>
+          <h1>Публичные турниры</h1>
+          <p class="page-lede">Смотреть можно без аккаунта. Код участников здесь не показывается.</p>
+        </div>
+      </div>
+
+      <div class="ba-watch-grid">
+        <a class="ba-watch-card ba-panel ba-frame" href="#">
+          <div style="display: flex; justify-content: space-between; align-items: center"><span class="ba-tag ba-tag-live">LIVE</span><span class="ba-mono-muted">1 матч идёт</span></div>
+          <div class="ba-copy"><h2 class="ba-h2">Блиц 2026</h2><p class="ba-mono-muted">Полуфинал · 4 участника · 20 минут на матч</p></div>
+          <span class="text-link">Открыть карту ↗</span>
+        </a>
+        <a class="ba-watch-card ba-panel" href="#">
+          <div style="display: flex; justify-content: space-between; align-items: center"><span class="ba-tag ba-tag-neutral">SCHEDULED</span><span class="ba-mono-muted">18.10 10:00</span></div>
+          <div class="ba-copy"><h2 class="ba-h2">Осенний отбор</h2><p class="ba-mono-muted">Сетка ещё не создана</p></div>
+          <span class="text-link">Открыть ↗</span>
+        </a>
+        <a class="ba-watch-card ba-panel" href="#">
+          <div style="display: flex; justify-content: space-between; align-items: center"><span class="ba-tag ba-tag-ok">COMPLETED</span><span class="ba-mono-muted">02.10</span></div>
+          <div class="ba-copy"><h2 class="ba-h2">Пробный блиц</h2><p class="ba-mono-muted">Победитель определён</p></div>
+          <span class="text-link">Результаты ↗</span>
+        </a>
+      </div>
+
+      <div class="ba-mt-6 empty-state" data-state="empty">
+        <p class="ba-kicker">Пустое состояние</p>
+        <h2 class="ba-h2">Открытых турниров пока нет</h2>
+        <p>Трансляции появятся здесь, когда организатор откроет публичный доступ.</p>
+        <a class="text-link" href="#">На главную ↗</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

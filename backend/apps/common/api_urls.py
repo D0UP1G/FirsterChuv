@@ -11,4 +11,5 @@ urlpatterns = [
     path("", include("backend.apps.problems.urls")),
     path("", include("backend.apps.submissions.urls")),
     path("me", CurrentUserView.as_view(), name="current-user"),
+    path("", include("backend.apps.drafts.urls")),
 ]
