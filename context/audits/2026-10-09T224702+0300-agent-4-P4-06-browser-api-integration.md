@@ -7,7 +7,7 @@
 - Исходная база P4-06: `13cd2d44c629a921481b9e70cb284fdeca264c81`.
 - Синхронизация GitFlow: `origin/develop` продвинулся PR #25 до `ed14416fee0d1cccbd0b9a202e563d49f062572a`; он влит в feature обычным merge `b1a4e260ca18c01e540a76f73b80a15dff9c6055`. Конфликтов не было.
 - Статус: `IN_PROGRESS`; доступный browser slice проверен, runtime CONNECT остаётся частичным.
-- PR / последующие коммиты: будет добавлен после публикации.
+- PR: [#30](https://github.com/D0UP1G/FirsterChuv/pull/30), открыт в `develop`; head при публикации — `bcd7df8cd73916a4292362f82d6ba29cad4e401f`.
 
 ## Цель и исходное состояние
 
