@@ -1,17 +1,17 @@
 # Агент 1: платформа и интеграция
 
-- Статус: `IN_REVIEW` — `A1-01` реализована и локально проверена; ожидает PR review/integration.
+- Статус: `IN_PROGRESS` — интеграционный state sync для завершённой `A1-01`; затем начать `A1-02`.
 - Назначенный исполнитель: Codex, agent 1.
-- Текущая задача/ветка/база: `A1-01` / `feature/platform-bootstrap` / `e5f421b` (`origin/develop`).
+- Текущая задача/ветка/база: `A1-01-state-sync` / `feature/a1-01-state-sync` / `2484d86` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-01 bootstrap audit](../audits/2026-10-09T134327+0300-agent-1-A1-01.md), четыре follow-up; [verification audit](../audits/2026-10-09T144549+0300-agent-1-A1-01-verification.md); [PR #2](https://github.com/D0UP1G/FirsterChuv/pull/2) открыт в `develop`.
+- Последний аудит/PR/проверки: [A1-01 bootstrap audit](../audits/2026-10-09T134327+0300-agent-1-A1-01.md), четыре follow-up; [verification audit](../audits/2026-10-09T144549+0300-agent-1-A1-01-verification.md); [state-sync audit](../audits/2026-10-09T145210+0300-agent-1-A1-01-state-sync.md). PR #2 merged в `develop` (`2484d86`).
 
 ## Разбивка задач на малые шаги
 
 Статусы отражают только эту карточку и не означают интеграцию в `develop`.
 
-### A1-01 · `feature/platform-bootstrap` · `IN_REVIEW`
+### A1-01 · `feature/platform-bootstrap` · `DONE` — merged PR #2 at `2484d86`
 
 - [x] A1-01.1 Создать Python/Django структуру и зафиксировать зависимости; `uv sync --frozen --all-groups` выполнен.
 - [x] A1-01.2 Настроить env, UTC и SQLite timeout/WAL; smoke подтвердил WAL/5000 ms. Deploy check оставил только ожидающие TLS reverse proxy предупреждения HSTS/HTTPS.
@@ -62,4 +62,4 @@
 - Владею: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/` (включая invites/participants), root tooling, Compose/CI, общей цепочкой миграций, интеграцией и релизом.
 - Не менять пути агентов 2–4 без согласованной передачи. Общие контракты и миграции сверять с потребителями до изменения.
 - Передача агентам 2–4: стабильные пути, auth dependency, ID-модели, конфигурация, миграционная база и локальный запуск.
-- Следующий шаг: завершить feature PR #2 по GitFlow; после интеграции от `origin/develop` начать `A1-02` в `feature/account-roles`. Auth/CSRF/role API остаются вне A1-01.
+- Следующий шаг: подтвердить обновлённый STATE через этот feature PR, затем начать `A1-02` от актуального `origin/develop` в `feature/account-roles`. Auth/CSRF/role API остаются вне A1-01.
