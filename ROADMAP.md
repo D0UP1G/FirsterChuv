@@ -72,7 +72,7 @@ HEAD #7 `1a2b54a`: ORM/AppConfig/URL, BYE/WAITING/canonical rank и private gene
 
 **P2-02.1 проверен в #7 `1a2b54a`:** draft/scheduled guard первым SQLite conditional UPDATE, до reads/existing-return/freeze; regression всех трёх mutators и HTTP generate прошёл. После integration MERGED этот подпункт завершён.
 
-P2-02.2 full first-round PUT pairings по v1 User UUID → frozen entrant UUID, POST reset, reason/actor/Idempotency-Key/409 rules. Сервисы уже написаны, добавить HTTP/idempotency/lifecycle/race tests. Не размораживать roster, BYE без played run, начавшаяся история не удаляется. Ничего не требует живого judge/UI. M03/M04; T05/T06.
+P2-02.2 full first-round PUT pairings по v1 User UUID → frozen entrant UUID, POST reset, reason/actor/Idempotency-Key/409 rules — опубликовано в PR #50. Не размораживать roster, BYE без played run, начавшаяся история не удаляется. M03/M04; T05/T06.
 
 ### P2-03 · feature/match-clock-start-runtime · READY
 
@@ -94,7 +94,7 @@ Pure guards `8f5b762` в develop; intent/receipt idempotency core #41 прове
 
 **P2-06.1 проверен в #16 `a0b1dcc`:** durable event store и score→event roundtrip OK→WA/CE сохраняют SOLVED с последним verdict. Whitelist/privacy сохранены. После integration MERGED следующий шаг P2-06.2/3.
 
-P2-06.2 EventWriter adapter/producers и durable snapshots с coherent lastEventId; P2-06.3 public HTTP/SSE/heartbeat/cursor/resync/connection caps/slow client. PublicAccessV1 A1 подключить отдельным CONNECT, event store/projector/transport tests писать сейчас. Если access adapter ещё отсутствует, public runtime не открывать. Source/email/CE никогда не public. V01–03/S02; T16/T17/T20.
+P2-06.2 durable snapshots с coherent lastEventId опубликованы в PR #53. P2-06.3 public HTTP/SSE/heartbeat/cursor/resync/connection caps/slow client остаётся после отдельного PublicAccessV1 CONNECT. Source/email/CE никогда не public. V01–03/S02; T16/T17/T20.
 
 ## Агент 3: реальные вердикты, надёжная очередь, workspace
 

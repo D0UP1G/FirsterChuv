@@ -63,3 +63,12 @@
 - Added migration `competition.0002_bracketcommandreceipt`, API/domain regression coverage, and same-key concurrency coverage.
 - Verification on this branch: targeted bracket API plus persistence tests `23 passed`; same-key concurrency test `1 passed`; full backend suite `237 passed, 2 skipped`; Django system check clean; migration drift check clean; `git diff --check` clean.
 - Branch includes fresh `origin/develop` sync at merge commit `7815160`; P2-02.2 implementation remains ready to publish as a follow-up PR after merged PR #7.
+
+## Current publication closeout (2026-10-10)
+
+- P2-02.2 manual pairing/reset API is published in [PR #50](https://github.com/D0UP1G/FirsterChuv/pull/50).
+- P2-03 base-SHA audit correction is published in [PR #51](https://github.com/D0UP1G/FirsterChuv/pull/51).
+- P1-02.6 frontend CI is published in [PR #52](https://github.com/D0UP1G/FirsterChuv/pull/52).
+- P2-06.2 durable public snapshots is published in [PR #53](https://github.com/D0UP1G/FirsterChuv/pull/53), latest head `fd79038`.
+- P3-05.1 draft CAS retry is already included in open [PR #21](https://github.com/D0UP1G/FirsterChuv/pull/21), latest head `620f58e`, with four successful CI checks.
+- Next independent implementation remains P2-03 persisted runtime; P2-06.3 public HTTP/SSE stays gated on PublicAccessV1.
