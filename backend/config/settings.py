@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "backend.apps.accounts.apps.AccountsConfig",
     "backend.apps.drafts.apps.DraftsConfig",
     "backend.apps.tournaments.apps.TournamentsConfig",
+    "backend.apps.problems.apps.ProblemsConfig",
 ]
 
 MIDDLEWARE = [

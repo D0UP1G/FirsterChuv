@@ -96,6 +96,10 @@ T20: SQL/XSS/CSRF/SSRF/archive/command injection и обход ролей/UUID. 
 
 ## Граница supervisor protocol в sandbox
 
-Ревизия PR #3 выявила F01 (невалидный Docker PID flag) и F07: в diagnostic copy solution может писать в stdout управляющего процесса через `/proc/1/fd/1`; host launcher собирает PIPE до проверки cap. Пока это не исправлено и не проверено владельцем, harness не считается прошедшим real security gate. Parser отказывает при marker injection, успешная подделка verdict не установлена, unbounded flood не выполнялся.
+Ревизия PR #3 выявила F01 (невалидный Docker PID flag) и F07: в diagnostic copy solution может писать в stdout управляющего процесса через `/proc/1/fd/1`; host launcher собирает PIPE до проверки cap. Это исторический finding для 3a0d865: в 6950f10 автор исправил обе границы; повторная ревизия подтвердила fresh image/5 real smoke/fd denial/bounded capture/cleanup/recovery. Полная изоляционная приёмка official judge остаётся открытой. Parser отказывает при marker injection, успешная подделка verdict не установлена, unbounded flood не выполнялся.
 
 Нужны защита supervisor descriptors от solution и bounded host stream reading с kill/cleanup при overflow, включая compile/run stderr. Лимит файла `/work/program.stdout` не охватывает обходной канал. P3-01 требует bounded regression probe, resource recovery и normal job после отказа; результаты в [ревизии](../reviews/2026-10-09-repository-audit.md). Контейнерная граница и целостность протокола проверяются отдельно.
+
+## Повторная ревизия 2026-10-09
+
+На совместном feature прошли 105 backend tests, 36 pure domain и 12 sandbox units; standard image rebuilt и 5 actual smoke pass. Bounded probes подтверждают F01/F07 fixes, ограничения/cleanup/normal job recovery, не все экспертные inputs или private-data browser paths. Queue SQLite race и bracket lifecycle/public score-event mismatch требуют fixes #15/#7/#16; [отчёт](../reviews/2026-10-09-integration-review.md). P1-03 proxy/share/log redaction и полный T18/T20 остаются обязательными.
