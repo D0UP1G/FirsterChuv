@@ -1,6 +1,6 @@
 # Целевой запуск, восстановление и защита MVP
 
-Приложение и команды запуска ещё не реализованы. Этот runbook задаёт результат задач A1-06/A3-05; агент 1 заменит предложения проверенными командами. Не сообщать пользователю, что текущий репозиторий уже можно запустить.
+Полный demo и команда `./scripts/start-demo.sh` ещё не реализованы. На feature-ветке Agent 1 прошли ограниченные проверки Django/миграций, `scripts/dev.sh`, сборки API image и Compose health после запуска/перезапуска; полная приёмка чистой установки и T01 не выполнялись. В backend есть начальный каркас и локальные dev helpers; Compose содержит API scaffold, opt-in web и незавершённые runtime profiles. `match-clock` и `judge-worker` станут запускаемыми после реализации команд агентами 2 и 3. Не сообщать, что MVP или demo уже запускаются.
 
 ## Одна команда запуска
 
@@ -8,13 +8,17 @@
 
 Необходимые условия: Docker Engine/Compose, достаточные CPU/RAM/disk под собственную песочницу, один local persistent volume для SQLite и private package storage. Во время проверки solution network off; trusted startup может получать разрешённые images. Если нужны system permissions/Docker group, это отдельная настройка оператора, не обход изоляции.
 
+Публичный TLS ingress в репозитории не настроен. До внешней публикации reverse proxy должен завершать HTTPS и задавать redirect/HSTS; пока эти два инфраструктурных параметра не определены, `manage.py check --deploy` ожидаемо сообщает W004/W008. Compose API и web ports по умолчанию привязаны к localhost.
+
 `.env.example` должен содержать только реально используемые ключи без секретных значений. Минимальные группы настроек: Django secret/hosts/origins, SQLite path, admin bootstrap identity/password из защищённой конфигурации, official package path, compiler registry, execution/resource caps и request/queue limits. Yandex read credentials отдельны и нужны только import feature, не local checking.
 
 Передавать service-specific env: API не получает Docker socket; worker не получает OAuth/password/Django secret без необходимости; sandbox не получает env ни одного из них. Не применять весь `.env` к каждому контейнеру.
 
 ## Первоначальные данные
 
-Первый admin создаётся защищённой management command; никаких стандартных общедоступных admin/admin. Идемпотентный bootstrap не меняет пароль существующего пользователя при каждом restart. Официальный пакет импортируется программно, checksum/format/readiness фиксируются.
+Первый application admin создаётся командой `./scripts/manage.sh create_admin --email admin@example.org --display-name "Tournament Admin"`. В интерактивном terminal пароль запрашивается скрыто дважды. Для automation передайте `DJANGO_ADMIN_PASSWORD` через secret manager/защищённую конфигурацию только этого процесса; не помещайте пароль в аргумент команды, inline shell command, общий `.env`, Compose env API, Git или логи. Значение читается и удаляется из окружения процесса команды. Если нет ни secret injection, ни TTY, команда завершится ошибкой.
+
+Команда проверяет настроенные Django password validators. При повторном запуске для уже активного application admin она оставляет аккаунт и пароль без изменений; существующий participant не повышается, неактивный admin автоматически не включается. Созданный application admin имеет `role=admin`, но `is_staff=False` и `is_superuser=False`; Django superuser не требуется для продуктовых admin endpoints. Для изменения роли или состояния используйте отдельную контролируемую процедуру, не bootstrap повторный запуск. Никаких стандартных общедоступных admin/admin. Официальный пакет импортируется программно, checksum/format/readiness фиксируются.
 
 Для demo нужны четыре participant: два новых присоединяются по ссылке, ещё два могут быть назначены заранее. Admin строит полуфиналы/финал. Для быстрой проверки поставить небольшую duration, для показательного матча — 20 минут. Не выдавать smoke fixtures собственного автора за единый пакет организаторов.
 

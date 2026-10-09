@@ -1,0 +1,83 @@
+name: firsterchuv
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      SQLITE_PATH: /app/.data/db.sqlite3
+      DJANGO_ALLOWED_HOSTS: api,localhost,127.0.0.1
+    command: ["/app/scripts/start-api.sh"]
+    init: true
+    volumes:
+      - app-data:/app/.data
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  # Enable after agent 4 produces frontend/dist.
+  web:
+    image: nginx:1.29-alpine
+    profiles: [web]
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  # These opt-in profiles become runnable when agents 2 and 3 add commands.
+  match-clock:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    profiles: [runtime]
+    command: ["uv", "run", "--no-sync", "python", "manage.py", "run_match_clock"]
+    environment:
+      SQLITE_PATH: /app/.data/db.sqlite3
+      DJANGO_ALLOWED_HOSTS: api
+      DJANGO_DEBUG: "false"
+      DJANGO_REQUIRE_SECRET_KEY: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - app-data:/app/.data
+    restart: unless-stopped
+
+  judge-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    profiles: [runtime]
+    command: ["uv", "run", "--no-sync", "python", "manage.py", "run_judge_worker"]
+    environment:
+      SQLITE_PATH: /app/.data/db.sqlite3
+      DJANGO_ALLOWED_HOSTS: api
+      DJANGO_DEBUG: "false"
+      DJANGO_REQUIRE_SECRET_KEY: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - app-data:/app/.data
+    restart: unless-stopped
+
+volumes:
+  app-data:
