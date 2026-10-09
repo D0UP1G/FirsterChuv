@@ -1,5 +1,12 @@
 # Координатор: ревизия и параллельный план
 
+## Публикация и final gate, 2026-10-10T01:29:46+03:00
+
+- [PR #60](https://github.com/D0UP1G/FirsterChuv/pull/60) опубликован/attached; первый head014c98f remote verified и5/5 CI SUCCESS. Последние source54/doc checkpoints требуют повторного exact-head CI до merge.
+- #54 latest94d42a0 retained ordinary merge. #59 latest9eb394c проверен отдельно: historical participant fix PASS,19 source tests PASS;4 real races и rematch/downstream probe FAIL, source не включён. A2 первым исправляет эти persistence slices, A4 snapshot#53.
+- A5 завершил локальный auth slice, ждёт handoff доступности в develop; после code merge эта зависимость снимается, доступны P5-01/02/03 и собственный PR. Невлитые84 tests автора не приписываются coordinator suite.
+- [Publication audit](../audits/2026-10-10T012946+0300-coordinator-readiness-publication.md). Следующее: final push/CI/merge/fresh remote verification и frontend continuation, без source force push/deletion/main изменений.
+
 ## Проверенные результаты перед публикацией, 2026-10-10T01:24:06+03:00
 
 - Статус IN_REVIEW, feature/mvp-readiness-handoff от cc204e6. #21/#50/#51/#52/#54 latest86208d5/#55/#56 сохранены ordinary merge commits; #53/#57/#58/#59 latest7465a9c исключены с воспроизведёнными correctness findings.

@@ -11,12 +11,12 @@
 | #51 | c7492a045ab0529c50310990b4579244d06be1ee | APPROVE append-only correction ошибочного полного SHA; исходные audits сохранены |
 | #52 | 512d46e1a6d11b8d37ebd9dd5e2affd671568ec0 | APPROVE locked frontend CI; coordinator дополняет maxWorkers=1 для повторяемой resource concurrency |
 | #53 | fd79038847a23b38bb8a444c028b87ce75ed9571 | REQUEST_CHANGES; snapshot concurrency/equal cursor correctness; не включён |
-| #54 | 86208d54846377bba1f61f079081edf011f6a711 | APPROVE как design reference после собственной correction auth preview; static HTML/CSS не React runtime |
+| #54 | 94d42a0026c1b9c0c3b61ddf4ce3c25ac1ff4f8b | APPROVE как design reference после собственной correction auth preview; static HTML/CSS не React runtime |
 | #55 | 95b1cec06836cab0501f033ad6f8aa6eca732c30 | APPROVE publication docs; current author sections сохранены вместе с #50/#51 |
 | #56 | 3e99ae5368fd177f8342d49878ef137cd31974d9 | APPROVE Markdown brandbook reference; дополнительные идеи не расширяют MVP |
 | #57 | 0073fbd96d38f657368ffa318d6ca23bff5f8a2d | REQUEST_CHANGES configured-run SQLite read→write race; HTTP/gateway пока нет |
 | #58 | 1f3fae5fc3ee70ab4e2bff713fd3a6cd7439d6a8 | REQUEST_CHANGES accepted/result SQLite races и mutable participants старого run |
-| #59 | 7465a9c3ca0110a93bb5f8e5a4c63aecf80b42b8 | REQUEST_CHANGES same-command SQLite race; новые technical/rematch функции не включены |
+| #59 | 9eb394c88c64b1d22d90685c2eb44d946f91d755 | REQUEST_CHANGES SQLite races и downstream after rematch; participant snapshot исправлен в этом leaf |
 
 #48/#49 после прежней ревизии меняют только A4 card/новые audits; входят в cc204e6, production/tests не меняли. Избранные source heads объединены ordinary merge commits; единственный docs conflict A2 card разрешён сохранением обеих секций. Shared app/include additions сохранили все существующие apps, drafts добавлена отдельно. Чужие feature refs/checkout не менялись, main bootstrap. Исторические docs/audits не считаются актуальным кодом.
 
@@ -43,6 +43,18 @@ Root повторил probe на exact fd79038 в disposable file-backed export:
 Исходные tests #57–59: сначала 13/13 PASS; после обновления #59 — 16/16 PASS (19.122s). Это happy-path evidence, не доказательство конкурентной безопасности. Root повторил все четыре race probes и historical replacement probe на exact #57/#58 + latest #59 в disposable file-backed DB, timeout0.2: FAIL как выше. Пробы используют synthetic users/receipt и настоящий SQL; participant code не исполняется. Первый повтор tests без DJANGO_DEBUG/secret остановился на settings guard, повтор probe с прежним disposable DB — на duplicate fixture; свежий DB и test settings дали перечисленные результаты, эти setup ошибки не выдаются за product bugs.
 
 Первое READY A2: исправить эти конкретные persistence slices и направить их в develop; готовые cores не переписывать. В резерве независимые HTTP permissions/serializers, run-scoped gateway/resolver/failure sink/finalization. Ни один source head #53/#57/#58/#59 не находится в coordinator ancestry. Подробный новый [closing audit](../../context/audits/2026-10-10T012406+0300-coordinator-late-pr-review.md).
+
+## Последнее обновление авторов перед merge, 01:29 +03:00
+
+#59 обновлён до 9eb394c: participant_user_ids закреплён на run и копируется в rematch/replacement; ledger больше не читает mutable slots. Historical probe теперь PASS: old result stored=True, current score не меняется (apply_result=False). Замечание к #58 original head остаётся верным, но в общем leaf #59 оно исправлено; сохранить этот fix, не реализовывать повторно.
+
+19/19 runtime/ledger/admin tests PASS (19.276s). Все четыре настоящие SQLite race probes по-прежнему дают один успех и один uncaught lock error. Новый последовательный probe: technical winner полуфинала → rematch до начала финала. Upstream становится READY, downstream slot остаётся PLAYER со старым победителем; новый победитель rematch не может пройти: AdminCommandPersistenceError(downstream slot is no longer available for winner advancement). Нужен атомарный revoke/reopen downstream projection при допустимом rematch и новые advancement tests; после фактического downstream start пересмотр запрещён. Код #59 в coordinator feature не включён.
+
+#54 обновлён до 94d42a0: добавлены горизонтальные уровни текста 24/12px и reference docs/audit. Все HTML изменения механически проверены: только CSS classes; CSS19 строк прочитан, own auth correction сохранена. Source head объединён обычным merge. Source scope не затрагивает React/runtime. Дальнейшие updates автора после этого снимка проверяются отдельно.
+
+Первый remote CI [#60 run37999339340](https://github.com/D0UP1G/FirsterChuv/actions/runs/37999339340) на 014c98f: 5/5 SUCCESS. После latest design/docs checkpoint CI повторяется на новом опубликованном exact head до merge. [Новый publication audit](../../context/audits/2026-10-10T012946+0300-coordinator-readiness-publication.md).
+
+A5 завершил первый UI срез локально: auth returnPath/query/hash и84 tests заявлены в его новой задаче; coordinator этот код не интегрировал и не выдаёт его за own verified PASS. Он ожидает handoff card в develop. После merge #60 его доступная очередь P5-01/02/03 продолжается на fresh develop; это конкретный unblock, не backend prerequisite.
 
 ## Design correction и handoff
 

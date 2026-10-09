@@ -8,10 +8,10 @@
 - #50 даёт настоящий admin pairings/reset HTTP с User UUID mapping, CSRF/reason/idempotency/lifecycle/SQLite first-write. Match/config/start/ready/clock/ledger/promotion пока не runtime.
 - #52 добавляет frontend CI вместе с существующими4 jobs; combined feature ограничивает worker1.
 - #54 брендбук BLITZ_ARENA:13 HTML screens/tokens и собственный inert auth preview fix. React styling переносит новый A5, production UI ещё не branded этим PR.
-- #56 Markdown brandbook доступен как reference; #54 latest86208d5 сохраняет grid/text rhythm и inert auth correction.
-- #57/#58/#59 не включены: реальные file-backed configure/admission/result/admin lock errors; historical participants в #58 mutable. 16 tests latest #59 PASS, probes FAIL; первое READY A2 — исправления и PR base develop.
+- #56 Markdown brandbook доступен как reference; #54 latest94d42a0 сохраняет grid/text rhythm и inert auth correction.
+- #57/#58/#59 не включены: реальные file-backed configure/admission/result/admin lock errors; historical participants в original #58 mutable, latest #59 9eb394c исправляет snapshot (late result PASS). 19 tests PASS, четыре race probes и rematch downstream probe FAIL; первое READY A2 — исправления и PR base develop.
 - #53fd79038 не включён: concurrent snapshot SQLite500/cursor loss и same-cursor different run overwrite. FixA4P4-07 READY, source PR остаётсяOPEN.
-- A5 создан и active в отдельной Codex задаче; frontend/P4-01–06 переданы ему. A4 владеет events/SSE/system acceptance. A1 common/access/build, A2 competition/run/ledger, A3 real judge/worker/workspace.
+- A5 создан в отдельной Codex задаче; первый локальный auth срез завершил, ожидает handoff merge, затем продолжает READY очередь; frontend/P4-01–06 переданы ему. A4 владеет events/SSE/system acceptance. A1 common/access/build, A2 competition/run/ledger, A3 real judge/worker/workspace.
 
 ## Проверенный этап и остаток
 

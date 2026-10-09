@@ -1,6 +1,6 @@
 # Реестр архитектурных решений
 
-Обновлено: 2026-10-09. `CONFIRMED` — прямое решение команды. `PROPOSED` — предложение архитектуры, реализация должна записать фактический выбор и результаты. `SUPERSEDED` — предыдущий вариант больше не применяется. `IMPLEMENTED` — наблюдаемый код, не новое подтверждение команды; `ADOPTED` — выбранная спецификация в рамках текущего поручения, ещё не код.
+Обновлено: 2026-10-10. `CONFIRMED` — прямое решение команды. `PROPOSED` — предложение архитектуры, реализация должна записать фактический выбор и результаты. `SUPERSEDED` — предыдущий вариант больше не применяется. `IMPLEMENTED` — наблюдаемый код, не новое подтверждение команды; `ADOPTED` — выбранная спецификация в рамках текущего поручения, ещё не код.
 
 | ID | Статус | Решение и основание |
 |---|---|---|
@@ -12,7 +12,7 @@
 | ADR06 | IMPLEMENTED | Session auth/CSRF и management command admin интегрированы PR #5; один origin proxy остаётся целью, не full browser acceptance. |
 | ADR07 | PROPOSED | Durable queue в SQLite, один judge-worker, один узел, WAL/timeout и атомарные обновления. Redis/Celery не требуются для MVP. |
 | ADR08 | PROPOSED | SSE + snapshots/events для публичных обновлений; собственный безопасный DTO, без private source. |
-| ADR09 | PROPOSED | React + TypeScript, Monaco, безопасный Markdown и TeX-renderer. Конкретные библиотеки/версии фиксировать lockfiles при bootstrap. |
+| ADR09 | SUPERSEDED | Исходное предложение React/TypeScript/Monaco. Реальный редактор выбран CodeMirror 6, фактическая реализация записана ADR21; не возвращать Monaco без новой причины. |
 | ADR10 | PROPOSED | Admin глобально управляет всеми турнирами. Участие admin в матчах выключено; роль participant играет, публичный просмотр открыт всем. |
 | ADR11 | PROPOSED | Solved ↓, penalty ↑, last accepted active time ↑, окончательное равенство → rematch. Параметры публикуются до старта и замораживаются для run. |
 | ADR12 | PROPOSED | Условия/тесты/checkers из официального пакета — основной import. Импорт Яндекс описаний/метаданных связывается с этим пакетом; source-only задачи не готовы для матча. |
@@ -49,3 +49,5 @@ ADR18, CONFIRMED 2026-10-10 по поручению команды: интерф
 ADR19 — ADOPTED: пять владельцев; новый A5 frontend/design, A4 public events/SSE/system acceptance, A2 competition/run/ledger. P4-01–06 сохраняют UI meaning и передаются A5. Причина: убрать последовательное ожидание всех runtime/frontend частей и дать публичному backend отдельного владельца.
 
 ADR20 — ADOPTED target boundaries: [MVP handoff](../../context/contracts/2026-10-10-mvp-boundaries.md): separate frozen RunProblemSnapshot/Provider, сохраняемый в accepted submission; additive failure sink; GET draft run selector/404; per-claim container fencing. Причина: закрыть обсуждение формы точными совместимыми contracts и продолжить независимую реализацию. Existing v1 receipt/verdict fields не меняются; implementations/readiness требуют отдельных tests/CI/runtime acceptance.
+
+ADR21 — IMPLEMENTED 2026-10-10, наблюдение координатора: текущий frontend/package-lock и workspace используют CodeMirror 6, TypeScript, безопасный Markdown/TeX renderer. Первоначальная Monaco proposal ADR09 устарела. Проверенные UI tests/build не означают full workspace API/browser acceptance; A5 сохраняет текущий редактор и подключает реальные providers.

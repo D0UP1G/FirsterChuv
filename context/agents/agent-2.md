@@ -4,7 +4,7 @@
 
 - Источник: прямое поручение команды перераспределить оставшийся MVP и создать нового frontend owner. Это текущее назначение; прежние author checkpoints ниже сохранены как история.
 - Статус назначения: READY; фактический IN_PROGRESS выставляет владелец при начале edits в своём изолированном checkout.
-- Первое действие: исправить проверенные #57–59 (0073fbd/1f3fae5/7465a9c): SQLite read→write/full bounded retry, frozen participants original run, exact-command replay; file-backed tests. PR только в develop, после #50 база доступна без переписывания веток. Persistence cores уже написаны, не повторять. Затем P2-03 get/config/start/ready + production gateway/snapshot, по одному endpoint.
+- Первое действие: исправить проверенные #57–59 (0073fbd/1f3fae5/latest9eb394c): SQLite read→write/full bounded retry, exact-command replay, revoke/reopen downstream после разрешённого rematch. Participant snapshot/late old result fix уже есть в latest9eb394c — сохранить; file-backed tests. PR только в develop, после #50 база доступна без переписывания веток. Persistence cores уже написаны, не повторять. Затем P2-03 get/config/start/ready + production gateway/snapshot, по одному endpoint.
 - Независимый резерв: HTTP serializers/permissions для config/start/ready, P2-04 durable failure sink/finalization/promotion, P2-05 API/replacement. #58 accepted/result и #59 actions исправлять по конкретным замечаниям [review](../../docs/reviews/2026-10-10-mvp-readiness.md), не реализовывать повторно.
 - Владение: competition/models/services/migrations/tests; events переданы A4.
 - Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
