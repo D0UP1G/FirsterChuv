@@ -1,15 +1,19 @@
 # Агент 2: сетка и live backend
 
-Перепланировано координатором 2026-10-09 по опубликованному PR #7; собственные прежние аудиты владельца не переписаны.
+Перепланировано координатором по ROADMAP v2. Исторические A-ID оставлены в старых аудитах.
 
-- Реализация: algorithm/ORM/atomic generate/reset/pairing services готовы в feature/bracket-runtime, HEAD a89b8fc, PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7) OPEN draft; пока не integrated.
-- Проверки: координатор повторил 58 tests с test-only app/URL registration, no migration drift. Package import F03 исправлен; full T06/clock/played history ещё нет. F08 archived reset воспроизведён.
-- Старый BLOCKED по A1-03 снят планом: roster/models/freeze интегрированы PR #8/#9. Новый статус задания **P2-01 READY**, не утверждение, что владелец уже возобновил сессию.
-- Первое действие: сохранить a89b8fc и merge актуального develop; минимальные CompetitionConfig/URL добавления явно разрешены владельцу в этом же PR. Не ждать ответ A1. Прочитать обновлённый bracket/pairings DTO v1, ordinary suite/migration check; остальной clock/score писать без ожидания A3.
-- Пути: backend/apps/competition, events; свои migrations/tests, fixtures match/public-match/score-event.
-- Очередь: P2-01 PR slice → P2-02 persistence → P2-03 clock/start → P2-04 score/ledger → P2-05 admin actions → P2-06 snapshots/SSE. Pure clock/score/event store доступны без judge/importer/UI.
-- Во время ожидания CONNECT: продолжить свои pure/domain tests или event store. Не блокировать всю роль из-за очереди посылок A3.
-- История аудитов feature: [round invariant](https://github.com/D0UP1G/FirsterChuv/blob/feature/bracket-runtime/context/audits/2026-10-09T154602+0300-agent-2-A2-01-round-invariant.md), [coordination](https://github.com/D0UP1G/FirsterChuv/blob/feature/bracket-runtime/context/audits/2026-10-09T153228+0300-agent-2-A2-01-coordination.md).
-- Следующий шаг: обновить свой branch/base/status и stale PR body; штатно зарегистрировать app, исправить F08, сделать HTTP pairing/reset по v1. Сохранить уже выполненные rank/persistence/import изменения, full T05/T06 не объявлять пройденными.
+- Статус: `IN_REVIEW` для среза `P2-04.1`; P2-04 целиком остаётся `IN_PROGRESS`.
+- Исполнитель: Codex в роли агента 2.
+- Текущая задача/ветка: `P2-04.1` / `feature/match-scoring-results`.
+- База перед публикацией: feature создана от `origin/develop` `d9488e3`, затем синхронизирована обычным fast-forward до `cad34ea` после merge PR #12 (`P1-01`).
+- Пути текущего среза: `backend/apps/competition/domain/scoring.py`, `backend/apps/competition/tests/test_scoring.py`, эта карточка и audit.
+- Соседние срезы: P2-01 PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7) и P2-03.1 clock PR [#11](https://github.com/D0UP1G/FirsterChuv/pull/11) остаются OPEN/ready/CLEAN и основаны на предыдущем `develop` `d9488e3`. Их файлы и ветки здесь не изменялись.
+- P2-04.1 implementation: чистая детерминированная функция результата с typed per-run final verdict receipts; первая OK на задачу; число решённых, penalty и время последней первой OK; одинаковый score → rematch; одинаковый receipt идемпотентен, конфликтующие и чужие receipts отклоняются.
+- Интеграция: код ещё не в `develop`; нет ORM, ledger, ResultSink, HTTP, migrations или atomic downstream/event write.
+- Приёмка: часть M05/M07/T10 на уровне scoring unit tests. Полные M05/M07 и T10 не закрыты; T09/J04/T19 и delayed-result/lease/FINALIZING поведение не проверялись этим срезом.
+- Граница: функция принимает уже допущенные реальные final receipts; admission, дедлайн, lease/current-run, инфраструктурные ошибки и момент финализации принадлежат следующему ledger/wiring срезу. Тестовые fixtures используются только в unit tests.
+- Контракт: `docs/architecture/match-engine.md`, `docs/architecture/parallel-contracts.md`, `contracts/mvp-v1/match.json`, `contracts/mvp-v1/score-event.json`; требования M05/M07/J04, T09/T10/T19.
+- Следующий шаг: P2-04.2 accepted-attempt ledger/ResultSink после согласования с MatchRun/lifecycle P2-01 и clock/state P2-03, а также receipt/admission порта P3-04. Реализовать duplicate/out-of-order/lease/delayed OK/SUPERSEDED guards, ожидание pending accepted submissions и атомарную winner/downstream/event запись.
+- Аудит текущего среза: [P2-04.1 score core](../audits/2026-10-09T171844+0300-agent-2-P2-04-1-score-core.md).
 
-План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
+Общий `context/STATE.md` меняет только координатор после merge.
