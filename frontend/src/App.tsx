@@ -66,9 +66,9 @@ function Header() {
   return (
     <>
       <header className="site-header">
-        <Link className="brand" to="/" aria-label="Блиц — на главную">
+        <Link className="brand" to="/" aria-label="BLITZ_ARENA — на главную">
           <span className="brand-mark" aria-hidden="true">Б</span>
-          <span>блиц<span className="brand-period">.</span></span>
+          <span>BLITZ_<span className="brand-accent">ARENA</span></span>
         </Link>
         <nav className="primary-nav" aria-label="Основная навигация">
           <NavLink to="/watch" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>Зрителям</NavLink>
@@ -217,7 +217,7 @@ function NotFoundPage() {
 }
 
 function Footer() {
-  return <footer className="site-footer"><Link className="footer-brand" to="/">блиц<span>.</span></Link><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+  return <footer className="site-footer"><Link className="footer-brand" to="/">BLITZ_<span className="brand-accent">ARENA</span></Link><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
 }
 
 function errorMessage(error: unknown): string {

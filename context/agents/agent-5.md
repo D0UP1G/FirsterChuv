@@ -13,16 +13,28 @@
 - Свои audit/card: branch/base/paths перед edits, новый append-only audit после сессии, exact checks/SHA/PR/следующий READY. Только feature/* → develop, merge sync, без force push/удаления чужих branches.
 - [План](../../ROADMAP.md), [границы](../contracts/2026-10-10-mvp-boundaries.md), [история прежнего UI owner](agent-4.md), [дизайн](../../frontend/design/README.md).
 
+## Текущий срез: P5-01 — перенос дизайн-системы в React
+
+- Статус: `IN_PROGRESS`; implementation slice published in open P5-01 design PR #64; CI/review/merge pending.
+- Ветка: `feature/agent-5-p5-01-design`, базовый SHA `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (`origin/develop` после merge #60).
+- Sync: ordinary merge commit `afc4b26fc6934962a976aa53db97d3b000b4d5bd` with fresh `develop` `85e0cd0d2b82fce9996106af3922171dcee17c76`; no conflicts. Auth PR #62 is merged at that develop SHA.
+- PR: https://github.com/D0UP1G/FirsterChuv/pull/64; opened at head `127920d667066cfdc588751f8a284183dd9c6847`, CI was `IN_PROGRESS` at publication snapshot.
+- Paths: `frontend/index.html`, `frontend/src/index.css`, `frontend/src/App.css`, `frontend/src/App.tsx`, `frontend/src/pages/Admin.css`, `context/audits/2026-10-10T014600+0300-agent-5-P5-01-design-system.md`, `context/audits/2026-10-10T014632+0300-agent-5-P5-01-design-sync.md`, `context/audits/2026-10-10T014724+0300-agent-5-P5-01-design-publication.md`, and this card.
+- Цель: применить verified `frontend/design` / brandbook v2.0 tokens, type, grid, spacing and shared status/button/panel language to the existing React shell, auth, invite and bracket views; preserve current logic and HTTP states.
+- Implementation commit: `aa3912b3414c4f9376af76d440e2e45fa5f42a79`; publication audit commit may advance the PR head. This slice is not in develop yet. P5-03 provider status is independent; no new endpoint is needed.
+- Later P5-02 remains a separate feature slice for responsive/projector/accessibility/error-state review.
+
 ## Наблюдение координатора 2026-10-10T01:29:46+03:00
 
 Первая turn задачи завершилась: собственная feature/agent-5-auth-return-path в own clone, auth returnPath/query/hash и84 UI tests по сообщению автора. Код пока uncommitted и не в develop; coordinator не редактировал его. Ожидание card/handoff снимается merge integration #60; далее fresh develop обычным merge и P5-01/02/03 READY, публикация собственного UI slice→develop. Backend provider не prerequisite для brand/auth/responsive work.
 
 ## Текущий срез: P5-01 auth return path
 
-- Статус: `IN_PROGRESS`; узкий auth-flow fix опубликован в открытом PR #62, ждёт CI/review/merge.
+- Статус: auth implementation/integration merged; full T02 acceptance remains partial.
 - PR: https://github.com/D0UP1G/FirsterChuv/pull/62; опубликованный кодовый head `71ca100579fa5081c1dab3cb4172d1619cc60c29`.
+- Merge: `85e0cd0d2b82fce9996106af3922171dcee17c76`; final PR head `abdc12e637005211b83ea095a273f25273636748` passed 5/5 CI jobs.
 - Ветка: `feature/agent-5-auth-return-path`.
 - Исходная база `cc204e62a060eb2ceb16067a1b0693a2e083d9ab`; после handoff выполнен merge commit `aae63faab8b432ce5b608c9fa94530d7e1569afd` с fresh `origin/develop` `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (#60).
 - Пути среза: `frontend/src/App.tsx`, `frontend/src/pages/LoginPage.tsx`, `frontend/src/App.test.tsx`, `context/audits/2026-10-10T011119+0300-agent-5-P4-01-auth-return-path.md`, `context/audits/2026-10-10T013908+0300-agent-5-P5-01-auth-return-path-sync.md` и эта карточка.
 - Implementation: protected-route return path сохраняет pathname/query/hash и проверенный next переживает login→register. Integration: не в develop. Acceptance: 18 frontend test files / 84 tests, typecheck/build PASS; lint exit 0 с 5 прежними workspace warnings; браузерный backend CONNECT не выполнялся.
-- Следующий шаг: после компактного auth PR продолжить P5-01 на merged `frontend/design` tokens/shared layouts/auth/invite/bracket, затем P5-02 responsive/accessibility/projector. P5-03 CONNECT вести отдельно по exact endpoint SHA.
+- Следующий шаг: continue P5-01 design implementation; full browser/backend acceptance remains separate. P5-02 responsive/accessibility/projector and per-endpoint P5-03 CONNECT remain available.
