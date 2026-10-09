@@ -1,11 +1,11 @@
 # Агент 1: платформа и интеграция
 
-- Статус: `IN_PROGRESS` — A1-02 интегрирована; выполняется STATE-сверка перед A1-03.
+- Статус: `IN_PROGRESS` — A1-02 интегрирована и STATE синхронизирован; начата A1-03.
 - Назначенный исполнитель: Codex, agent 1.
-- Текущая задача/ветка/база: `A1-02 integration/state sync` / `feature/a1-02-state-sync` / `c64555c` (`origin/develop`).
+- Текущая задача/ветка/база: `A1-03` / `feature/tournament-roster` / `3b2b0ad` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-02 integration/state-sync audit](../audits/2026-10-09T151339+0300-agent-1-A1-02-integration-state-sync.md); [PR #6](https://github.com/D0UP1G/FirsterChuv/pull/6) docs/state sync открыт; [PR #5](https://github.com/D0UP1G/FirsterChuv/pull/5) merged в `c64555c`; A1-02.4 T02/T20 cross-check.
+- Последний аудит/PR/проверки: [A1-03.1 tournament CRUD](../audits/2026-10-09T152726+0300-agent-1-A1-03-1-tournament-crud.md) — локальный feature-only срез; [PR #6](https://github.com/D0UP1G/FirsterChuv/pull/6) merged at `3b2b0ad`; предыдущий A1-02 integration/state-sync audit — [файл](../audits/2026-10-09T151339+0300-agent-1-A1-02-integration-state-sync.md).
 
 ## Разбивка задач на малые шаги
 
@@ -29,12 +29,14 @@
 - [x] A1-02.3 Добавить защищённую management command для начального admin без пароля в argv/logs; TTY prompt/confirmation, secret injection, idempotency, refusal to promote и отсутствие Django superuser покрыты тестами.
 - [x] A1-02.4 Сверить все критерии T02/T20 с PDF кейса, requirements, API/security contracts и фактическими тестами; непокрытые domain/UI/sandbox сценарии оставлены явно открытыми.
 
-### A1-03 · `feature/tournament-roster` · `TODO`
+### A1-03 · `feature/tournament-roster` · `IN_PROGRESS`
 
-- [ ] A1-03.1 Реализовать модель и admin-only CRUD турнира с датами, форматом, visibility и cap.
-- [ ] A1-03.2 Реализовать назначение, список, удаление и числовой seed участников.
-- [ ] A1-03.3 Защитить cap/уникальность и согласовать roster freeze с агентом 2 до API изменений.
-- [ ] A1-03.4 Сверить T03/T05; не удалять историю сыгравшего участника.
+- [x] A1-03.1 Модель и admin-only CRUD турнира: поля M01, strict input, config, даты/status, безопасный delete/archive; API contract и миграции. Feature-only, audit attached to implementation; not merged.
+- [ ] A1-03.2 Participant directory и roster: список active accounts, назначение, список, числовой seed, удаление/логическое снятие.
+- [ ] A1-03.3 Capacity/uniqueness: транзакционный условный счётчик, ограничения БД, inactive/admin/duplicate guards; `freeze_roster(tournament_id)` вызывается при создании bracket в той же внешней atomic transaction согласно `docs/architecture/match-engine.md` и API contract. Решение пользователя: следовать docs; ответ получен 2026-10-09.
+- [ ] A1-03.4 Сверить M01/M03 и T03/T05 с PDF, проверить историю played entrants, записать аудит с фактическими ограничениями сценариев.
+
+Подшаги исполнения: .1 contract/model → migration → CRUD/security; .2 participant model → admin directory → roster API; .3 concurrency/freeze/replacement boundary → API tests; .4 case cross-check → feature review/audit/PR. После каждого завершённого среза сверить `ROADMAP.md`, API/data-model docs и кейс. `context/STATE.md` меняется только после подтверждённой интеграции в `develop`.
 
 ### A1-04 · `feature/tournament-invites` · `TODO`
 
@@ -62,4 +64,4 @@
 - Владею: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/` (включая invites/participants), root tooling, Compose/CI, общей цепочкой миграций, интеграцией и релизом.
 - Не менять пути агентов 2–4 без согласованной передачи. Общие контракты и миграции сверять с потребителями до изменения.
 - Передача агентам 2–4: стабильные пути, auth dependency, ID-модели, конфигурация, миграционная база и локальный запуск.
-- Следующий шаг: завершить отдельный `feature/a1-02-state-sync` PR; затем начать A1-03 в `feature/tournament-roster` от актуального `develop` и сверить roster freeze с владельцем A2 до API изменений.
+- Следующий шаг: A1-03.2 — active participant directory, participant model и admin roster API; затем .3 implement the agreed `freeze_roster` service without editing Agent 2 paths.

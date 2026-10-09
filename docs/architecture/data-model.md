@@ -21,8 +21,8 @@ erDiagram
 | Сущность | Основные поля / смысл |
 |---|---|
 | User | id, displayName, normalizedEmail unique, passwordHash, role participant/admin, isActive. Custom Django User с первой миграции. |
-| Tournament | id, slug unique, title, description, startsAt/endsAt, format single_elimination, participantLimit, visibility public/unlisted, shareTokenHash при unlisted, status, createdBy, defaultMatchConfig. |
-| TournamentParticipant | tournamentId, userId, seed nullable, status ACTIVE/REMOVED. Unique tournament/user. Удаление после игры логическое. |
+| Tournament | id, slug unique, title, description, startsAt/endsAt, format single_elimination, participantLimit, visibility public/unlisted, будущий `shareTokenHash` для unlisted-доступа, status, createdBy, defaultMatchConfig, activeParticipantCount, rosterFrozenAt, createdAt/updatedAt. A1-03.1 сохраняет остальные перечисленные поля; выдача share token ещё не реализована. `activeParticipantCount` обновляется атомарно вместе с roster mutations; `rosterFrozenAt` выставляется во внешней транзакции bracket generation. |
+| TournamentParticipant | id, tournamentId, userId, seed nullable, status ACTIVE/REMOVED, addedAt/removedAt. Unique tournament/user. Removal after play is logical and match references preserve the entrant. |
 | Invite | id, tournamentId, tokenHash unique, expiresAt или maxUses (минимум одно), usedCount, revokedAt, createdBy. Plain token отдаётся при создании, не хранится. |
 | InviteAcceptance | inviteId/userId unique, acceptedAt. Идемпотентный accept, повтор не расходует use. |
 | ProblemPackage | id, checksum, formatVersion, importedAt/by, validationStatus, privateStorageRef. Формат берётся из фактического README пакета. |
@@ -43,8 +43,8 @@ Session/cookie storage использует стандартную Django sessio
 ## Обязательные ограничения
 
 - `users.role` имеет только participant/admin, default participant. `is_staff`/`is_superuser` не назначаются из регистрации.
-- Назначается только активный participant. Не более cap; capacity проверяется атомарно с добавлением/accept.
-- Seed уникален внутри турнира среди active entrants либо нормализуется перед генерацией; игрок не встречается дважды в одном раунде.
+- Назначается только активный `participant`, не admin. Активных игроков не больше cap; добавление/accept атомарно обновляет их число. Seed — положительное целое и уникален среди active entrants, если задан; один игрок не попадает дважды в раунд.
+- Изменения состава отклоняются после `rosterFrozenAt`. `freeze_roster(tournament_id)` идемпотентен и вызывается внутри транзакции генерации bracket; ошибка создания bracket откатывает freeze.
 - Пары и набор задач нельзя незаметно менять после старта. Run хранит immutable версии задачи/правил.
 - Unique `(userId, runId, idempotencyKey)` связывает повторный submission request с одним объектом; при том же ключе и другом source/language/problem возвращается 409.
 - Worker claim/recovery guarded by status и leaseToken. Старый worker не перезаписывает новый результат.

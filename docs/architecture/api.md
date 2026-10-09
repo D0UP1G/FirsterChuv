@@ -1,6 +1,6 @@
 # API и права доступа
 
-Целевой contract DRF API. A1-01 реализовал платформенную основу; A1-02 реализовал auth slice в feature-ветке, остальные domain endpoints пока плановые. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.
+Целевой contract DRF API. A1-01 реализовал платформенную основу, A1-02 — auth slice, A1-03.1 в feature-ветке добавил admin-only tournament CRUD; account directory и roster mutations относятся к A1-03.2 и пока не реализованы. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.
 
 Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csrf` выдаёт `csrfToken` в JSON и HttpOnly CSRF cookie; frontend посылает `X-CSRFToken`. Register/login/logout имеют явную CSRF protection, не полагаются только на SessionAuthentication. Публичные GET не требуют login.
 
@@ -16,12 +16,12 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 | POST `/auth/login` | Без login + CSRF/rate limit | Session; одинаковый 401 для неизвестного email, неверного пароля и inactive account |
 | POST `/auth/logout` | Auth + CSRF | Инвалидировать session, 204 |
 | GET `/me` | Auth | id/displayName/role; private cache no-store |
-| GET `/admin/users?role=participant` | A | Ограниченный поиск для назначения; не public каталог email |
-| GET `/tournaments` | Auth | Admin все; participant только joined, pagination |
-| POST `/tournaments` | A | Создать турнир |
-| GET `/tournaments/{id}` | A / joined P | Private management/member view |
-| PATCH `/tournaments/{id}` | A | Разрешённые поля согласно status |
-| DELETE `/tournaments/{id}` | A | Только draft без played history; иначе архивирование через status |
+| GET `/admin/users?q=...&limit=...&offset=...` | A | A1-03.2: только active participant; ограниченный поиск, UUID/displayName без email, pagination |
+| GET `/tournaments` | Auth | Admin все; participant только joined; pagination. В A1-03.1 реализован admin view |
+| POST `/tournaments` | A | Создать турнир; `createdBy`, `status`, slug и roster state назначает сервер |
+| GET `/tournaments/{id}` | A / joined P | Private management/member view. Joined participant появится вместе с roster API |
+| PATCH `/tournaments/{id}` | A | Whitelist полей и правила по status/freeze; неизвестные/read-only поля отклоняются |
+| DELETE `/tournaments/{id}` | A | Нефрозеный draft удаляется; после freeze или lifecycle progress — архивируется, история не уничтожается |
 | GET `/tournaments/{id}/participants` | A / joined P | P видит display names, не полный private user |
 | POST `/tournaments/{id}/participants` | A | `{userId, seed?}`, participant, cap/duplicate guards |
 | PATCH `/tournaments/{id}/participants/{userId}` | A | Seed/status до roster freeze |
@@ -33,9 +33,9 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 
 Не добавлять public endpoint смены роли. Bootstrap admin — management command. Если команда позже захочет admin role-management, это отдельное защищённое и аудируемое решение.
 
-Успешная регистрация возвращает `201` с `{id, displayName, role}`; login возвращает тот же user summary и обновлённый `csrfToken` после session/CSRF rotation. Auth responses и `/me` имеют `Cache-Control: no-store`. Текущие scoped limits: register `20/hour`, login `10/minute` на клиентский IP; reverse proxy topology должна соответствовать `NUM_PROXIES` в settings. Account endpoints, базовые application-role permission probes и bootstrap command покрыты тестами в `feature/account-roles`. Реальных admin write endpoints и object ownership checks пока нет; T02 остаётся открытым, а T20 не проходила как полный security suite.
+Успешная регистрация возвращает `201` с `{id, displayName, role}`; login возвращает тот же user summary и обновлённый `csrfToken` после session/CSRF rotation. Auth responses и `/me` имеют `Cache-Control: no-store`. Текущие scoped limits: register `20/hour`, login `10/minute` на клиентский IP; reverse proxy topology должна соответствовать `NUM_PROXIES` в settings. Account endpoints, базовые application-role permission probes и bootstrap command покрыты тестами в `feature/account-roles`; реальные admin tournament writes добавлены в `feature/tournament-roster`. Roster и participant-specific match ownership ещё не интегрированы; T02 остаётся открытым, а T20 не проходила как полный security suite.
 
-Пример создания турнира (вариант конфигурации, не реализованный endpoint):
+Пример создания турнира:
 
 ```json
 {
@@ -57,7 +57,11 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 }
 ```
 
-60 секунд здесь — пример выбора admin, не правило кейса. Dates/duration/limits валидируются сервером; match run snapshot immutable после старта.
+60 секунд здесь — пример выбора admin, не правило кейса. Для tournament defaults сервер требует `endsAt > startsAt`, `participantLimit >= 2`, поддерживает только `single_elimination`, а `visibility` — `public` или `unlisted`. `matchDurationSec` ограничен 60–7200 секундами; scoring order должен быть ровно `solved_desc`, `penalty_asc`, `last_accepted_asc`, штраф — 0–7200 секунд, penalized verdicts — уникальное подмножество WA/TL/ML/RE, final tie policy — `rematch`. Поля статуса/владельца и любые неизвестные ключи не принимаются из клиента. Match run snapshot immutable после старта.
+
+В A1-03.1 mutation endpoints для tournament уже защищены application role admin, session CSRF и `Cache-Control: no-store`. До roster freeze разрешены date/format/cap/config changes. После freeze эти структурные поля закрыты; title/description/visibility остаются редактируемыми, пока турнир не перешёл в `running`, `completed` или `archived`. DELETE нефрозеного `draft` выполняет hard delete; в остальных случаях устанавливается `archived`. Полный T03 остаётся `NOT_RUN` до проверки integrated browser/API сценария.
+
+`POST /tournaments/{id}/bracket/generate` вызывается агентом 2 в одной внешней `transaction.atomic()` с `backend.apps.tournaments.services.freeze_roster(tournament_id)`. Успешная генерация и frozen roster коммитятся вместе; ошибка создания bracket откатывает freeze. Freeze идемпотентен, а любые последующие add/remove/seed изменения возвращают conflict. Match/bracket replacement после старта остаётся отдельным контролируемым action агента 2.
 
 ## Задачи и сетка
 
