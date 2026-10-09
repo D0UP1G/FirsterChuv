@@ -54,6 +54,46 @@
 - Runtime CONNECT открыт: текущие `compose.yaml` и `backend/Dockerfile` не дают judge-worker Docker CLI/Engine access; это shared deployment wiring P1-04/P3-04.2. Доступность Docker из host runner сама по себе не меняет compiler readiness.
 - Разделение результата: implementation — LocalJudge core и task policy; integration — worker/Docker CLI/Engine CONNECT ещё не выполнен; acceptance — реальный Docker smoke недоступен, checker protocol ждёт package README. GitHub CI PR #23: 4 jobs PASS после одного rerun; первый backend запуск флакнул на чужом invite-concurrency тесте P1, повтор прошёл без изменений ветки. Официальный package/T12/T14/T18/T20/T21 acceptance не закрывается synthetic bundle или тестовыми doubles.
 
+## Текущая сессия: P3-04.2 · submission worker/recovery
+
+- ID задачи: `P3-04.2`; статус: `IN_PROGRESS` (реализация и локальная проверка завершены; публикация ждёт интеграции PR #15).
+- Ветка: `feature/submission-worker`; база `origin/develop`: `15e3edf4fdfe7910f0984f97f26eee8589d5319b`.
+- Зависимость: PR #15 (`feature/submission-queue-core`, head `555ca0ee692fdc4472857e3f2350c01819224f1e`) остаётся OPEN/CLEAN, четыре CI jobs PASS. Queue core включён merge commit `cae2d74` только в эту собственную feature-ветку; исходную ветку/worktree не менять.
+- Изменены только `backend/apps/submissions/{worker.py,factory.py,README.md}`, собственные management command/tests, эта карточка и audit. Общие config/Compose/contracts и чужие paths не менялись.
+- Реализованы durable loop с приоритетом due outbox, worker/executor/result sink fail-closed factory, heartbeat ограниченного claim lease, stale-result guard, infra retry без verdict, command `run_judge_worker` с bounded CLI options, recovery очереди/outbox при повторных циклах.
+- Основание: J04/E03 и частичные серверные сценарии T09/T14/T19/T20; runtime snapshot/adapters/failure sink P3-04.3–4 и реальный LocalJudge остаются отдельной работой. В этой задаче нет sandbox process registry, поэтому cleanup ограничен durable DB lease recovery.
+- Проверки этой ревизии: submissions suite 41/41 PASS на файловой SQLite; system checks PASS; migration drift отсутствует; compileall и `git diff --check` PASS; command обнаруживается и без factory отказывает закрыто.
+- Аудит старта: [`2026-10-09T213942+0300-agent-3-P3-04.2-start.md`](../audits/2026-10-09T213942+0300-agent-3-P3-04.2-start.md). Аудит реализации: [`2026-10-09T214617+0300-agent-3-P3-04.2-worker.md`](../audits/2026-10-09T214617+0300-agent-3-P3-04.2-worker.md).
+- Следующий шаг: дождаться merge PR #15 в `develop`; затем обновить эту ветку обычным `git merge origin/develop`, проверить собственный diff и опубликовать PR строго в `develop`. После публикации главный READY execution приоритет — P3-03 LocalJudge; P3-04.3–4 продолжить после него/по доступности A2 adapter и snapshot. До публикации PR #15 не создавать дублирующий stacked PR.
+- Handoff-сверка: [`2026-10-09T214821+0300-agent-3-P3-04.2-handoff-correction.md`](../audits/2026-10-09T214821+0300-agent-3-P3-04.2-handoff-correction.md) уточняет порядок из аудита реализации по ROADMAP v3.
+
+## Текущая сессия: P3-04.3 · queue adapters к common v1
+
+- ID задачи: `P3-04.3`; статус: `IN_PROGRESS`.
+- Ветка: `feature/submission-worker`; HEAD на старте `38ed3bef68fab79085200a0bda8570be2830f1c3`; последний проверенный `origin/develop=c5682dd657969b699e22b8a2815b5247ad5a1553`.
+- Ветка уже содержит локальную queue dependency из PR #15 и предыдущий P3-04.2; чужие worktree/ветки не редактируются. По прямому указанию команды не сливать `origin/develop` или чужие feature branches.
+- Планируемые пути: `backend/apps/submissions/adapters.py`, adapter tests, submissions README, эта карточка и отдельные start/implementation audits. Shared contracts/settings/Compose и миграции не менять.
+- Срез: адаптировать local queue receipts/ports к common `CompetitionGatewayV1`, `EventWriter`, `LanguageRegistry`, `ResultSink`; `match_id` остаётся local-only, common DTO exact shape сохраняется, `ResultApplication.applied=False` считается успешно доставленным receipt.
+- Настоящих A2 production providers ещё нет; адаптеры не создают fallback/fake runtime и не включаются в factory. Не менять открытые PR #15/#16/#21/#23/#25/#26.
+- Стартовый аудит: [`2026-10-09T220323+0300-agent-3-P3-04.3-start.md`](../audits/2026-10-09T220323+0300-agent-3-P3-04.3-start.md).
+- Реализация: exact common `AttemptReceipt`/`ResultReceipt` mapping (local-only `match_id` не утекает), permit conversion, EventWriter/LanguageRegistry forwarding, `ResultApplication.applied` mapping; `applied=False` проверено end-to-end как успешная outbox delivery. Изменены `submissions/adapters.py`, tests и README; shared contract files/config не менялись.
+- Проверки: submissions suite 46/46 PASS на файловой SQLite; Django checks, compileall, migration drift check и `git diff --check` PASS. Runtime A2 providers не запускались.
+- Implementation audit: [`2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md`](../audits/2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md). Статус остаётся `IN_PROGRESS` до разрешённой интеграции/PR; user instructed not to merge branches.
+
+## Текущая сессия: P3-04.4 · failure outbox и run snapshot handoff
+
+- ID задачи: `P3-04.4`; статус: `IN_PROGRESS`.
+- Ветка: `feature/submission-worker`; HEAD на старте `cb18524abb2e26bb440f8cd44078ea7244a0ac8c`; свежий `origin/develop=c5682dd657969b699e22b8a2815b5247ad5a1553` проверен.
+- Работать только с собственным submissions app и документацией; PR/ветки #15/#16/#21/#23/#25/#26 и их worktree не менять. По прямому указанию пользователя branch merge не выполнять.
+- READY срез: typed-compatible local `InfrastructureFailureReceipt/Sink`, durable terminal failure outbox и redelivery; собственная app migration допустима. Test doubles только в tests, runtime требует реальный sink.
+- Run snapshot version/checksum отсутствуют в common `SubmissionPermit`/production A2 provider. Оформить отдельный contract request без изменения common contract/изобретения A2 API; snapshot resolver не реализовывать до согласования.
+- Планируемые пути: submissions ports/models/services/worker/factory/own migration/tests/README, `context/contracts/` request, эта карточка и отдельные audits.
+- Стартовый аудит: [`2026-10-09T220642+0300-agent-3-P3-04.4-start.md`](../audits/2026-10-09T220642+0300-agent-3-P3-04.4-start.md).
+- Реализация текущего среза: добавлены локальные совместимые `InfrastructureFailureReceipt/Sink`, terminal `InfrastructureFailureOutbox` и app-local migration; exhausted retry и recovery просроченного последнего worker lease создают durable outbox только при успешном status transition. Worker доставляет отдельный технический receipt с allowlisted reason через lease/retry; receipt не содержит source/diagnostics и не создаёт verdict. Test-only sinks остаются только в тестах; factory/runtime по-прежнему требует production ports.
+- Run snapshot version/checksum не реализован без A2 provider и решения по boundary. Запрос оформлен в [`agent-3-run-problem-snapshot.md`](../contracts/agent-3-run-problem-snapshot.md), статус `WAITING_CONNECT`; production submit/judge должен оставаться закрыт без источника trusted immutable snapshot.
+- Реализация audit: [`2026-10-09T221206+0300-agent-3-P3-04.4-failure-outbox.md`](../audits/2026-10-09T221206+0300-agent-3-P3-04.4-failure-outbox.md). Проверки: submissions suite 49/49, Django system checks, compileall, migration drift check и `git diff --check` PASS.
+- Срез остаётся `IN_PROGRESS`: common A1 DTO/Protocol, A2 idempotent technical ledger sink, A2 run snapshot provider и runtime wiring не интегрированы. Код только в этой feature-ветке; другие A3 worktree/PR не редактировались, merge/push/PR в этой сессии не выполнялись по указанию пользователя.
+
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
 
 ## Исторический checkpoint: P3-04.1 / admission race
@@ -67,3 +107,36 @@
 - PR #15 и его worktree — существующие артефакты этого agent-3 checkout; не менять чужие ветки/worktrees. Общий `context/STATE.md` не редактировать.
 - Publication audit: `context/audits/2026-10-09T203941+0300-agent-3-P3-04.1-publication.md`. Предыдущий head `a6d3674` имел четыре зелёных GitHub CI jobs; на обновлённом head после sync #22 надо дождаться их повторного результата/review.
 - Следующий шаг: дождаться checks/review PR #15, не выполнять merge самостоятельно; затем продолжить P3-03 в отдельной feature-ветке от актуального `origin/develop`.
+
+## Актуальная сессия: sync и продолжение P3-04 · 2026-10-09
+
+- Задача: синхронизировать собственную `feature/submission-worker` с актуальной `origin/develop`, затем сверить реализацию очереди/worker с интегрированными queue core, LocalJudge, catalog и runtime contracts.
+- Статус: `IN_PROGRESS`. Начальный HEAD feature: `59ed8c91af99077f6e59059989686796a4df2c02`; база до sync: `15e3edf4fdfe7910f0984f97f26eee8589d5319b`; входящий `origin/develop`: `6de4882f1f6ed712ba2704f539ea8421ede9d577`.
+- Разрешённый scope: собственная `backend/apps/submissions/` и её tests/migrations/README, собственная карточка/audits и собственные contract requests. `context/STATE.md`, чужие apps/config/Compose, чужие ветки/worktrees и уже активные P3-02.2/P3-05.1 задачи не менять.
+- Разрешённая команда merge: обычный `--no-ff` merge `origin/develop` в `feature/submission-worker`; PR merge и merge в `develop`/`main` не выполнять.
+- Конфликт при sync возник только в этой карточке: сохранены новый checkpoint координатора и исторический LocalJudge checkpoint из develop, вместе с собственными аудитируемыми P3-04.2–4 записями.
+- Стартовый аудит sync: [`2026-10-09T232137+0300-agent-3-P3-04-sync.md`](../audits/2026-10-09T232137+0300-agent-3-P3-04-sync.md).
+- Обязательные документы и кейс повторно сверены; submissions suite после sync прошёл 49/49, migration drift отсутствует. Проверка нашла P3-04.2 gap: sandbox удаляет контейнер в `finally`, но аварийная остановка worker может оставить контейнер. Глобальный sweep по ownership label не выполнялся: ADR07 пока `PROPOSED`, и контракт не связывает контейнер с живым/просроченным queue lease; без этого sweep может удалить параллельную активную работу.
+- Ограниченный запрос о безопасном worker/container recovery записан в [`agent-3-worker-container-recovery.md`](../contracts/agent-3-worker-container-recovery.md) со статусом `WAITING_CONNECT`. Это не блокирует revalidation и публикацию уже проверенных loop/lease/outbox частей P3-04.2.
+- Аудит старта revalidation: [`2026-10-09T232240+0300-agent-3-P3-04.2-revalidation-start.md`](../audits/2026-10-09T232240+0300-agent-3-P3-04.2-revalidation-start.md).
+- Revalidation audit: [`2026-10-09T232846+0300-agent-3-P3-04.2-postsync.md`](../audits/2026-10-09T232846+0300-agent-3-P3-04.2-postsync.md). Проверки после sync: submissions 49/49, backend 170 PASS/1 skip, sandbox unit 15/15, Django check, migration drift, compileall и diff check PASS. Docker Engine недоступен; real smoke не выполнен.
+- Повторный fetch перед публикацией выявил новый `origin/develop=56c20eb3323c892d7f2fa9aadc6beb905548f677` (PR #35, только A4 transport/tests/audits). Собственная ветка чиста на `584d0fc`; начат follow-up sync в этой же feature.
+- Стартовый аудит follow-up sync: [`2026-10-09T232929+0300-agent-3-P3-04-sync-followup-start.md`](../audits/2026-10-09T232929+0300-agent-3-P3-04-sync-followup-start.md).
+- Follow-up sync завершён обычным merge `origin/develop` `56c20eb` в свою feature-ветку без конфликтов. Входящие изменения: A4 match transport/client tests и audits; A3 production files не затронуты. Проверен `git diff --check` для merge commit. Завершающий аудит: [`2026-10-09T232958+0300-agent-3-P3-04-sync-followup.md`](../audits/2026-10-09T232958+0300-agent-3-P3-04-sync-followup.md).
+- Feature PR [#37](https://github.com/D0UP1G/FirsterChuv/pull/37) в `develop`: implementation-срезы P3-04.2 worker/leases, P3-04.3 adapters и P3-04.4 failure outbox находятся `IN_REVIEW`; PR не слит.
+- Сразу после публикации GitHub base продвинулся `56c20eb → 7e2cb46` через PR #36 (A4 editor tests/audits only). Собственная ветка чистая; начинается ещё один ordinary sync перед обновлением PR.
+- Стартовый аудит sync PR head: [`2026-10-09T233104+0300-agent-3-P3-04-sync-pr-head-start.md`](../audits/2026-10-09T233104+0300-agent-3-P3-04-sync-pr-head-start.md).
+- Follow-up merge #36 завершён в своей ветке без конфликтов. Получены только `frontend/src/workspace/CodeEditor.test.tsx`, карточка/A4 audits; A3 source не затронут. Проверен `git diff --check`; обновление remote PR head ожидает обычного push. Audit: [`2026-10-09T233119+0300-agent-3-P3-04-sync-pr-head.md`](../audits/2026-10-09T233119+0300-agent-3-P3-04-sync-pr-head.md).
+- После audit/card push PR #37 достиг head `8e9542829eb4cd83536bc991ef4dd1e0efece271`; CI run `37987957323` на нём прошёл 4/4. PR остаётся `OPEN/MERGEABLE`.
+- Новый fetch: `origin/develop=25a82c092236d98275f897d624452b24bd501883` (PR #39, A4 compiler/language tests and docs only). Собственная ветка чиста; A3 source не затронут, начат очередной ordinary sync перед review.
+- Стартовый аудит follow-up: [`2026-10-09T233629+0300-agent-3-P3-04-sync-pr-head-followup-start.md`](../audits/2026-10-09T233629+0300-agent-3-P3-04-sync-pr-head-followup-start.md).
+- Merge PR #39 в свою feature завершён без конфликтов; изменились только `frontend/src/pages/ParticipantWorkspacePage.test.tsx`, `frontend/src/workspace/devTransport.ts`, A4 card/audits. Проверен `git diff --check`; A3 source/test files не изменились. Завершающий sync audit: [`2026-10-09T233646+0300-agent-3-P3-04-sync-pr-head-followup.md`](../audits/2026-10-09T233646+0300-agent-3-P3-04-sync-pr-head-followup.md).
+- PR #37 обновлён fast-forward push до head `d532df06123057dcf395dffce7f8b3b264028b43`; base `25a82c092236d98275f897d624452b24bd501883`; `OPEN/MERGEABLE`. В CI run `37988178652` первый `backend` запуск упал на unrelated P1 invite concurrency (`database_busy`), rerun упал только этот job и прошёл; итоговый CI 4/4 PASS. A3 source не менялся. Audit: [`2026-10-09T234001+0300-agent-3-P3-04-ci-rerun.md`](../audits/2026-10-09T234001+0300-agent-3-P3-04-ci-rerun.md).
+- Следующий шаг: дождаться review PR #37 и оставить его открытым до решения о слиянии. Container cleanup, immutable run snapshot и production A2 sinks остаются конкретными CONNECT подпунктами; P3-02.2/P3-05.1 выполняются в отдельных worktree.
+
+### Финальная сверка PR #37 — 2026-10-09
+
+- Повторный `git fetch origin` не выявил новых коммитов: `origin/develop=25a82c092236d98275f897d624452b24bd501883`; ветка `feature/submission-worker` чиста на `26b5cf1916a531868c41cc4728fd38009a400bf8`.
+- Последний CI run `37988555234` на этом head завершился `success`, 4/4 job; PR #37 остаётся `OPEN/CLEAN` с базой `develop`.
+- Код P3-04 не менялся в ходе сверки. Результат проверки и остающиеся CONNECT ограничения записаны в [аудите](../audits/2026-10-09T234207+0300-agent-3-P3-04-final-sync-ci.md).
+- PR не слит. Следующий шаг: дождаться review; не интегрировать в `develop` без решения команды. Конкретные ожидания по container recovery, run snapshot и production A2 sinks остаются в contract requests.
