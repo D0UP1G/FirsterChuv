@@ -19,9 +19,10 @@
 
 ## Текущий срез: P5-01 auth return path
 
-- Статус: `IN_PROGRESS`; узкий auth-flow fix готов локально, integration PR впереди.
+- Статус: `IN_PROGRESS`; узкий auth-flow fix опубликован в открытом PR #62, ждёт CI/review/merge.
+- PR: https://github.com/D0UP1G/FirsterChuv/pull/62; опубликованный кодовый head `71ca100579fa5081c1dab3cb4172d1619cc60c29`.
 - Ветка: `feature/agent-5-auth-return-path`.
 - Исходная база `cc204e62a060eb2ceb16067a1b0693a2e083d9ab`; после handoff выполнен merge commit `aae63faab8b432ce5b608c9fa94530d7e1569afd` с fresh `origin/develop` `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (#60).
 - Пути среза: `frontend/src/App.tsx`, `frontend/src/pages/LoginPage.tsx`, `frontend/src/App.test.tsx`, `context/audits/2026-10-10T011119+0300-agent-5-P4-01-auth-return-path.md`, `context/audits/2026-10-10T013908+0300-agent-5-P5-01-auth-return-path-sync.md` и эта карточка.
 - Implementation: protected-route return path сохраняет pathname/query/hash и проверенный next переживает login→register. Integration: не в develop. Acceptance: 18 frontend test files / 84 tests, typecheck/build PASS; lint exit 0 с 5 прежними workspace warnings; браузерный backend CONNECT не выполнялся.
-- Следующий шаг: отдельный небольшой PR с кодом и аудитами; после merge продолжить P5-01 на merged `frontend/design` tokens/shared layouts/auth/invite/bracket, затем P5-02 responsive/accessibility/projector. P5-03 CONNECT вести отдельно по exact endpoint SHA.
+- Следующий шаг: после компактного auth PR продолжить P5-01 на merged `frontend/design` tokens/shared layouts/auth/invite/bracket, затем P5-02 responsive/accessibility/projector. P5-03 CONNECT вести отдельно по exact endpoint SHA.
