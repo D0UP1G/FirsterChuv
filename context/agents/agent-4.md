@@ -4,7 +4,7 @@
 
 ## Текущая задача
 
-- `P4-01` — `IN_REVIEW` (реализация завершена; интеграция в `develop` ожидает PR); ветка `feature/frontend-shell-auth`, база `ae0846b22953527d74835febf963169e2093238d` (`origin/develop`).
+- `P4-01` — `IN_REVIEW`; [PR #22](https://github.com/D0UP1G/FirsterChuv/pull/22), ветка `feature/frontend-shell-auth`, база `ae0846b22953527d74835febf963169e2093238d` (`origin/develop`). Implementation завершена; integration CI ещё идёт, полный browser acceptance частичный.
 - Подзадачи: (1) React/TypeScript scaffold, lockfile, production build, router и API client; (2) реальный CSRF bootstrap/rotation и register/login/logout/me; (3) роль participant/admin в навигации, anonymous public route без login redirect и состояния loading/error/retry/empty; (4) проверить сборку и auth-сценарии, описать результат аудитом.
 - Планируемые пути: `frontend/**`, эта карточка и `context/audits/2026-10-09T201024+0300-agent-4-P4-01.md`.
 - Проверка среза: implementation — готова; browser/auth acceptance — частичная; полный T02/T20 не закрывается этим UI-срезом.
