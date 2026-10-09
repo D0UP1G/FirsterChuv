@@ -1,30 +1,12 @@
 # Агент 3: sandbox, задачи и код
 
-Перепланировано координатором 2026-10-09 по PR #3. Историческое NOT_RUN сохранено в аудитах владельца.
+Карточка объединена координатором при повторной ревизии 2026-10-09 по запросу команды; собственные аудиты владельца сохранены.
 
-- Реализация: harness в feature/sandbox-proof, HEAD 3a0d865, PR [#3](https://github.com/D0UP1G/FirsterChuv/pull/3) OPEN, пока не integrated; полного LocalJudge/worker/API нет.
-- Проверки: 8 unit tests и C++ syntax прошли. Координатор собрал образ на доступном Docker 29.8.2; неизменённый runner НЕ запускается: --pid=private → invalid PID mode. Диагностическая копия без флага прошла 4 real smoke cases, это не исправление PR. Дополнительные sandbox риски см. отчёт ревизии.
-- Первое задание: **P3-01 READY** — исправить запуск и границу управляющего канала, подтвердить bounded hostile/runtime checks, новый audit/PR. Не ждать агента 1 или официальный пакет для этого.
-- Пути: sandbox, backend/apps/problems, submissions, drafts, judge; свои migrations/tests, fixtures problem/submission/draft.
-- Очередь: P3-01 runner → P3-02 storage/safe import core → P3-03 LocalJudge → P3-04 durable queue → P3-05 private drafts/history. Если runtime/review/CONNECT ждёт, storage/queue core/drafts пишутся независимо с DI/test ports.
-- **Только P3-06 WAITING_EXTERNAL:** официальный пакет и README отсутствуют. Mapping официального архива не угадывать. До получения вести normalized internal bundle и synthetic fixtures; финальные T12/T14/T21 не закрывать.
-- P3-07 Yandex import после обязательного local MVP, никаких внешних вердиктов.
-- Исторические аудиты: [harness](https://github.com/D0UP1G/FirsterChuv/blob/feature/sandbox-proof/context/audits/2026-10-09T140224+0300-agent-3-A3-01c.md), [publication](https://github.com/D0UP1G/FirsterChuv/blob/feature/sandbox-proof/context/audits/2026-10-09T143912+0300-agent-3-A3-01-pr.md).
-- Следующий шаг: sync develop, собственные IN_PROGRESS/branch/base/paths; устранить F01/F07 и перепроверить реальные контейнеры. Отсутствующий adapter/provider в runtime всегда fail closed.
+- В feature/mvp-integration-review-2 собраны sandbox PR #3 (6950f10) и normalized catalog PR #14 (9234951). До MERGED общего PR их код не приписывается develop.
+- F01/F07 исправлены автором и перепроверены на заново собранном Docker image: 12 unit tests, real smoke включая protocol-write, bounded isolation/output/cleanup/recovery checks прошли. Full official/hostile T18/T21 не закрыты.
+- Catalog — normalized parser/storage/DTO/readiness/immutable version, не official mapping, workspace HTTP или LocalJudge.
+- Queue PR #15 (7d76d0b) не интегрируется: concurrent SQLite admission может дать необработанный database locked и HTTP 500; нужен bounded retry/503 и race regression.
+- Следующие задачи: исправить #15, реализовать настоящий LocalJudge/worker по bundle и common ports, private drafts/history, programmatic import/public assets/language registry. Only official package adapter ждёт организаторов.
+- При WAITING_CONNECT продолжать LocalJudge/core/recovery/drafts в своей зоне; test doubles разрешены только tests, runtime provider отсутствует → fail closed.
 
-План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
-
-## Текущая сессия: P3-02
-
-- ID задачи: `P3-02`; статус: `IN_REVIEW`.
-- Ветка: `feature/problem-storage-import-core`; база `origin/develop`: `d9488e3bf960c6a2248fd4399ba5848a091b8769`; исходный HEAD: `d9488e3bf960c6a2248fd4399ba5848a091b8769`.
-- Пути в работе: `backend/apps/problems/`, `backend/config/settings.py`, эта карточка и отдельный аудит сессии.
-- Объём: внутренняя версия ProblemBundleV1, безопасное чтение ограниченного архива без распаковки на файловую систему, immutable version/checksum catalog и разделённые public/private данные.
-- Ограничение: официальный пакет/README отсутствует; синтетическая форма используется только как внутренний нормализованный контракт и тестовые данные. Внешний формат не угадывается.
-- Проверено до изменений: рабочее дерево чистое; отдельный worktree создан от `origin/develop` SHA `d9488e3bf960c6a2248fd4399ba5848a091b8769`.
-- Сделано: app `problems` с миграцией, version/checksum/readiness, public/private storage, ProblemCatalogV1 и compiler registry. ZIP reader ограничен по размеру/ratio/типам записей/путям и не пишет на диск. Синтетические fixtures покрывают нормализацию и ошибки.
-- Проверки: после синхронизации свежего develop весь backend 68/68, `makemigrations --check`, Django system check, `compileall`, `git diff --check` прошли. Поиск в app не нашёл `extractall`, shell/process execution API.
-- Ограничение: production compiler spec `cpp20` остаётся `verified=False`, пока нет Docker runtime proof; поэтому production catalog fail-closed и новые versions не переходят в READY. Test-only registry проверяет state transition без подмены execution/verdict.
-- Синхронизация: merge `origin/develop` SHA `cad34ea4ddf1171779dc22139f2e1533160b5015`; merge commit `5ff96ad4c639e35cd5b5bf457d3e4d525da793cd`.
-- PR: [#14](https://github.com/D0UP1G/FirsterChuv/pull/14), `OPEN`, base `develop`, head SHA `5ff96ad4c639e35cd5b5bf457d3e4d525da793cd`, merge state `CLEAN`; merge не выполнялся.
-- Следующий шаг: P3-03 подключит проверенный JudgeProvider и доступные compiler specs. Official archive mapping остаётся отдельной задачей P3-06 после получения README.
+[ROADMAP](../../ROADMAP.md), [v1](../../docs/architecture/parallel-contracts.md). Итоговый consolidated status будет дополнен после проверки общего integration PR.
