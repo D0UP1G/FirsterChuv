@@ -193,9 +193,13 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 function RequireRole({ role, children }: { role: UserRole; children: ReactNode }) {
   const { status, user, retry } = useAuth()
+  const location = useLocation()
   if (status === 'loading') return <LoadingState label="Проверяем права доступа…" />
   if (status === 'error') return <ErrorState message="Не удалось проверить права доступа." onRetry={() => void retry()} />
-  if (status === 'anonymous') return <Navigate to="/login?next=%2Fadmin" replace />
+  if (status === 'anonymous') {
+    const next = `${location.pathname}${location.search}${location.hash}`
+    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />
+  }
   if (user?.role !== role) return <Navigate to="/dashboard" replace />
   return children
 }

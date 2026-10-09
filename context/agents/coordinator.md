@@ -1,5 +1,13 @@
 # Координатор: ревизия и параллельный план
 
+## Подтверждённое слияние и closeout, 2026-10-10T01:36:20+03:00
+
+- Основная ревизия/передача DONE: #60 MERGED в723985f, final head9d7996d, CI5/5 SUCCESS; source21/50–52/54–56 MERGED. Main unchanged; все166 audits base/source/own сохранены.
+- Ветка feature/mvp-readiness-closeout от fresh origin/develop723985f. Scope docs-only: own closing audit/card/STATE/report/roadmap checkpoints, latest58 review. Production/tests/config/CI/contracts/чужие cards не меняются.
+- #57–59 base retarget develop выполнен без изменения code refs. Latest58 source733acc6 tests13 PASS, реальные races/history FAIL; latest59 participant fix сохранить, rematch downstream исправить.
+- A5 follow-up отправлен в созданную по поручению команды задачу; active progress подтверждает продолжение. У остальных назначения в Git, чужие сессии/checkout не переключались.
+- [Closing audit](../audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md). Оставшийся шаг этой docs сессии: publish closeout→develop, exact-head CI, remote verification. Отдельный STATE sync не prerequisite ни одного владельца.
+
 ## Публикация и final gate, 2026-10-10T01:29:46+03:00
 
 - [PR #60](https://github.com/D0UP1G/FirsterChuv/pull/60) опубликован/attached; первый head014c98f remote verified и5/5 CI SUCCESS. Последние source54/doc checkpoints требуют повторного exact-head CI до merge.
