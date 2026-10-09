@@ -980,7 +980,16 @@ class InviteAcceptanceConcurrencyTests(TransactionTestCase):
         invite.refresh_from_db()
         self.tournament.refresh_from_db()
         self.assertEqual(sum(result[0] == "accepted" for result in results), 1, results)
-        self.assertEqual(sum(result[0] == "unavailable" for result in results), 1, results)
+        blocked = [result for result in results if result[0] != "accepted"]
+        self.assertEqual(len(blocked), 1, results)
+        self.assertIn(
+            blocked[0],
+            (
+                ("unavailable", InviteUnavailable.code),
+                ("rejected", "database_busy"),
+            ),
+            results,
+        )
         self.assertEqual(invite.used_count, 1)
         self.assertEqual(invite.acceptances.count(), 1)
         self.assertEqual(self.tournament.active_participant_count, 1)

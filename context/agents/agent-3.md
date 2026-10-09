@@ -1,28 +1,22 @@
-# Агент 3: sandbox, задачи и код
+# Агент 3: sandbox, задачи, код
 
-Перепланировано координатором 2026-10-09 по PR #3. Историческое NOT_RUN сохранено в аудитах владельца.
+Перепланировано координатором 2026-10-09 по поручению команды; исторические NOT_RUN/PASS владельца не переписаны.
 
-- Реализация: harness в feature/sandbox-proof, HEAD 3a0d865, PR [#3](https://github.com/D0UP1G/FirsterChuv/pull/3) OPEN, пока не integrated; полного LocalJudge/worker/API нет.
-- Проверки: 8 unit tests и C++ syntax прошли. Координатор собрал образ на доступном Docker 29.8.2; неизменённый runner НЕ запускается: --pid=private → invalid PID mode. Диагностическая копия без флага прошла 4 real smoke cases, это не исправление PR. Дополнительные sandbox риски см. отчёт ревизии.
-- Первое задание: **P3-01 READY** — исправить запуск и границу управляющего канала, подтвердить bounded hostile/runtime checks, новый audit/PR. Не ждать агента 1 или официальный пакет для этого.
-- Пути: sandbox, backend/apps/problems, submissions, drafts, judge; свои migrations/tests, fixtures problem/submission/draft.
-- Очередь: P3-01 runner → P3-02 storage/safe import core → P3-03 LocalJudge → P3-04 durable queue → P3-05 private drafts/history. Если runtime/review/CONNECT ждёт, storage/queue core/drafts пишутся независимо с DI/test ports.
-- **Только P3-06 WAITING_EXTERNAL:** официальный пакет и README отсутствуют. Mapping официального архива не угадывать. До получения вести normalized internal bundle и synthetic fixtures; финальные T12/T14/T21 не закрывать.
-- P3-07 Yandex import после обязательного local MVP, никаких внешних вердиктов.
-- Исторические аудиты: [harness](https://github.com/D0UP1G/FirsterChuv/blob/feature/sandbox-proof/context/audits/2026-10-09T140224+0300-agent-3-A3-01c.md), [publication](https://github.com/D0UP1G/FirsterChuv/blob/feature/sandbox-proof/context/audits/2026-10-09T143912+0300-agent-3-A3-01-pr.md).
-- Следующий шаг: sync develop, собственные IN_PROGRESS/branch/base/paths; устранить F01/F07 и перепроверить реальные контейнеры. Отсутствующий adapter/provider в runtime всегда fail closed.
+- Проверены/integration feature: #3 6950f10 harness F01/F07 fixes, 12 units/5 actual smoke/bounded isolation+cleanup+recovery; #14 9234951 normalized catalog/private split/immutable versions. GitHub MERGED общего PR определяет integration. Не повторять готовые cores.
+- Первое READY P3-04.1: #15 7d76d0b busy/locked race → bounded whole-transaction retry/503, original received_at, file-backed concurrent keys/rollback tests, затем merge core.
+- Главный execution READY P3-03: реальный LocalJudge/verified compiler на programmatically imported normalized smoke bundle, task limits/checker/OK WA TL ML RE CE, private diagnostics, infra отдельно. Это возможно без A2/UI/official package.
+- Следом actual worker/recovery/result+failure adapters/immutable run version/checksum P3-04.2–4; Runtime без real gateway/provider отказывает, fixture verdict запрещён.
+- Резерв READY P3-05 private revisioned drafts/history; P3-02 import/public workspace/assets/languages и strict artifact language type validation. Test access ports до короткого CONNECT A2.
+- ONLY P3-06 WAITING_EXTERNAL: official package/README. Пока package нет, роль продолжает P3-02/03/04/05. P3-07 Yandex после обязательного MVP.
+- Пути: sandbox/problems/submissions/drafts/judge и собственные migrations/tests. Full T12–15/T18–21 не закрыты; ML нельзя выводить только из signal9, source/checkers/tests не public.
 
-## Текущая сессия: P3-04
+[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
 
-- ID задачи: `P3-04`; статус: `IN_REVIEW`.
-- Ветка: `feature/submission-queue-core`; база `origin/develop`: `cad34ea4ddf1171779dc22139f2e1533160b5015`; исходный HEAD: `cad34ea4ddf1171779dc22139f2e1533160b5015`.
-- Пути в работе: `backend/apps/submissions/`, `backend/config/settings.py`, разрешённая регистрация `backend/apps/common/api_urls.py`, эта карточка и отдельный аудит.
-- Объём: private source/submission storage, idempotent bounded admission через обязательные injected ports, SQLite conditional claim/lease/retry/recovery и durable result outbox. HTTP/runtime без настоящих ports не принимать.
-- Ограничения: provider/CompetitionGateway/EventWriter не реализованы в develop; тестовые adapters будут только в изолированных tests. Не менять чужие apps/branches и общий `context/STATE.md`.
-- Реализовано в этой feature-сессии: admission + private author API, idempotency/hash, глобальная/авторская/матчевая capacity, rate limit, leases/renewal/recovery/backoff и ResultSink outbox; приложение и routes зарегистрированы штатно. Production POST без ports отвечает 503.
-- Проверки feature worktree: `backend.apps.submissions` — 19 tests; полный backend — 66 tests; Django check, migration drift, compileall и diff check прошли. Реальный judge, HTTP 202 на настоящих MatchPort adapters и browser/hostile acceptance не запускались.
-- PR: [#15](https://github.com/D0UP1G/FirsterChuv/pull/15), base `develop`, head `8462ba287585b0b548bfb4b44b113d7d77e4720c`, статус OPEN/MERGEABLE. Обязательных status checks нет.
-- Текущий статус: срез опубликован и ожидает review; `context/STATE.md` не менялся. Подробности публикации — отдельный audit.
-- Следующий шаг agent 3: пока P3-04 ожидает review/CONNECT, начать независимую P3-05 в отдельной feature-ветке от свежего `origin/develop`. После готовности P2-03/04 и P3-03 выполнить runtime CONNECT; не выдавать текущий core за работающий judge.
+## Текущая сессия: P3-04.1 / admission race
 
-План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
+- ID: `P3-04.1`; статус: `IN_PROGRESS`.
+- Ветка PR: `feature/submission-queue-core`; исходный HEAD `7d76d0b1bf85c7a707de72ebaa1cb8364b4c9207`; исходная база `cad34ea4ddf1171779dc22139f2e1533160b5015`; синхронизация свежего `origin/develop=ae0846b22953527d74835febf963169e2093238d` в merge.
+- Изменяемые пути: `backend/apps/submissions/services.py`, `errors.py`, `views.py`, `tests/`, `backend/config/settings.py` (сохранить обе app registrations), эта карточка и новый аудит.
+- Acceptance: только SQLite busy/locked вызывает bounded retry всей admission transaction; исчерпание преобразуется в retryable 503; сохраняется исходный `received_at`; file-backed concurrent TransactionTestCase покрывает разные/одинаковые idempotency keys, capacity и rollback ledger/event без 500.
+- PR #15 и его worktree — существующие артефакты этого agent-3 checkout; не менять чужие ветки/worktrees. Общий `context/STATE.md` не редактировать.
+- Следующий шаг: закончить merge, реализовать и проверить P3-04.1, обновить PR #15 без rebase/force push; далее P3-03 согласно ROADMAP v3.

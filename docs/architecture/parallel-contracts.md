@@ -1,12 +1,14 @@
 # Контракты v1 для независимой разработки
 
-Дата: 2026-10-09. Назначение: реализация четырёх дорожек без ожидания соседней feature-ветки. Это спецификация целевых границ; готовность конкретного адаптера подтверждается кодом/PR, а не этим документом. Текущий `common/contracts.py` содержит только SubmissionPermit, JudgeResult и три базовых Protocol, без реализаций. Уточнения ниже материализуются P1-02 и адаптерами владельцев; до этого локальный typing Protocol по этой спецификации допустим.
+Дата: 2026-10-09. Назначение: реализация четырёх дорожек без ожидания соседней feature-ветки. Это спецификация целевых границ; готовность конкретного адаптера подтверждается кодом/PR, а не этим документом. В `common/contracts.py` объявлены immutable DTO и typing Protocol для submission/result/workspace, problem catalog, public access, judge и events; они не содержат provider implementations и не импортируют optional apps. До интеграции конкретных apps доступ к ним остаётся только через готовый adapter, а отсутствие provider закрывает действие.
 
 ## Приоритет и версия
 
-Выполненные auth/tournament/roster endpoints остаются совместимыми с кодом `develop` на `146b2cb`. Будущие REST endpoints описаны в [api.md](api.md), доменные правила — в [match-engine.md](match-engine.md), события — в [realtime.md](realtime.md). Этот документ уточняет nullable seed, независимое тестирование и порты. При расхождении проверять фактическую реализацию и исправлять контракт явно, не переключать потребителя на свой формат молча.
+Выполненные auth/tournament/roster endpoints остаются совместимыми с кодом `develop` на базе повторной ревизии `dd80c93` (включая invitations/CI). Будущие REST endpoints описаны в [api.md](api.md), доменные правила — в [match-engine.md](match-engine.md), события — в [realtime.md](realtime.md). Этот документ уточняет nullable seed, независимое тестирование и порты. При расхождении проверять фактическую реализацию и исправлять контракт явно, не переключать потребителя на свой формат молча.
 
 `contracts/mvp-v1/*.json` — примеры DTO, не backend и не все возможные состояния. `v1` — версия соглашения. Новое optional поле допустимо с обновлением примера; изменение обязательного поля/enum/семантики требует версии и migration plan. Fixtures не подтверждают выполнение требований кейса.
+
+`contracts/mvp-v1/schemas.json` содержит JSON Schema Draft 2020-12 для всех девяти примеров; `scripts/check_contracts.py` сверяет комплектность, типы/форматы и запрещает неописанные поля. Для публичных match/event DTO схема также проверяет отклонение private `source`. CI запускает проверку отдельно от API integration; synthetic examples не являются runtime fixtures и не доказывают S02.
 
 ## Уже доступная база для всех
 
@@ -35,11 +37,12 @@
 | Порт/владелец | Метод и результат | Кто использует |
 |---|---|---|
 | CompetitionGatewayV1 / A2 | `authorize_submission(actorId, matchId, runId, problemId, receivedAt)` → Permit `{runId, elapsedMs, scoringVersion}` | A3 submission admission |
-| CompetitionGatewayV1 / A2 | `register_accepted(AttemptReceipt)` → durable pending ledger | A3, в общей transaction до 202 |
+| CompetitionGatewayV1 / A2 | `register_accepted(AttemptReceipt)` → `None` after durable pending-ledger write | A3, в общей transaction до 202 |
 | CompetitionGatewayV1 / A2 | `apply_result(ResultReceipt)` → `{applied: bool}` | A3 worker, идемпотентно |
 | CompetitionGatewayV1 / A2 | `authorize_workspace(actorId, matchId, runId, problemId, purpose)` → WorkspaceContext | A3 statement/draft/history; purpose `metadata/statement/draft/history` |
 | ProblemCatalogV1 / A3 | `describe_ready(problemIds)` → immutable public versions/limits/languages, отказ для NOT_READY/unknown | A2 config/start |
 | ProblemCatalogV1 / A3 | `load_bundle(problemId, version)` → private ProblemBundleV1 | A3 JudgeProvider |
+| LanguageRegistry / A3 | `is_supported(languageId)` → `bool` из server-owned allowlist | A3 admission |
 | PublicAccessV1 / A1 | `assert_can_view(tournamentId, shareToken?)` → public-safe access context | A2 snapshot/SSE |
 | EventWriter / A2 | `append(scope, eventType, publicPayload)` → monotonic event ID | Domain changes в той же transaction |
 | JudgeProvider / A3 | `execute(TrustedJudgeJob)` → JudgeResult; infrastructure failure отдельным typed error | Один trusted worker |
@@ -48,11 +51,11 @@
 
 `WorkspaceContext`: actorId/runId/problemId, разрешённые действия и признак раскрытия условия. Actor active participant и принадлежит run; до start разрешены metadata, условие не раскрывается. Для собственной истории старых runs доступ определяется автором и membership/history policy, не только current run. Админ управляет матчем, но этот порт не даёт ему исходник чужого решения. Metadata admin inspect — отдельная admin view.
 
-`TrustedJudgeJob`: submissionId, source (server-owned private content/reference), languageId из server registry, problemId/version/checksum. Image, argv, compiler path, network, limits и checker конфигурация выбираются trusted provider из registry/bundle; браузер их не задаёт. JudgeResult verdict только OK/WA/TL/ML/RE/CE; compile diagnostics bounded/private. Ошибка Docker/checker — infrastructure error, не RE/WA и не начисление score. Общий JudgeResult сейчас untyped по verdict: конкретный provider обязан проверять enum, контрактные tests нужны.
+`TrustedJudgeJob`: submissionId, source (server-owned private content/reference), languageId из server registry, problemId/version/checksum. Image, argv, compiler path, network, limits и checker конфигурация выбираются trusted provider из registry/bundle; браузер их не задаёт. `JudgeResult.verdict` типизирован как OK/WA/TL/ML/RE/CE, но provider всё равно валидирует runtime enum и bounded/private compile diagnostics. Ошибка Docker/checker — infrastructure error, не RE/WA и не начисление score.
 
 ### ProblemBundleV1
 
-Внутренний объект импортера: problemId/version/checksum, public statementMarkdown/asset IDs/examples/limits, private test references и expected-output references, checker/validator/reference descriptors, supported language IDs. Хранится в доверенном storage; API выдаёт только public projection. Файлы private слоя недоступны static server и solution container. Checker получает нужные данные в собственной ограниченной среде; код участника не получает expected output.
+Нормализованный объект catalog: problemId/version/checksum, public statementMarkdown/assets/examples/limits/languages и private `tests` (input bytes, nullable expected-output bytes) вместе с `private_artifacts` (role/sourcePath/languageId/content bytes для checker/validator/reference). Public projection содержит лишь asset IDs и не выдаёт checksum/private artifacts; `load_bundle` предназначен доверенному judge-коду. Закрытые данные не идут в API response, static server или solution container. Checker получает только нужные данные в собственной ограниченной среде; код участника не получает expected output.
 
 Это **не заявленный формат архива организаторов**. P3-02 создаёт нормализатор/storage на собственных synthetic fixtures; P3-06 читает настоящий README и пишет внешний mapping. Яндекс statement без private local judge data остаётся NOT_READY. Чтение пакета не исполняет его scripts на host.
 
@@ -68,7 +71,7 @@ SQLite не даёт обычных row locks PostgreSQL. Использоват
 
 ## HTTP и fixtures для frontend
 
-- [invite.json](../../contracts/mvp-v1/invite.json): admin create result `{invite,token,url}`; list возвращает paginated metadata без token, revoke 204. Metadata id/tournamentId/expiresAt/maxUses/uses/revokedAt; maxUses/expiresAt nullable, минимум один ограничитель обязателен. Preview валидного token возвращает `{tournament:{id,title},valid:true,expiresAt}`; истёкший/отозванный/исчерпавший лимит — 410 error envelope, неизвестный — 404. Accept 200 с `{tournamentId,userId,joined:true}` и для идемпотентного повтора. P1-01 реализует этот API в `feature/tournament-invites`; до merge это ещё не часть `develop`.
+- [invite.json](../../contracts/mvp-v1/invite.json): admin create result `{invite,token,url}`; list возвращает paginated metadata без token, revoke 204. Metadata id/tournamentId/expiresAt/maxUses/uses/revokedAt; maxUses/expiresAt nullable, минимум один ограничитель обязателен. Preview валидного token возвращает `{tournament:{id,title},valid:true,expiresAt}`; истёкший/отозванный/исчерпавший лимит — 410 error envelope, неизвестный — 404. Accept 200 с `{tournamentId,userId,joined:true}` и для идемпотентного повтора. P1-01 интегрирован PR #12; полный browser CONNECT остаётся P4-02.
 - [bracket.json](../../contracts/mvp-v1/bracket.json): форма уже опубликованного serializer PR #7 a89b8fc: `{tournamentId,rosterFrozenAt,bracketSize,matches}`. Match: id/key/roundIndex/position/kind/status/winner/nextMatchId/nextSlot/slots. Slot: index/resolution/participant/sourceMatchId; participant/winner `{id,userId,displayName,seed}` либо null. Здесь id участника — roster entry UUID, userId — account UUID. BYE — kind=BYE/status=BYE, без MatchRun; downstream WAITING отличается от пустого BYE. В будущем public stream может добавить optional lastEventId, но текущий private DTO его не обещает.
 - Ручные пары: **PUT `/tournaments/{id}/bracket/pairings`**, admin+CSRF+command Idempotency-Key, `{pairings:[{position:0,leftUserId:UUID|null,rightUserId:UUID|null},...],reason}`. Полный первый раунд, позиции непрерывны 0..bracketSize/2-1, каждый frozen active entrant ровно один раз, обе стороны null запрещены. API преобразует User UUID в roster entry UUID и вызывает существующий set_first_round_pairings; response — bracket DTO. Так UI не угадывает внутренний entry ID и не делает два неатомарных PATCH при обмене игроков. PATCH `/matches/{id}` остаётся для pre-start config; изменение одной пары возможно только с проверкой/пересборкой всего раунда.
 - Explicit POST `/tournaments/{id}/bracket/reset` с `{reason}` и command Idempotency-Key возвращает bracket DTO на том же frozen roster только до первого start. Lifecycle draft/scheduled обязателен, archived/running/completed отклоняются. Service существует, HTTP/reset idempotency/reason ещё предстоит сделать P2-02.
@@ -90,3 +93,7 @@ Frontend `ApiTransport` имеет HTTP implementation и отдельный dev
 Если include optional field или отдельный endpoint не определён, зафиксировать предложение потребителя в contract request и продолжать готовые экраны; не заменять уже описанные DTO несовместимыми формами. Raw invite/share credential в dev примере synthetic и не работает, в runtime выдаётся только разрешённой admin операции. Share link и invite token не взаимозаменяемы.
 
 При подключении достаточно одного готового provider: merge develop в свою ветку, реализовать тонкий adapter, выполнить contract + smoke checks, audit/PR. Владелец app добавляет её AppConfig и URL include в общие settings/API root в том же PR с модулем — это явно разрешённая минимальная передача, ожидание агента 1 не нужно. Для CompetitionConfig рецепт: строка `backend.apps.competition.apps.CompetitionConfig` в INSTALLED_APPS и `path("", include("backend.apps.competition.urls"))` в common/api_urls.py. Новые apps A3 регистрируются аналогично вместе с собственным кодом. Если provider не готов, продолжить свою независимую очередь. Нужное изменение контракта фиксировать отдельным файлом `context/contracts/<agent>-<topic>.md`: поля, причина, совместимость, затронутые потребители и fallback; это сообщение в Git, не разрешение автоматически писать другим агентам/людям.
+
+## Передача runtime после повторной ревизии
+
+[Runtime handoffs](runtime-handoffs.md) задаёт production owners/queue receipt adapters, immutable job snapshots и отдельный additive infrastructure failure port. Core не заменяет provider. #7 lifecycle и #16 SOLVED.lastVerdict требуют исправлений; детали — [отчёт](../reviews/2026-10-09-integration-review.md). Старые ссылки a89b8fc выше фиксируют происхождение serializer/rank, не последний HEAD (#7 сейчас 1952244).

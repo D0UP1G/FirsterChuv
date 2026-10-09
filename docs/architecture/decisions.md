@@ -34,4 +34,8 @@ SQLite задаёт границу MVP: один сервер, локальны�
 
 ADR16, **ADOPTED**: по поручению команды ROADMAP v2 даёт READY очередь, малый implementation PR, отдельный CONNECT/full acceptance. Совместимые consumers пишутся по [parallel-contracts v1](parallel-contracts.md), test/dev fixtures не используются runtime. Причина: PR #7 ждал уже merged A1-03, STATE sync становился prerequisite. Владельцам apps разрешены минимальные AppConfig/URL additions вместе с кодом; common typing interfaces расширяются короткими P1-02 срезами; порт не означает готовый provider.
 
-Наблюдаемый код: custom User/common/accounts/tournaments в develop, competition ORM/sandbox только open PR, queue/clock/frontend отсутствуют. ADR05/07/08/09/11/12 остаются целевыми деталями до реализации и проверки. Official adapter P3-06 ждёт package/README, но normalized storage/queue/UI разработка продолжается.
+Исторический snapshot первой ревизии: custom User/common/accounts/tournaments в develop, competition ORM/sandbox только open PR, queue/clock/frontend отсутствовали. Актуальный состав — STATE и повторная ревизия. ADR05/07/08/09/11/12 остаются целевыми деталями до реализации и проверки. Official adapter P3-06 ждёт package/README, но normalized storage/queue/UI разработка продолжается.
+
+## Повторная ревизия и runtime приоритет
+
+ADR17, ADOPTED 2026-10-09: готовые pure clock/score/catalog/harness интегрировать как малые срезы, далее production MatchRun/gateway/ledger/JudgeProvider/worker/UI; не повторять helpers. При зависимости продолжать резервную очередь ROADMAP v3. Для exhausted infrastructure failures принят отдельный additive failure DTO/sink по runtime-handoffs; existing v1 ResultReceipt/verdicts неизменны. Причина: queue освобождает capacity без verdict, accepted ledger требует понятного восстановления без автоматического поражения. Это спецификация, не уже реализованный provider.

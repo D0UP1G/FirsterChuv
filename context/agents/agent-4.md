@@ -1,15 +1,13 @@
 # Агент 4: React и пользовательские сценарии
 
-Перепланировано координатором 2026-10-09. В опубликованных refs/PR и develop frontend не найден; неопубликованная работа другого checkout этим не исключается.
+Перепланировано координатором по поручению команды 2026-10-09. Frontend не найден в опубликованных refs/PR; неопубликованную работу своего checkout проверить перед созданием нового.
 
-- Исполнитель: пока не подтверждён опубликованной карточкой.
-- Первое задание: **P4-01 READY**, feature/frontend-shell-auth от актуального origin/develop (последний проверенный SHA 146b2cb).
-- Пути: frontend, UI/browser tests; backend config и соседние apps не менять.
-- Реальный API доступен сейчас: auth/csrf/register/login/logout/me, tournament CRUD/directory/roster. Сразу подключить его.
-- Будущие match/problem/submission/draft/public DTO: parallel-contracts + contracts/mvp-v1. UI разрабатывается через отдельный dev transport, без ожидания backend branches; production не содержит fallback fixtures.
-- Очередь: P4-01 shell/auth → P4-02 CRUD/invites → P4-03 admin match UI → P4-04 workspace/editor → P4-05 anonymous map/projector → P4-06 browser CONNECT по одному готовому API.
-- Во время ожидания CONNECT: следующая страница/components, local draft/reducer/dedupe/XSS tests. Не ждать весь A1/A2/A3.
-- Приёмка: UI/browser checks ещё не выполнены. Fixtures не подтверждают real verdict/official task/security/demo.
-- Следующий шаг: проверить, нет ли своего начатого checkout, записать фактический task/branch/base/status, сделать React build и auth; каждый готовый endpoint подключать маленьким срезом.
+- Первое READY P4-01: React/TS/lockfile/build/router и real csrf/register/login/logout/me. API доступен сейчас, не ждать A1/A2/A3. Register всегда participant, role navigation, public без redirect, logout чистит private user cache.
+- Следующее READY P4-02: real CRUD/directory/roster/seed/cap/invites/create/copy/revoke/preview/register/accept. Backend #12 merged, не заменять его mock transport. Проверить сценарий admin + два participant в browser.
+- Резерв READY: P4-03 match/action components по v1 dev transport, P4-04 editor/safe Markdown/TeX/local drafts/reload/task switching, P4-05 map/projector/reducer/dedupe/reconnect. Это можно делать до future endpoints.
+- P4-06 CONNECT каждого готового API по одному на exact SHA. При missing API runtime показывает error, fixtures только dev/tests; mock verdict не выдаётся за работающий MVP.
+- Не завершать дорожку при ожидании одного endpoint: в той же сессии продолжать следующую страницу/editor/draft/map/test задачу. Собственный audit/card/PR после среза, затем следующая READY работа до явного стопа или исчерпания доступной очереди.
+- Пути: frontend/browser tests, соседние apps не менять. Private source/CE не загружать в public UI; XSS/unsafe URLs/diagnostics только plain text/sanitized rendering.
+- Пока ни browser flow, ни editor/drafts/map/full demo не проверены. R1 real smoke pipeline, затем R2 обязательные функции/R3 official T01–21.
 
-План: [ROADMAP v2](../../ROADMAP.md). Контракт: [parallel-contracts](../../docs/architecture/parallel-contracts.md). Ревизия: [отчёт](../../docs/reviews/2026-10-09-repository-audit.md). Перед edits владелец записывает фактическую сессию; после неё добавляет новый аудит.
+[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).

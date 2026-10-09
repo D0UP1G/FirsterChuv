@@ -1,0 +1,297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "uuid": { "type": "string", "format": "uuid" },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "text": { "type": "string", "minLength": 1 },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "positiveInteger": { "type": "integer", "minimum": 1 },
+    "nullableUuid": { "anyOf": [{ "$ref": "#/$defs/uuid" }, { "type": "null" }] },
+    "nullableDateTime": { "anyOf": [{ "$ref": "#/$defs/dateTime" }, { "type": "null" }] },
+    "nullablePositiveInteger": { "anyOf": [{ "$ref": "#/$defs/positiveInteger" }, { "type": "null" }] },
+    "nullableNonNegativeInteger": { "anyOf": [{ "$ref": "#/$defs/nonNegativeInteger" }, { "type": "null" }] },
+    "nullableVerdict": {
+      "anyOf": [
+        { "enum": ["OK", "WA", "TL", "ML", "RE", "CE"] },
+        { "type": "null" }
+      ]
+    },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "userId", "displayName", "seed"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "userId": { "$ref": "#/$defs/uuid" },
+        "displayName": { "$ref": "#/$defs/text" },
+        "seed": { "$ref": "#/$defs/nullablePositiveInteger" }
+      }
+    },
+    "bracketSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "resolution", "participant", "sourceMatchId"],
+      "properties": {
+        "index": { "$ref": "#/$defs/nonNegativeInteger" },
+        "resolution": { "enum": ["PLAYER", "WAITING", "BYE"] },
+        "participant": { "anyOf": [{ "$ref": "#/$defs/participant" }, { "type": "null" }] },
+        "sourceMatchId": { "$ref": "#/$defs/nullableUuid" }
+      }
+    },
+    "bracketMatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "roundIndex", "position", "kind", "status", "winner", "nextMatchId", "nextSlot", "slots"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "key": { "$ref": "#/$defs/text" },
+        "roundIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "position": { "$ref": "#/$defs/nonNegativeInteger" },
+        "kind": { "enum": ["MATCH", "BYE"] },
+        "status": { "enum": ["WAITING", "READY", "RUNNING", "PAUSED", "FINALIZING", "FINISHED", "TIED", "SUPERSEDED", "BYE"] },
+        "winner": { "anyOf": [{ "$ref": "#/$defs/participant" }, { "type": "null" }] },
+        "nextMatchId": { "$ref": "#/$defs/nullableUuid" },
+        "nextSlot": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "slots": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/bracketSlot" } }
+      }
+    },
+    "taskState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["problemId", "label", "status", "attempts", "lastVerdict"],
+      "properties": {
+        "problemId": { "$ref": "#/$defs/uuid" },
+        "label": { "$ref": "#/$defs/text" },
+        "status": { "enum": ["NOT_STARTED", "ATTEMPTED", "SOLVED"] },
+        "attempts": { "$ref": "#/$defs/nonNegativeInteger" },
+        "lastVerdict": { "$ref": "#/$defs/nullableVerdict" }
+      }
+    },
+    "playerState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["userId", "displayName", "solvedCount", "penaltyMs", "lastAcceptedElapsedMs", "tasks"],
+      "properties": {
+        "userId": { "$ref": "#/$defs/uuid" },
+        "displayName": { "$ref": "#/$defs/text" },
+        "solvedCount": { "$ref": "#/$defs/nonNegativeInteger" },
+        "penaltyMs": { "$ref": "#/$defs/nonNegativeInteger" },
+        "lastAcceptedElapsedMs": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "tasks": { "type": "array", "items": { "$ref": "#/$defs/taskState" } }
+      }
+    },
+    "scoringRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order", "wrongAttemptPenaltySec", "penalizedVerdicts", "finalTiePolicy"],
+      "properties": {
+        "order": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/text" } },
+        "wrongAttemptPenaltySec": { "$ref": "#/$defs/nonNegativeInteger" },
+        "penalizedVerdicts": { "type": "array", "uniqueItems": true, "items": { "enum": ["WA", "TL", "ML", "RE"] } },
+        "finalTiePolicy": { "const": "rematch" }
+      }
+    },
+    "problemVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["problemId", "label", "version", "conditionAvailable"],
+      "properties": {
+        "problemId": { "$ref": "#/$defs/uuid" },
+        "label": { "$ref": "#/$defs/text" },
+        "version": { "$ref": "#/$defs/text" },
+        "conditionAvailable": { "type": "boolean" }
+      }
+    },
+    "bracket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tournamentId", "bracketSize", "rosterFrozenAt", "matches"],
+      "properties": {
+        "tournamentId": { "$ref": "#/$defs/uuid" },
+        "bracketSize": { "$ref": "#/$defs/positiveInteger" },
+        "rosterFrozenAt": { "$ref": "#/$defs/dateTime" },
+        "matches": { "type": "array", "items": { "$ref": "#/$defs/bracketMatch" } }
+      }
+    },
+    "draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "problemId", "languageId", "source", "revision", "updatedAt"],
+      "properties": {
+        "runId": { "$ref": "#/$defs/uuid" },
+        "problemId": { "$ref": "#/$defs/uuid" },
+        "languageId": { "$ref": "#/$defs/text" },
+        "source": { "type": "string" },
+        "revision": { "$ref": "#/$defs/positiveInteger" },
+        "updatedAt": { "$ref": "#/$defs/dateTime" }
+      }
+    },
+    "invite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invite", "token", "url"],
+      "properties": {
+        "invite": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "tournamentId", "expiresAt", "maxUses", "uses", "revokedAt"],
+          "properties": {
+            "id": { "$ref": "#/$defs/uuid" },
+            "tournamentId": { "$ref": "#/$defs/uuid" },
+            "expiresAt": { "$ref": "#/$defs/nullableDateTime" },
+            "maxUses": { "$ref": "#/$defs/nullablePositiveInteger" },
+            "uses": { "$ref": "#/$defs/nonNegativeInteger" },
+            "revokedAt": { "$ref": "#/$defs/nullableDateTime" }
+          },
+          "anyOf": [
+            { "properties": { "expiresAt": { "$ref": "#/$defs/dateTime" } } },
+            { "properties": { "maxUses": { "$ref": "#/$defs/positiveInteger" } } }
+          ]
+        },
+        "token": { "$ref": "#/$defs/text" },
+        "url": { "type": "string", "format": "uri-reference", "minLength": 1 }
+      }
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["matchId", "runId", "status", "serverNow", "elapsedMs", "remainingMs", "allowedDurationMs", "leaderUserId", "winnerUserId", "lastEventId", "scoringRule", "players", "tournamentId", "startMode", "readyUserIds", "problemVersions"],
+      "properties": {
+        "matchId": { "$ref": "#/$defs/uuid" },
+        "runId": { "$ref": "#/$defs/uuid" },
+        "status": { "enum": ["WAITING", "READY", "RUNNING", "PAUSED", "FINALIZING", "FINISHED", "TIED", "SUPERSEDED"] },
+        "serverNow": { "$ref": "#/$defs/dateTime" },
+        "elapsedMs": { "$ref": "#/$defs/nonNegativeInteger" },
+        "remainingMs": { "$ref": "#/$defs/nonNegativeInteger" },
+        "allowedDurationMs": { "$ref": "#/$defs/positiveInteger" },
+        "leaderUserId": { "$ref": "#/$defs/nullableUuid" },
+        "winnerUserId": { "$ref": "#/$defs/nullableUuid" },
+        "lastEventId": { "$ref": "#/$defs/nonNegativeInteger" },
+        "scoringRule": { "$ref": "#/$defs/scoringRule" },
+        "players": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/playerState" } },
+        "tournamentId": { "$ref": "#/$defs/uuid" },
+        "startMode": { "enum": ["manual", "both_ready"] },
+        "readyUserIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/uuid" } },
+        "problemVersions": { "type": "array", "items": { "$ref": "#/$defs/problemVersion" } }
+      }
+    },
+    "problem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["problemId", "version", "label", "title", "statementMarkdown", "assetIds", "examples", "timeLimitMs", "memoryLimitBytes", "languages"],
+      "properties": {
+        "problemId": { "$ref": "#/$defs/uuid" },
+        "version": { "$ref": "#/$defs/text" },
+        "label": { "$ref": "#/$defs/text" },
+        "title": { "$ref": "#/$defs/text" },
+        "statementMarkdown": { "type": "string" },
+        "assetIds": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["input", "output"],
+            "properties": { "input": { "type": "string" }, "output": { "type": "string" } }
+          }
+        },
+        "timeLimitMs": { "$ref": "#/$defs/positiveInteger" },
+        "memoryLimitBytes": { "$ref": "#/$defs/positiveInteger" },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "template"],
+            "properties": { "id": { "$ref": "#/$defs/text" }, "name": { "$ref": "#/$defs/text" }, "template": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "public-match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["matchId", "runId", "status", "serverNow", "elapsedMs", "remainingMs", "allowedDurationMs", "leaderUserId", "winnerUserId", "lastEventId", "scoringRule", "players"],
+      "properties": {
+        "matchId": { "$ref": "#/$defs/uuid" },
+        "runId": { "$ref": "#/$defs/nullableUuid" },
+        "status": { "enum": ["WAITING", "READY", "RUNNING", "PAUSED", "FINALIZING", "FINISHED", "TIED", "SUPERSEDED"] },
+        "serverNow": { "$ref": "#/$defs/dateTime" },
+        "elapsedMs": { "$ref": "#/$defs/nonNegativeInteger" },
+        "remainingMs": { "$ref": "#/$defs/nonNegativeInteger" },
+        "allowedDurationMs": { "$ref": "#/$defs/positiveInteger" },
+        "leaderUserId": { "$ref": "#/$defs/nullableUuid" },
+        "winnerUserId": { "$ref": "#/$defs/nullableUuid" },
+        "lastEventId": { "$ref": "#/$defs/nonNegativeInteger" },
+        "scoringRule": { "$ref": "#/$defs/scoringRule" },
+        "players": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/playerState" } }
+      }
+    },
+    "roster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tournamentId", "canonicalRoster", "expectedGeneratorInput", "databaseSeedsAfterAdaptation"],
+      "properties": {
+        "tournamentId": { "$ref": "#/$defs/uuid" },
+        "canonicalRoster": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["userId", "displayName", "seed", "status", "entryId"],
+            "properties": {
+              "userId": { "$ref": "#/$defs/uuid" },
+              "displayName": { "$ref": "#/$defs/text" },
+              "seed": { "$ref": "#/$defs/nullablePositiveInteger" },
+              "status": { "const": "ACTIVE" },
+              "entryId": { "$ref": "#/$defs/uuid" }
+            }
+          }
+        },
+        "expectedGeneratorInput": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["participantId", "seed"],
+            "properties": { "participantId": { "$ref": "#/$defs/uuid" }, "seed": { "$ref": "#/$defs/nullablePositiveInteger" } }
+          }
+        },
+        "databaseSeedsAfterAdaptation": { "type": "array", "items": { "$ref": "#/$defs/nullablePositiveInteger" } }
+      }
+    },
+    "score-event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eventId", "type", "matchId", "runId", "payload"],
+      "properties": {
+        "eventId": { "$ref": "#/$defs/positiveInteger" },
+        "type": { "const": "score.changed" },
+        "matchId": { "$ref": "#/$defs/uuid" },
+        "runId": { "$ref": "#/$defs/uuid" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["leaderUserId", "players"],
+          "properties": {
+            "leaderUserId": { "$ref": "#/$defs/nullableUuid" },
+            "players": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/playerState" } }
+          }
+        }
+      }
+    },
+    "submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["submissionId", "runId", "status", "verdict", "receivedAt", "elapsedMs"],
+      "properties": {
+        "submissionId": { "$ref": "#/$defs/uuid" },
+        "runId": { "$ref": "#/$defs/uuid" },
+        "status": { "enum": ["QUEUED", "RUNNING", "RETRY_WAIT", "FINISHED", "INFRA_FAILED", "CANCELLED"] },
+        "verdict": { "$ref": "#/$defs/nullableVerdict" },
+        "receivedAt": { "$ref": "#/$defs/dateTime" },
+        "elapsedMs": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    }
+  }
+}
