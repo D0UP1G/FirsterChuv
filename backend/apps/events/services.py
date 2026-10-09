@@ -7,7 +7,7 @@ from uuid import UUID
 from django.db import transaction
 from django.db.models import Max
 
-from backend.apps.events.models import MatchEvent
+from backend.apps.events.models import MatchEvent, MatchSnapshot
 from backend.apps.events.public_payloads import (
     PublicEventInputError,
     validate_score_changed_payload,
@@ -97,3 +97,32 @@ def current_event_cursor(*, tournament_id: UUID | str) -> int:
         latest=Max("id")
     )["latest"]
     return cursor or 0
+
+
+@transaction.atomic
+def save_snapshot(*, match_id: UUID | str, run_id: UUID | str, last_event_id: int, public_payload: object) -> bool:
+    """Persist a public snapshot only when its cursor is not stale."""
+    match_uuid = _scope_uuid(match_id, name="match_id")
+    run_uuid = _scope_uuid(run_id, name="run_id")
+    if type(last_event_id) is not int or last_event_id < 0:
+        raise PublicEventInputError("last_event_id must be a non-negative integer")
+    payload = validate_score_changed_payload(public_payload)
+    snapshot = MatchSnapshot.objects.select_for_update().filter(match_id=match_uuid).first()
+    if snapshot is not None and snapshot.last_event_id > last_event_id:
+        return False
+    if snapshot is None:
+        MatchSnapshot.objects.create(match_id=match_uuid, run_id=run_uuid, last_event_id=last_event_id, payload=payload)
+    else:
+        snapshot.run_id = run_uuid
+        snapshot.last_event_id = last_event_id
+        snapshot.payload = payload
+        snapshot.save(update_fields=("run_id", "last_event_id", "payload", "updated_at"))
+    return True
+
+
+def read_snapshot(*, match_id: UUID | str) -> dict | None:
+    match_uuid = _scope_uuid(match_id, name="match_id")
+    snapshot = MatchSnapshot.objects.filter(match_id=match_uuid).first()
+    if snapshot is None:
+        return None
+    return {"matchId": str(snapshot.match_id), "runId": str(snapshot.run_id), "lastEventId": snapshot.last_event_id, "payload": validate_score_changed_payload(snapshot.payload)}

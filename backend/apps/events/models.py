@@ -32,3 +32,19 @@ class MatchEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.event_type} #{self.id} for {self.match_id}"
+
+
+class MatchSnapshot(models.Model):
+    """Latest public-safe state for one match/run and its durable event cursor."""
+
+    match_id = models.UUIDField(primary_key=True)
+    run_id = models.UUIDField()
+    last_event_id = models.PositiveBigIntegerField(default=0)
+    payload = models.JSONField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=Q(last_event_id__gte=0), name="events_snapshot_nonnegative_cursor")]
+
+    def __str__(self) -> str:
+        return f"snapshot {self.match_id} @ {self.last_event_id}"
