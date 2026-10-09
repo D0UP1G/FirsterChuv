@@ -28,7 +28,9 @@
 | V03 | WebSocket/SSE, анимация сдачи/обгона/победы | Стр. 6, блок 4 | P2-06, P4-05 / T17 |
 | V04 | Режим большого экрана/проектора | Стр. 6, блок 4 | P4-05 / T16 |
 
-P1-01 закрывает backend-подпроверки M02/T04 для invite API в своей feature-ветке до merge. Его participant/auth guard покрывает только вход через invite; полное S02 также включает private source, spectator read-only, object access и admin/browser paths и остаётся открытым.
+P1-01 интегрирован PR #12 и закрывает backend-подпроверки M02/T04 для invite API. Его participant/auth guard покрывает только вход через invite; полное S02 также включает private source, spectator read-only, object access и admin/browser paths и остаётся открытым.
+
+P1-02 добавляет PR checks для backend/domain/schema/common-import boundaries, а отдельный manual workflow — запуск реального Docker smoke с явным подтверждением. GitHub dispatch станет доступен после обычной интеграции workflow в default branch `main`; до того времени Docker smoke остаётся отдельной ручной проверкой. Это повторяемый CI и частичная поддержка D02/S01/T20; сам workflow не включает branch protection, а отсутствие private data в полной системе, runtime isolation и полные S02/T20 остаются отдельной приёмкой.
 
 План MVP выбирает ручной посев и одиночное выбывание. Рейтинг и другие форматы не нужны для покрытия минимального требования. Автозапуск реализуется по готовности обоих; расписание можно добавить после него. Диапазоны 3–5 задач и 15–30 минут на стр. 2 описывают обычный блиц, не являются объявленным жёстким лимитом API. Для demo: четыре задачи, 20 минут; короткая длительность для проверки допустима.
 
@@ -81,17 +83,18 @@ P1-01 закрывает backend-подпроверки M02/T04 для invite AP
 
 Стр. 6: дополнительные форматы и уведомления засчитываются в критерий 1; запуск на собственном вводе — в 3; реплей, комментаторская панель, мобильная версия — в 4; античит — в 5. Они засчитываются только при нахождении команды в верхнем диапазоне соответствующего критерия. Собственный ввод технически возможен в варианте Б, но остаётся дополнительной функцией. Не заменять ими недоделанные обязательные пункты.
 
-## Снимок покрытия после ревизии 2026-10-09
+## Снимок покрытия после повторной ревизии 2026-10-09
 
-P-ID выше ведут к ROADMAP v2; старые A-ID сохранены в истории/аудитах. Consumer по контракту не ждёт несмерженный provider, full acceptance остаётся системной.
+P-ID выше ведут к ROADMAP v3, старые A-ID сохранены. Consumer core не ждёт provider; full acceptance остаётся системной.
 
 | Область | Подтверждено | Открыто |
 |---|---|---|
-| M01/M03/TEAM01 | PR #5/#8 integrated, auth/role/CRUD/roster/freeze, 37 backend tests | Browser/played-history и full T02/T03/T05 |
-| M02/M04–08 | Grid/ORM в open PR #7 a89b8fc, 58 test-settings tests | Invites/integration/F08/clock/score/all interventions |
-| P01–03/E01–04 | Target contracts, не работающий workspace | Official import/editor/queue/verdicts/drafts |
-| V01–04 | Public DTO/SSE spec, dev examples | Real stream/map/projector |
-| J01–04/S01/S02 | Role guards; sandbox unit checks | F01/F07, real hostile execution/source secrecy/recovery |
-| D01–06 | API scaffold, README/env, история | Одна команда full startup, official demo/video/release |
+| M01/M03/TEAM01 | #5/#8 integrated auth/roles/CRUD/roster/freeze | Browser/played-history/T02/T03/T05 |
+| M02 | #12 integrated hashed invite/use/cap/revoke/expiry | Browser register/join/T04 |
+| M04–08 | #7 ORM/registration published; #11/#13 pure clock/score в integration slice | Lifecycle #7 fix, full pairing HTTP, persisted runtime/ledger/promotion/actions |
+| P01–03/E01–04 | #14 normalized catalog/private split в integration slice | Verified compiler/programmatic import/official adapter/workspace/editor/drafts/queue |
+| V01–04 | DTO/schema; #16 store published | SOLVED.lastVerdict fix, access/producers/snapshots/SSE/map |
+| J01–04/S01/S02 | #3 F01/F07 исправлены, real bounded sandbox checks; global role guards | LocalJudge/checker/task limits/ML/queue race/recovery/proxy/private browser/full hostile |
+| D01–06 | API scaffold/README/env/history/CI #17 | Full one-command runtime, official demo/video/release |
 
-[Ревизия всех PR/аудитов](reviews/2026-10-09-repository-audit.md) содержит команды/SHA/ограничения. Все полные T01–21 остаются NOT_RUN. Только P3-06 и final T12/T14/T21 ждут официальный package, другие READY задачи продолжаются.
+[Ревизия 19 PR и 53 аудитов](reviews/2026-10-09-integration-review.md) содержит SHA/результаты/ограничения. Все полные T01–21 остаются NOT_RUN. Только official mapping/final T12/T14/T21 ждут package, остальные задачи выполняются независимо по [runtime handoffs](architecture/runtime-handoffs.md).

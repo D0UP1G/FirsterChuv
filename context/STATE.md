@@ -1,41 +1,35 @@
-# Состояние интеграции
+# Состояние проекта после повторной ревизии
 
-Снимок ревизии 2026-10-09, Europe/Moscow. База кода: origin/develop `146b2cb64a6273472c2de9cae04bfad21acd1782` (PR #9). Ревизионная документация подготовлена через feature/parallel-agent-roadmap; этот SHA — база изученного кода до её документационного PR. Статус её слияния проверяется отдельно в GitHub и не меняет состав приложения. Ответственный за дальнейшие снимки — координатор интеграции, агент 1 по умолчанию; ожидание STATE PR не блокирует работу после подтверждённого code merge.
+Снимок 2026-10-09, Europe/Moscow. Исходный develop `dd80c933083eea8ac234a17593a6a54a09ded53d` (#19), main `e9fc0ef` bootstrap. Проверенный состав текущего coordinator feature/mvp-integration-review-2 включает пять готовых heads #3/#11/#13/#14 и admin guards 8f5b762. Факт общей интеграции определяется MERGED общего PR/remote refs, публикация записана в новом coordinator audit. Документация внутри feature не объявляет будущий merge выполненным.
 
-Документационная ревизия: [PR #10](https://github.com/D0UP1G/FirsterChuv/pull/10), первый HEAD 80d286a опубликован и проверен 2026-10-09T16:44:37+03:00. Состав приложения ниже относится к базе #9; после MERGED #10 общий develop получает новый план/контракты, без нового application code. Перед началом следующего среза fetch/merge актуального develop обязателен.
+Общий [PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20) опубликован и проверен 2026-10-09T19:55:37+03:00: первый HEAD 5194baca, base dd80c93; четыре CI jobs IN_PROGRESS. После MERGED #20 состав ниже доступен в develop; перед началом следующего среза fetch/merge актуального develop, не ждать отдельный STATE PR.
 
-## Компоненты
+## Что есть и чего нет
 
-| Компонент | Реальное положение | Доказательство/оставшаяся работа |
+| Компонент | Реализация / интеграция | Остаток до working MVP |
 |---|---|---|
-| PDF/архитектура/контекст | Integrated PR #1 | SHA PDF сверён, все 8 страниц прочитаны; план обновлён отдельной ревизией |
-| Backend/common/User | Integrated PR #2 | Bootstrap/SQLite/API; Compose полный runtime не готов |
-| Auth/CSRF/roles/bootstrap admin | Integrated PR #5 | Account tests; full T02/T20 открыты |
-| Tournament CRUD/roster/freeze | Integrated PR #8 | Nullable seed/cap/role/rollback; 37 backend tests повторены на этой базе; full T03/T05 открыты |
-| Приглашения | Не integrated | P1-01; существующая ветка/checkout agent 1 может быть начата, опубликованного результата нет |
-| Алгоритм сетки | Open draft PR #7, a89b8fc | ORM/run models/generate/reset/pairing service появились; 58 tests с временной app registration прошли. Clock/score/штатное подключение отсутствуют; F08 archived reset открыт |
-| Sandbox harness | Open PR #3, 3a0d865 | 8 unit tests, image build успешен; исходный runner FAIL invalid PID mode. Diagnostic fix проходит 4 smoke cases, не исходный PR |
-| LocalJudge/official importer/queue/drafts | Не integrated | P3-02–06, реальные verdicts/recovery ещё не доказаны |
-| Frontend/public SSE/карта | Не integrated | P2-06/P4-01–06; frontend публичная ветка не обнаружена |
-| CI/review gate | Не настроен | Все 9 PR без checks/reviews; main/develop protected=false; P1-02 |
-| Официальный package/README | Не получены | Только P3-06/final T12/T14/T21 ждут внешние материалы, другая разработка продолжается |
-| Full demo/video/release | Не готовы | T01–21 в целом NOT_RUN, main bootstrap, тегов/release нет |
+| User/common/auth/roles/CSRF | develop #2/#5 | Full browser/object/runtime security acceptance |
+| CRUD/roster/seed/freeze | develop #8 | Played-history и browser acceptance |
+| Invite backend | develop #12 | A4 реальный browser register/accept flow |
+| CI/schemas/common ports | develop #17/#18/#19, 4 jobs pass | Required protection отсутствует; реальных providers ещё нет |
+| Sandbox harness | #3 6950f10 включён в integration feature | F01/F07 исправлены; task-specific limits/ML/checker/worker/official full T18 |
+| Pure clock/scoring | #11 28d6cda/#13 19bbf88 включены в integration feature | Persisted run/start/API/gateway/ledger/finalization/promotion |
+| Normalized catalog | #14 9234951 включён в integration feature | verified compiler/import/workspace HTTP/official adapter |
+| Bracket ORM/API | #7 1952244 не включён: lifecycle B01/F08 | Fix draft/scheduled guard, потом full reset/pairing HTTP |
+| Queue core | #15 7d76d0b не включён: concurrent admission B02 | Fix busy→503/retry/race, worker/provider/production adapters |
+| Event store | #16 8340014 не включён: SOLVED.lastVerdict B03 | Fix OK→WA, producers/access/snapshots/SSE |
+| Admin guards | feature/match-admin-actions 8f5b762 включена в общий integration feature | Pure guards; настоящие command store/effects/HTTP отсутствуют |
+| Frontend | Опубликованных refs/PR нет | React build/auth/admin/editor/map и CONNECT |
+| Official package/README | Не получены | Только adapter/final official acceptance WAITING_EXTERNAL |
+| Full one-command demo/release | Не готовы | R1→R2→R3; main не релиз |
 
-## Git / PR
-
-- main `e9fc0ef97dcb83d2beffa41f42cb873ebcde71bc`: пустой bootstrap, не релиз.
-- develop `146b2cb64a6273472c2de9cae04bfad21acd1782`: PR #1/#2/#4/#5/#6/#8/#9 merged.
-- Open #3 feature/sandbox-proof: `3a0d86503b22b95b5004625ef8998cd1cc4c11c3`.
-- Open draft #7 feature/bracket-runtime: `a89b8fc8d5dce0657f44a559c302ae97c5b0a5b4`.
-- Feature refs/история сохранены. Все опубликованные merges используют merge commits; force push ревизия не делала.
-
-Полный список PR/замечаний/аудитов/команд — [отчёт проверки](../docs/reviews/2026-10-09-repository-audit.md). Снимок требует fetch/GitHub проверки перед новым merge, не заменяет актуальные refs.
+Совместная интеграционная сборка: 105 Django tests passed, migration drift нет, 36 clock/score/admin и 12 sandbox unit pass, standard image rebuilt/5 actual smoke pass. Bounded Docker probes подтверждают F01/F07 fixes и isolation/cleanup/recovery на exact #3 HEAD, не всю безопасность официального judge. Полные T01–21 остаются NOT_RUN.
 
 ## Следующая работа одновременно
 
-1. A1: P1-01 invites; во время review — CI/proxy/access/Compose.
-2. A2: P2-01 штатное подключение PR #7 (минимальная передача общих файлов), P2-02 F08/HTTP pairing/reset; затем clock/scoring/events. Canonical rank и package import уже реализованы. Не ждать A1-03.
-3. A3: P3-01 исправить Docker argv и протокольную границу, real tests; параллельная очередь storage/queue/drafts без ожидания A1/A2 или package.
-4. A4: P4-01 React + real auth/roster, остальные экраны по v1 dev fixtures; CONNECT по одному готовому endpoint.
+1. A1: P1-03 public/share access и proxy/logging; резерв P1-04 infrastructure + P1-02.5 additive failure handoff. Прежний explicit stop отдельной сессии учитывается, документ не запускает её автоматически.
+2. A2: P2-02.1 fix #7, P2-06.1 fix #16; затем настоящий MatchRun/API/gateway/ledger, сохраняя готовые pure cores. Резерв command store/actions/projector.
+3. A3: P3-04.1 fix #15, затем LocalJudge/worker/registry. Резерв private drafts/import/assets; только P3-06 ждёт package.
+4. A4: P4-01 real React/auth и P4-02 уже готовые CRUD/invites. Резерв editor/local draft/map reducer; будущие APIs через dev transport до CONNECT.
 
-[ROADMAP v2](../ROADMAP.md) и [контракт v1](../docs/architecture/parallel-contracts.md) задают конкретные выходы. Полная системная интеграция нужна для финальной приёмки, отдельный mocked consumer её не закрывает. Runtime без реального provider/access port отказывает, не подделывает данные.
+При зависимости WAITING получает подпункт, исполнитель продолжает следующий READY шаг в той же сессии. [ROADMAP v3](../ROADMAP.md), [ревизия всех PR](../docs/reviews/2026-10-09-integration-review.md), [runtime handoffs](../docs/architecture/runtime-handoffs.md). Fetch актуального develop перед стартом; авторские feature refs/старые аудиты сохранены, shared app/CI registrations не заменять старыми полными копиями.

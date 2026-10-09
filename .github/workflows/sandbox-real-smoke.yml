@@ -1,0 +1,42 @@
+name: Real sandbox smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_real_docker_smoke:
+        description: Build the sandbox image and execute isolated real-Docker smoke cases
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-sandbox-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  real-smoke:
+    if: inputs.confirm_real_docker_smoke == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: 0.12.17
+          python-version: "3.14"
+      - name: Install locked project
+        run: uv sync --locked
+      - name: Confirm harness and Docker are available
+        run: |
+          test -f sandbox/Dockerfile
+          test -f sandbox/smoke.py
+          docker info
+      - name: Build sandbox image
+        run: docker build --platform=linux/amd64 --tag firsterchuv/sandbox-cpp:0.1.0 sandbox
+      - name: Run real Docker smoke cases
+        run: uv run --locked python sandbox/smoke.py --case all
