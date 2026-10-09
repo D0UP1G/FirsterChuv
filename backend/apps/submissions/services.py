@@ -25,11 +25,13 @@ from .errors import (
     SubmissionError,
     SubmissionNotFound,
 )
-from .models import QueueCounter, ResultOutbox, Submission
+from .models import InfrastructureFailureOutbox, QueueCounter, ResultOutbox, Submission
 from .ports import (
     AttemptReceipt,
     CompetitionGatewayV1,
     EventWriter,
+    InfrastructureFailureReceipt,
+    InfrastructureFailureSink,
     LanguageRegistry,
     ResultReceipt,
     ResultSink,
@@ -47,7 +49,14 @@ ADMISSION_RETRY_DELAYS = (0.025, 0.075)
 MAX_MATCH_PARTICIPANTS = 2
 SUPPORTED_VERDICTS = frozenset(Submission.Verdict.values)
 LANGUAGE_ID_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}")
-ERROR_CODE_RE = re.compile(r"[a-z0-9][a-z0-9_.-]{0,63}")
+INFRA_FAILURE_REASON_CODES = frozenset(
+    {
+        "infrastructure_error",
+        "judge_infrastructure_error",
+        "judge_result_invalid",
+        "worker_lease_expired",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +102,14 @@ class ResultDeliveryClaim:
     outbox_id: int
     lease_token: UUID
     receipt: ResultReceipt
+    attempt_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class FailureDeliveryClaim:
+    outbox_id: int
+    lease_token: UUID
+    receipt: InfrastructureFailureReceipt
     attempt_count: int
 
 
@@ -236,6 +253,20 @@ def _result_receipt(record: Submission) -> ResultReceipt:
         elapsed_ms=record.elapsed_ms,
         scoring_version=record.scoring_version,
         verdict=record.verdict,
+    )
+
+
+def _infrastructure_failure_receipt(record: Submission) -> InfrastructureFailureReceipt:
+    reason_code = (
+        record.internal_reason
+        if isinstance(record.internal_reason, str) and record.internal_reason in INFRA_FAILURE_REASON_CODES
+        else "infrastructure_error"
+    )
+    return InfrastructureFailureReceipt(
+        submission_id=record.pk,
+        run_id=record.run_id,
+        reason_code=reason_code,
+        retryable=False,
     )
 
 
@@ -544,6 +575,10 @@ class SubmissionService:
                     )
                     if updated:
                         _release_capacity(actor_id, match_id)
+                        InfrastructureFailureOutbox.objects.get_or_create(
+                            submission_id=submission_id,
+                            defaults={"available_at": current_time},
+                        )
                         recovered += 1
                 else:
                     updated = Submission.objects.filter(
@@ -571,7 +606,7 @@ class SubmissionService:
         current_time = now or timezone.now()
         if not timezone.is_aware(current_time):
             raise ValueError("failure time must be timezone-aware")
-        safe_code = error_code if isinstance(error_code, str) and ERROR_CODE_RE.fullmatch(error_code) else "infrastructure_error"
+        safe_code = error_code if isinstance(error_code, str) and error_code in INFRA_FAILURE_REASON_CODES else "infrastructure_error"
         with transaction.atomic():
             record = Submission.objects.filter(
                 pk=claim.submission_id,
@@ -600,6 +635,10 @@ class SubmissionService:
                 raise StaleLease("worker lease is no longer current")
             if exhausted:
                 _release_capacity(record.actor_id, record.match_id)
+                InfrastructureFailureOutbox.objects.get_or_create(
+                    submission_id=record.pk,
+                    defaults={"available_at": current_time},
+                )
             return new_status
 
     @staticmethod
@@ -782,4 +821,110 @@ class SubmissionService:
         )
         if updated != 1:
             raise StaleLease("result delivery lease is no longer current")
+        return True
+
+    @staticmethod
+    def claim_pending_infrastructure_failure(
+        *,
+        now: datetime | None = None,
+        lease_seconds: int = 60,
+    ) -> FailureDeliveryClaim | None:
+        current_time = now or timezone.now()
+        if not timezone.is_aware(current_time) or not 0 < lease_seconds <= MAX_LEASE_SECONDS:
+            raise ValueError("failure delivery lease must be bounded and timezone-aware")
+        with transaction.atomic():
+            InfrastructureFailureOutbox.objects.filter(
+                status=InfrastructureFailureOutbox.Status.SENDING,
+                lease_until__lte=current_time,
+            ).update(
+                status=InfrastructureFailureOutbox.Status.PENDING,
+                lease_token=None,
+                lease_until=None,
+                available_at=current_time,
+            )
+            for _ in range(MAX_CLAIM_COLLISIONS):
+                outbox = (
+                    InfrastructureFailureOutbox.objects.filter(
+                        status=InfrastructureFailureOutbox.Status.PENDING,
+                        available_at__lte=current_time,
+                    )
+                    .order_by("created_at", "id")
+                    .select_related("submission")
+                    .first()
+                )
+                if outbox is None:
+                    return None
+                token = uuid4()
+                updated = InfrastructureFailureOutbox.objects.filter(
+                    pk=outbox.pk,
+                    status=InfrastructureFailureOutbox.Status.PENDING,
+                    available_at__lte=current_time,
+                ).update(
+                    status=InfrastructureFailureOutbox.Status.SENDING,
+                    attempt_count=F("attempt_count") + 1,
+                    lease_token=token,
+                    lease_until=current_time + timedelta(seconds=lease_seconds),
+                )
+                if updated == 0:
+                    continue
+                return FailureDeliveryClaim(
+                    outbox_id=outbox.pk,
+                    lease_token=token,
+                    receipt=_infrastructure_failure_receipt(outbox.submission),
+                    attempt_count=outbox.attempt_count + 1,
+                )
+        return None
+
+    @staticmethod
+    def deliver_infrastructure_failure(
+        claim: FailureDeliveryClaim,
+        *,
+        sink: InfrastructureFailureSink | None,
+        now: datetime | None = None,
+    ) -> bool:
+        if sink is None:
+            raise IntegrationUnavailable("failure delivery requires a real InfrastructureFailureSink")
+        current_time = now or timezone.now()
+        if not timezone.is_aware(current_time):
+            raise ValueError("failure delivery time must be timezone-aware")
+        outbox = InfrastructureFailureOutbox.objects.filter(
+            pk=claim.outbox_id,
+            status=InfrastructureFailureOutbox.Status.SENDING,
+            lease_token=claim.lease_token,
+            lease_until__gt=current_time,
+        ).first()
+        if outbox is None:
+            raise StaleLease("failure delivery lease is no longer current")
+        try:
+            sink.record_infrastructure_failure(claim.receipt)
+        except Exception:
+            retry_at = current_time + _retry_delay(claim.attempt_count)
+            updated = InfrastructureFailureOutbox.objects.filter(
+                pk=claim.outbox_id,
+                status=InfrastructureFailureOutbox.Status.SENDING,
+                lease_token=claim.lease_token,
+            ).update(
+                status=InfrastructureFailureOutbox.Status.PENDING,
+                available_at=retry_at,
+                lease_token=None,
+                lease_until=None,
+                last_error_code="failure_sink_failed",
+            )
+            if updated != 1:
+                raise StaleLease("failure delivery lease is no longer current")
+            return False
+        updated = InfrastructureFailureOutbox.objects.filter(
+            pk=claim.outbox_id,
+            status=InfrastructureFailureOutbox.Status.SENDING,
+            lease_token=claim.lease_token,
+            lease_until__gt=current_time,
+        ).update(
+            status=InfrastructureFailureOutbox.Status.SENT,
+            sent_at=current_time,
+            lease_token=None,
+            lease_until=None,
+            last_error_code=None,
+        )
+        if updated != 1:
+            raise StaleLease("failure delivery lease is no longer current")
         return True

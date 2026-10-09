@@ -36,6 +36,20 @@
 - Проверки: submissions suite 46/46 PASS на файловой SQLite; Django checks, compileall, migration drift check и `git diff --check` PASS. Runtime A2 providers не запускались.
 - Implementation audit: [`2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md`](../audits/2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md). Статус остаётся `IN_PROGRESS` до разрешённой интеграции/PR; user instructed not to merge branches.
 
+## Текущая сессия: P3-04.4 · failure outbox и run snapshot handoff
+
+- ID задачи: `P3-04.4`; статус: `IN_PROGRESS`.
+- Ветка: `feature/submission-worker`; HEAD на старте `cb18524abb2e26bb440f8cd44078ea7244a0ac8c`; свежий `origin/develop=c5682dd657969b699e22b8a2815b5247ad5a1553` проверен.
+- Работать только с собственным submissions app и документацией; PR/ветки #15/#16/#21/#23/#25/#26 и их worktree не менять. По прямому указанию пользователя branch merge не выполнять.
+- READY срез: typed-compatible local `InfrastructureFailureReceipt/Sink`, durable terminal failure outbox и redelivery; собственная app migration допустима. Test doubles только в tests, runtime требует реальный sink.
+- Run snapshot version/checksum отсутствуют в common `SubmissionPermit`/production A2 provider. Оформить отдельный contract request без изменения common contract/изобретения A2 API; snapshot resolver не реализовывать до согласования.
+- Планируемые пути: submissions ports/models/services/worker/factory/own migration/tests/README, `context/contracts/` request, эта карточка и отдельные audits.
+- Стартовый аудит: [`2026-10-09T220642+0300-agent-3-P3-04.4-start.md`](../audits/2026-10-09T220642+0300-agent-3-P3-04.4-start.md).
+- Реализация текущего среза: добавлены локальные совместимые `InfrastructureFailureReceipt/Sink`, terminal `InfrastructureFailureOutbox` и app-local migration; exhausted retry и recovery просроченного последнего worker lease создают durable outbox только при успешном status transition. Worker доставляет отдельный технический receipt с allowlisted reason через lease/retry; receipt не содержит source/diagnostics и не создаёт verdict. Test-only sinks остаются только в тестах; factory/runtime по-прежнему требует production ports.
+- Run snapshot version/checksum не реализован без A2 provider и решения по boundary. Запрос оформлен в [`agent-3-run-problem-snapshot.md`](../contracts/agent-3-run-problem-snapshot.md), статус `WAITING_CONNECT`; production submit/judge должен оставаться закрыт без источника trusted immutable snapshot.
+- Реализация audit: [`2026-10-09T221206+0300-agent-3-P3-04.4-failure-outbox.md`](../audits/2026-10-09T221206+0300-agent-3-P3-04.4-failure-outbox.md). Проверки: submissions suite 49/49, Django system checks, compileall, migration drift check и `git diff --check` PASS.
+- Срез остаётся `IN_PROGRESS`: common A1 DTO/Protocol, A2 idempotent technical ledger sink, A2 run snapshot provider и runtime wiring не интегрированы. Код только в этой feature-ветке; другие A3 worktree/PR не редактировались, merge/push/PR в этой сессии не выполнялись по указанию пользователя.
+
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
 
 ## Текущая сессия: P3-04.1 / admission race

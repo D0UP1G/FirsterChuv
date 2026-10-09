@@ -12,8 +12,8 @@ from backend.apps.common.contracts import JudgeInfrastructureError, JudgeResult,
 from backend.apps.submissions.adapters import ResultSinkAdapter
 from backend.apps.submissions.errors import IntegrationUnavailable
 from backend.apps.submissions.factory import get_submission_worker
-from backend.apps.submissions.models import QueueCounter, ResultOutbox, Submission
-from backend.apps.submissions.ports import SubmissionPermit
+from backend.apps.submissions.models import InfrastructureFailureOutbox, QueueCounter, ResultOutbox, Submission
+from backend.apps.submissions.ports import InfrastructureFailureReceipt, SubmissionPermit
 from backend.apps.submissions.services import SubmissionService
 from backend.apps.submissions.worker import SubmissionWorker, WorkerAction
 
@@ -61,6 +61,14 @@ class FakeResultSink:
         return True
 
 
+class FakeInfrastructureFailureSink:
+    def __init__(self):
+        self.receipts: list[InfrastructureFailureReceipt] = []
+
+    def record_infrastructure_failure(self, receipt):
+        self.receipts.append(receipt)
+
+
 class SubmissionWorkerTests(TransactionTestCase):
     def setUp(self):
         self.user = User.objects.create_user("worker-author@example.test", "Author", "passphrase")
@@ -75,10 +83,12 @@ class SubmissionWorkerTests(TransactionTestCase):
         )
         self.executor = FakeExecutor()
         self.sink = FakeResultSink()
+        self.failure_sink = FakeInfrastructureFailureSink()
         self.worker = SubmissionWorker(
             service=self.service,
             executor=self.executor,
             result_sink=self.sink,
+            failure_sink=self.failure_sink,
         )
 
     def submit(self, key="attempt", source="int main() { return 0; }"):
@@ -135,6 +145,7 @@ class SubmissionWorkerTests(TransactionTestCase):
             service=self.service,
             executor=self.executor,
             result_sink=ResultSinkAdapter(SupersededGateway()),
+            failure_sink=self.failure_sink,
         )
 
         iteration = result_worker.run_once(now=self.now + timedelta(seconds=2))
@@ -154,6 +165,33 @@ class SubmissionWorkerTests(TransactionTestCase):
         self.assertIsNone(record.verdict)
         self.assertEqual(record.internal_reason, "judge_infrastructure_error")
         self.assertEqual(QueueCounter.objects.get(scope_key="global").pending_count, 1)
+
+    def test_exhausted_infrastructure_retries_deliver_failure_without_verdict(self):
+        accepted = self.submit()
+        self.worker.executor = FakeExecutor(error=JudgeInfrastructureError("private diagnostic"))
+        now = self.now + timedelta(seconds=1)
+
+        for attempt in range(1, 6):
+            iteration = self.worker.run_once(now=now)
+            if attempt < 5:
+                self.assertEqual(iteration.action, WorkerAction.SUBMISSION_RETRY_SCHEDULED)
+                now += timedelta(seconds=2 ** (attempt - 1) + 2)
+            else:
+                self.assertEqual(iteration.action, WorkerAction.SUBMISSION_INFRA_FAILED)
+
+        record = Submission.objects.get(pk=accepted.id)
+        self.assertEqual(record.status, Submission.Status.INFRA_FAILED)
+        self.assertIsNone(record.verdict)
+        outbox = InfrastructureFailureOutbox.objects.get(submission=record)
+        self.assertEqual(outbox.status, InfrastructureFailureOutbox.Status.PENDING)
+
+        delivered = self.worker.run_once(now=now + timedelta(seconds=1))
+
+        self.assertEqual(delivered.action, WorkerAction.FAILURE_DELIVERED)
+        outbox.refresh_from_db()
+        self.assertEqual(outbox.status, InfrastructureFailureOutbox.Status.SENT)
+        self.assertEqual(len(self.failure_sink.receipts), 1)
+        self.assertEqual(self.failure_sink.receipts[0].reason_code, "judge_infrastructure_error")
 
     def test_invalid_provider_result_is_recorded_as_infrastructure_error(self):
         accepted = self.submit()
@@ -255,6 +293,11 @@ class SubmissionWorkerTests(TransactionTestCase):
 
     def test_worker_rejects_missing_runtime_ports_and_invalid_lease(self):
         with self.assertRaises(IntegrationUnavailable):
-            SubmissionWorker(service=self.service, executor=self.executor, result_sink=None)
+            SubmissionWorker(
+                service=self.service,
+                executor=self.executor,
+                result_sink=self.sink,
+                failure_sink=None,
+            )
         with self.assertRaises(ValueError):
             self.worker.run_once(lease_seconds=0)

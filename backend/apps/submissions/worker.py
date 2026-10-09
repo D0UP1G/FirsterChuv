@@ -12,7 +12,7 @@ from backend.apps.common.contracts import JudgeInfrastructureError, JudgeResult
 
 from .errors import IntegrationUnavailable, StaleLease, SubmissionError
 from .models import Submission
-from .ports import ResultSink
+from .ports import InfrastructureFailureSink, ResultSink
 from .services import (
     MAX_LEASE_SECONDS,
     LeasedSubmission,
@@ -33,6 +33,8 @@ class WorkerAction(str, Enum):
     SUBMISSION_INFRA_FAILED = "submission_infra_failed"
     RESULT_DELIVERED = "result_delivered"
     RESULT_RETRY_SCHEDULED = "result_retry_scheduled"
+    FAILURE_DELIVERED = "failure_delivered"
+    FAILURE_RETRY_SCHEDULED = "failure_retry_scheduled"
     STALE_LEASE = "stale_lease"
 
 
@@ -88,10 +90,12 @@ class SubmissionWorker:
         service: SubmissionService | None,
         executor: SubmissionExecutor | None,
         result_sink: ResultSink | None,
+        failure_sink: InfrastructureFailureSink | None,
     ) -> None:
-        if service is None or executor is None or result_sink is None:
+        if service is None or executor is None or result_sink is None or failure_sink is None:
             raise IntegrationUnavailable(
-                "submission worker requires a queue service, trusted executor, and real ResultSink"
+                "submission worker requires a queue service, trusted executor, real ResultSink, "
+                "and InfrastructureFailureSink"
             )
         if not isinstance(service, SubmissionService):
             raise TypeError("submission worker service must be SubmissionService")
@@ -99,9 +103,12 @@ class SubmissionWorker:
             raise TypeError("submission worker executor must provide execute()")
         if not callable(getattr(result_sink, "apply_result", None)):
             raise TypeError("submission worker result sink must provide apply_result()")
+        if not callable(getattr(failure_sink, "record_infrastructure_failure", None)):
+            raise TypeError("submission worker failure sink must provide record_infrastructure_failure()")
         self.service = service
         self.executor = executor
         self.result_sink = result_sink
+        self.failure_sink = failure_sink
 
     def run_once(
         self,
@@ -132,6 +139,22 @@ class SubmissionWorker:
             except StaleLease:
                 return WorkerIteration(WorkerAction.STALE_LEASE)
             action = WorkerAction.RESULT_DELIVERED if delivered else WorkerAction.RESULT_RETRY_SCHEDULED
+            return WorkerIteration(action)
+
+        failure_delivery = self.service.claim_pending_infrastructure_failure(
+            now=now,
+            lease_seconds=lease_seconds,
+        )
+        if failure_delivery is not None:
+            try:
+                delivered = self.service.deliver_infrastructure_failure(
+                    failure_delivery,
+                    sink=self.failure_sink,
+                    now=now,
+                )
+            except StaleLease:
+                return WorkerIteration(WorkerAction.STALE_LEASE)
+            action = WorkerAction.FAILURE_DELIVERED if delivered else WorkerAction.FAILURE_RETRY_SCHEDULED
             return WorkerIteration(action)
 
         claim = self.service.claim_next(now=now, lease_seconds=lease_seconds)
