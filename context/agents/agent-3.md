@@ -10,6 +10,7 @@
 - Сделано локально: PID-флаг удалён; supervisor вызывает `PR_SET_DUMPABLE=0`; host runner ограничивает оба Docker pipe и завершает CLI при превышении; добавлены unit tests и smoke fixture `protocol-write`.
 - Проверки: 12/12 sandbox unit tests, Python compile, C++20 syntax (`-Wall -Wextra -Werror`) и `git diff --check` прошли. `docker info` не подключился к `/var/run/docker.sock`; `python3 sandbox/smoke.py --case protocol-write` завершился `NOT_VERIFIED`, поэтому runtime probe и Engine inspect не подтверждены.
 - Ограничение и следующий шаг: P3-01 остаётся `IN_PROGRESS` до runtime/hostile checks на доступном Docker Engine; затем синхронизировать/обновить PR #3. Независимый P3-02 выполнить в отдельной `feature/*` ветке от актуального `origin/develop`; внешний формат пакета не предполагать.
+- Публикация: commit `4026c37dc0dcd4699a596bfbaed896e7a7d22bf0` отправлен в `origin/feature/sandbox-proof`; PR #3 остаётся `OPEN`, base `develop`, head SHA совпадает. GitHub вернул `mergeStateStatus=UNKNOWN` после обновления; merge не выполнялся.
 
 Перепланировано координатором 2026-10-09 по PR #3. Историческое NOT_RUN сохранено в аудитах владельца.
 
