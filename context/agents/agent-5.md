@@ -5,7 +5,7 @@
 - Статус: `IN_PROGRESS`; независимая feature-ветка от свежего `develop`, PR #64 остаётся отдельным открытым срезом.
 - Ветка: `feature/agent-5-p5-02-responsive`; база на старте `85e0cd0d2b82fce9996106af3922171dcee17c76` (`origin/develop`, после merge PR #62).
 - До реализации зарезервированы пути: `frontend/src/App.tsx`, новый `frontend/src/responsive.css`, `frontend/src/workspace/workspace.css`, `frontend/src/spectator/spectator.css`, эта карточка и append-only audit текущей сессии. Тесты затрагивать только при необходимости подтвердить поведение.
-- Область: мобильная оболочка и формы, рабочее место участника, публичная карта, отдельный projector layout, видимый keyboard focus, reduced motion, читаемое переполнение ошибок и статусов. Существующие CodeMirror, безопасный Markdown/URL, TeX и локальные черновики сохраняются.
+- Область: мобильная оболочка и формы, рабочее место участника, публичная карта, keyboard focus, reduced motion и читаемое переполнение ошибок/статусов. Текущий projector mode сохраняется; специальная компоновка для него отложена. CodeMirror, безопасный Markdown/URL, TeX и локальные черновики сохраняются.
 - Проверки по ROADMAP: UI tests, typecheck, lint и build с ограниченными workers; визуально проверить обычный/mobile/projector сценарии в disposable browser session, если среда доступна.
 - Уточнение приоритета команды: публиковать минимальную адаптивность и keyboard focus; отдельную projector-компоновку/полировку отложить до рабочего матча M0.
 - Следующий приоритет после минимального среза: реальный browser M0 путь; доступные endpoints подключать по одному, каждый отсутствующий port фиксировать как `WAITING_CONNECT` и продолжать независимую READY UI-работу.
