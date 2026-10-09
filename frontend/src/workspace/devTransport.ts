@@ -78,6 +78,7 @@ function makeMatch(status: MatchView['status'], startedAt: number): MatchView {
 export function createDevWorkspaceTransport(search: URLSearchParams): WorkspaceTransport {
   const status: MatchView['status'] = search.get('status') === 'READY' ? 'READY' : 'RUNNING'
   const startedAt = Date.now()
+  const draftsUnavailable = search.get('draft') === 'offline-fixture'
   const storedDrafts = new Map<string, DraftSnapshot>()
   const scopeKey = (problemId: string, runId: string, languageId: string) => `${runId}:${problemId}:${languageId}`
   if (search.get('draftConflict') === '1') {
@@ -100,9 +101,11 @@ export function createDevWorkspaceTransport(search: URLSearchParams): WorkspaceT
       return structuredClone(search.get('compiler') === 'rust-fixture' ? plainTextCompilerFixture : languages)
     },
     async draft(_matchId, problemId, runId, languageId) {
+      if (draftsUnavailable) throw new ApiError('Dev-сценарий: черновик недоступен.', 503, 'integration_unavailable')
       return storedDrafts.get(scopeKey(problemId, runId, languageId)) ?? null
     },
     async saveDraft(_matchId, problemId, languageId, input) {
+      if (draftsUnavailable) throw new ApiError('Dev-сценарий: черновик недоступен.', 503, 'integration_unavailable')
       const key = scopeKey(problemId, input.runId, languageId)
       const current = storedDrafts.get(key)
       if ((current?.revision ?? 0) !== input.expectedRevision) {
