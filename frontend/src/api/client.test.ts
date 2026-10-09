@@ -97,4 +97,47 @@ describe('auth API client', () => {
       message: 'Требуется вход.',
     } satisfies Partial<ApiError>)
   })
+
+  it('creates and accepts real v1 invitations with CSRF and same-origin paths', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ csrfToken: 'csrf-admin' }))
+      .mockResolvedValueOnce(jsonResponse({
+        invite: { id: 'invite-1', tournamentId: 'tournament-1', expiresAt: null, maxUses: 2, uses: 0, revokedAt: null },
+        token: 'synthetic-token-for-test',
+        url: '/invites/synthetic-token-for-test',
+      }, 201))
+      .mockResolvedValueOnce(jsonResponse({
+        tournament: { id: 'tournament-1', title: 'Тестовый турнир' },
+        valid: true,
+        expiresAt: null,
+      }))
+      .mockResolvedValueOnce(jsonResponse({ tournamentId: 'tournament-1', userId: 'player-1', joined: true }))
+
+    const created = await api.createInvite('tournament-1', { maxUses: 2 })
+    const preview = await api.previewInvite(created.token)
+    const accepted = await api.acceptInvite(created.token)
+
+    expect(created.url).toBe('/invites/synthetic-token-for-test')
+    expect(preview.tournament.title).toBe('Тестовый турнир')
+    expect(accepted.joined).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+
+    const [createUrl, createInit] = fetchMock.mock.calls[1]
+    expect(createUrl).toBe('/api/v1/tournaments/tournament-1/invites')
+    expect(createInit?.method).toBe('POST')
+    expect(new Headers(createInit?.headers).get('X-CSRFToken')).toBe('csrf-admin')
+    expect(JSON.parse(String(createInit?.body))).toEqual({ maxUses: 2 })
+
+    const [previewUrl, previewInit] = fetchMock.mock.calls[2]
+    expect(previewUrl).toBe('/api/v1/invites/synthetic-token-for-test')
+    expect(previewInit?.credentials).toBe('include')
+    expect(previewInit?.cache).toBe('no-store')
+
+    const [acceptUrl, acceptInit] = fetchMock.mock.calls[3]
+    expect(acceptUrl).toBe('/api/v1/invites/synthetic-token-for-test/accept')
+    expect(acceptInit?.method).toBe('POST')
+    expect(new Headers(acceptInit?.headers).get('X-CSRFToken')).toBe('csrf-admin')
+    expect(acceptInit?.body).toBeUndefined()
+  })
 })

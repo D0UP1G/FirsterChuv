@@ -5,6 +5,9 @@ import { AuthProvider } from './auth/AuthContext'
 import { useAuth } from './auth/useAuth'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { AdminTournamentsPage } from './pages/AdminTournamentsPage'
+import { AdminTournamentPage } from './pages/AdminTournamentPage'
+import { InvitePage } from './pages/InvitePage'
 import './App.css'
 
 function App() {
@@ -24,8 +27,10 @@ function AppFrame() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/watch" element={<PublicViewerPage />} />
           <Route path="/watch/:tournamentId" element={<PublicViewerPage />} />
+          <Route path="/invites/:token" element={<InvitePage />} />
           <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
-          <Route path="/admin" element={<RequireRole role="admin"><AdminPage /></RequireRole>} />
+          <Route path="/admin" element={<RequireRole role="admin"><AdminTournamentsPage /></RequireRole>} />
+          <Route path="/admin/tournaments/:tournamentId" element={<RequireRole role="admin"><AdminTournamentPage /></RequireRole>} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
@@ -164,21 +169,6 @@ function DashboardPage() {
         <strong>{user.role === 'admin' ? 'Организатор' : 'Участник'}</strong>
         <p>{user.role === 'admin' ? 'У вас есть доступ к инструментам управления турниром.' : 'Войдите по ссылке-приглашению, чтобы присоединиться к турниру.'}</p>
         {user.role === 'admin' ? <Link className="text-link" to="/admin">К управлению турнирами <span aria-hidden="true">↗</span></Link> : <span className="muted-copy">Список матчей появится после подключения к турниру.</span>}
-      </div>
-    </section>
-  )
-}
-
-function AdminPage() {
-  return (
-    <section className="page-section dashboard-page">
-      <p className="eyebrow">Панель организатора</p>
-      <h1>Турниры</h1>
-      <p className="page-lede">Создавайте соревнования, приглашайте участников и готовьте сетку.</p>
-      <div className="empty-state compact-empty">
-        <span className="empty-icon" aria-hidden="true">＋</span>
-        <h2>Здесь будут ваши турниры</h2>
-        <p>Инструменты управления подключаются следующим пользовательским срезом.</p>
       </div>
     </section>
   )

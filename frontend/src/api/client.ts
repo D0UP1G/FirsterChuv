@@ -17,6 +17,84 @@ export interface LoginInput {
   password: string
 }
 
+export interface Page<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
+}
+
+export interface Tournament {
+  id: string
+  slug: string
+  title: string
+  description: string
+  startsAt: string
+  endsAt: string
+  format: 'single_elimination'
+  participantLimit: number
+  visibility: 'public' | 'unlisted'
+  status: 'draft' | 'scheduled' | 'running' | 'completed' | 'archived'
+  activeParticipantCount: number
+  rosterFrozenAt: string | null
+  matchDurationSec: number
+  startMode: 'manual' | 'both_ready'
+  scoringRule: {
+    order: ['solved_desc', 'penalty_asc', 'last_accepted_asc']
+    wrongAttemptPenaltySec: number
+    penalizedVerdicts: Array<'WA' | 'TL' | 'ML' | 'RE'>
+    finalTiePolicy: 'rematch'
+  }
+}
+
+export interface TournamentInput {
+  title: string
+  description: string
+  startsAt: string
+  endsAt: string
+  format: 'single_elimination'
+  participantLimit: number
+  visibility: 'public' | 'unlisted'
+  matchDurationSec: number
+  startMode: 'manual' | 'both_ready'
+  scoringRule: Tournament['scoringRule']
+}
+
+export interface DirectoryUser {
+  id: string
+  displayName: string
+}
+
+export interface RosterEntry {
+  userId: string
+  displayName: string
+  seed: number | null
+  status: 'ACTIVE' | 'REMOVED'
+  addedAt: string
+  removedAt: string | null
+}
+
+export interface InviteMetadata {
+  id: string
+  tournamentId: string
+  expiresAt: string | null
+  maxUses: number | null
+  uses: number
+  revokedAt: string | null
+}
+
+export interface InviteCreated {
+  invite: InviteMetadata
+  token: string
+  url: string
+}
+
+export interface InvitePreview {
+  tournament: { id: string; title: string }
+  valid: true
+  expiresAt: string | null
+}
+
 interface ApiErrorBody {
   error?: {
     code?: string
@@ -124,13 +202,17 @@ async function ensureCsrfToken(): Promise<string> {
   return pending
 }
 
-async function mutate<T>(path: string, payload?: unknown): Promise<T> {
+async function mutate<T>(path: string, payload?: unknown, method: 'POST' | 'PATCH' | 'DELETE' = 'POST'): Promise<T> {
   const token = await ensureCsrfToken()
   return request<T>(path, {
-    method: 'POST',
+    method,
     headers: { 'X-CSRFToken': token },
     body: payload === undefined ? undefined : JSON.stringify(payload),
   })
+}
+
+function segment(value: string): string {
+  return encodeURIComponent(value)
 }
 
 export const api = {
@@ -159,6 +241,81 @@ export const api = {
   async logout(): Promise<void> {
     await mutate<void>('/auth/logout')
     csrfToken = null
+  },
+
+  tournaments(): Promise<Page<Tournament>> {
+    return request<Page<Tournament>>('/tournaments?limit=100&offset=0')
+  },
+
+  tournament(id: string): Promise<Tournament> {
+    return request<Tournament>(`/tournaments/${segment(id)}`)
+  },
+
+  createTournament(input: TournamentInput): Promise<Tournament> {
+    return mutate<Tournament>('/tournaments', input)
+  },
+
+  updateTournament(id: string, input: Partial<TournamentInput>): Promise<Tournament> {
+    return mutate<Tournament>(`/tournaments/${segment(id)}`, input, 'PATCH')
+  },
+
+  deleteTournament(id: string): Promise<void> {
+    return mutate<void>(`/tournaments/${segment(id)}`, undefined, 'DELETE')
+  },
+
+  directory(query: string): Promise<Page<DirectoryUser>> {
+    const params = new URLSearchParams({ q: query, role: 'participant', limit: '50', offset: '0' })
+    return request<Page<DirectoryUser>>(`/admin/users?${params.toString()}`)
+  },
+
+  roster(tournamentId: string): Promise<Page<RosterEntry>> {
+    return request<Page<RosterEntry>>(`/tournaments/${segment(tournamentId)}/participants?limit=100&offset=0`)
+  },
+
+  assignParticipant(tournamentId: string, userId: string, seed?: number | null): Promise<RosterEntry> {
+    const payload: { userId: string; seed?: number | null } = { userId }
+    if (seed !== undefined) payload.seed = seed
+    return mutate<RosterEntry>(`/tournaments/${segment(tournamentId)}/participants`, payload)
+  },
+
+  setParticipantSeed(tournamentId: string, userId: string, seed: number | null): Promise<RosterEntry> {
+    return mutate<RosterEntry>(
+      `/tournaments/${segment(tournamentId)}/participants/${segment(userId)}`,
+      { seed },
+      'PATCH',
+    )
+  },
+
+  removeParticipant(tournamentId: string, userId: string): Promise<void> {
+    return mutate<void>(
+      `/tournaments/${segment(tournamentId)}/participants/${segment(userId)}`,
+      undefined,
+      'DELETE',
+    )
+  },
+
+  invites(tournamentId: string): Promise<Page<InviteMetadata>> {
+    return request<Page<InviteMetadata>>(`/tournaments/${segment(tournamentId)}/invites?limit=100&offset=0`)
+  },
+
+  createInvite(tournamentId: string, input: { expiresAt?: string; maxUses?: number }): Promise<InviteCreated> {
+    return mutate<InviteCreated>(`/tournaments/${segment(tournamentId)}/invites`, input)
+  },
+
+  revokeInvite(tournamentId: string, inviteId: string): Promise<void> {
+    return mutate<void>(
+      `/tournaments/${segment(tournamentId)}/invites/${segment(inviteId)}`,
+      undefined,
+      'DELETE',
+    )
+  },
+
+  previewInvite(token: string): Promise<InvitePreview> {
+    return request<InvitePreview>(`/invites/${segment(token)}`)
+  },
+
+  acceptInvite(token: string): Promise<{ tournamentId: string; userId: string; joined: true }> {
+    return mutate<{ tournamentId: string; userId: string; joined: true }>(`/invites/${segment(token)}/accept`)
   },
 }
 
