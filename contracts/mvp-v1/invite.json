@@ -1,0 +1,12 @@
+{
+  "invite": {
+    "id": "00000000-0000-0000-0000-000000000060",
+    "tournamentId": "00000000-0000-0000-0000-000000000010",
+    "expiresAt": "2026-10-09T15:00:00Z",
+    "maxUses": 4,
+    "uses": 0,
+    "revokedAt": null
+  },
+  "token": "synthetic-non-working-invite-token",
+  "url": "/invites/synthetic-non-working-invite-token"
+}
