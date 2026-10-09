@@ -1,11 +1,14 @@
 from datetime import timedelta
+from unittest.mock import patch
 from uuid import uuid4
 
+from django.db import OperationalError
 from django.test import TestCase
 from django.utils import timezone
 
 from backend.apps.accounts.models import User
 from backend.apps.submissions.errors import (
+    AdmissionBusy,
     IdempotencyConflict,
     IntegrationUnavailable,
     QueueFull,
@@ -15,7 +18,7 @@ from backend.apps.submissions.errors import (
 )
 from backend.apps.submissions.models import QueueCounter, ResultOutbox, Submission
 from backend.apps.submissions.ports import ResultReceipt, SubmissionPermit
-from backend.apps.submissions.services import SubmissionService
+from backend.apps.submissions.services import SubmissionService, _is_sqlite_lock_error, _reserve_capacity
 
 
 class FakeCompetition:
@@ -121,6 +124,66 @@ class SubmissionQueueTests(TestCase):
         self.submit()
         with self.assertRaises(IdempotencyConflict):
             self.submit(source="int main() { return 1; }")
+
+    def test_busy_lock_retries_whole_admission_and_preserves_received_at(self):
+        calls = 0
+
+        def busy_once(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise OperationalError("database is locked")
+            return _reserve_capacity(*args, **kwargs)
+
+        with patch("backend.apps.submissions.services._reserve_capacity", side_effect=busy_once):
+            accepted = self.submit()
+
+        self.assertEqual(calls, 2)
+        self.assertEqual(accepted.received_at, self.now)
+        self.assertEqual(self.competition.authorized[0][-1], self.now)
+        self.assertEqual(Submission.objects.count(), 1)
+        self.assertEqual(QueueCounter.objects.get(scope_key="global").pending_count, 1)
+        self.assertEqual(len(self.competition.accepted), 1)
+        self.assertEqual(len(self.events.events), 1)
+
+    def test_exhausted_busy_lock_raises_retryable_admission_error_without_partial_writes(self):
+        with (
+            patch(
+                "backend.apps.submissions.services._reserve_capacity",
+                side_effect=OperationalError("database table is locked: submissions_queuecounter"),
+            ) as reserve,
+            patch("backend.apps.submissions.services.sleep") as wait,
+        ):
+            with self.assertRaises(AdmissionBusy):
+                self.submit()
+
+        self.assertEqual(reserve.call_count, 3)
+        self.assertEqual(wait.call_count, 2)
+        self.assertEqual(Submission.objects.count(), 0)
+        self.assertEqual(QueueCounter.objects.count(), 0)
+        self.assertEqual(self.competition.accepted, [])
+        self.assertEqual(self.events.events, [])
+
+    def test_non_lock_operational_error_is_not_retried_or_rewritten(self):
+        with patch(
+            "backend.apps.submissions.services._reserve_capacity",
+            side_effect=OperationalError("no such table: submissions_queuecounter"),
+        ) as reserve:
+            with self.assertRaisesRegex(OperationalError, "no such table"):
+                self.submit()
+
+        self.assertEqual(reserve.call_count, 1)
+        self.assertEqual(Submission.objects.count(), 0)
+        self.assertEqual(QueueCounter.objects.count(), 0)
+
+    def test_extended_sqlite_busy_code_is_recognized_but_other_codes_are_not(self):
+        busy = OperationalError("busy snapshot")
+        busy.sqlite_errorcode = 517
+        other = OperationalError("unrelated sqlite failure")
+        other.sqlite_errorcode = 1
+
+        self.assertTrue(_is_sqlite_lock_error(busy))
+        self.assertFalse(_is_sqlite_lock_error(other))
 
     def test_missing_runtime_ports_fail_closed_without_persisting_source(self):
         service = self.make_service(competition=None, event_writer=None, language_registry=None)

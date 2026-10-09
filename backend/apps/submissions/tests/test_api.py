@@ -6,6 +6,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from backend.apps.accounts.models import User
+from backend.apps.submissions.errors import AdmissionBusy
 from backend.apps.submissions.models import Submission
 from backend.apps.submissions.services import SubmissionService
 from backend.apps.submissions.tests.test_services import (
@@ -66,6 +67,18 @@ class SubmissionAPITests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json()["error"]["code"], "integration_unavailable")
         self.assertEqual(Submission.objects.count(), 0)
+
+    def test_exhausted_sqlite_busy_maps_to_retryable_503(self):
+        with (
+            patch("backend.apps.submissions.views.get_submission_service", return_value=self.service),
+            patch.object(self.service, "admit", side_effect=AdmissionBusy("SQLite remained locked")),
+        ):
+            response = self.post_submission(key="retry-same-key")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"]["code"], "queue_busy")
+        self.assertIn("Idempotency-Key", response.json()["error"]["message"])
+        self.assertEqual(response["Cache-Control"], "no-store")
 
     def test_author_only_detail_and_source_routes_hide_another_users_submission(self):
         accepted = self.service.admit(

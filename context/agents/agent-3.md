@@ -15,8 +15,9 @@
 ## Текущая сессия: P3-04.1 / admission race
 
 - ID: `P3-04.1`; статус: `IN_PROGRESS`.
-- Ветка PR: `feature/submission-queue-core`; исходный HEAD `7d76d0b1bf85c7a707de72ebaa1cb8364b4c9207`; исходная база `cad34ea4ddf1171779dc22139f2e1533160b5015`; синхронизация свежего `origin/develop=ae0846b22953527d74835febf963169e2093238d` в merge.
-- Изменяемые пути: `backend/apps/submissions/services.py`, `errors.py`, `views.py`, `tests/`, `backend/config/settings.py` (сохранить обе app registrations), эта карточка и новый аудит.
+- Ветка PR: `feature/submission-queue-core`; исходный HEAD `7d76d0b1bf85c7a707de72ebaa1cb8364b4c9207`; исходная база `cad34ea4ddf1171779dc22139f2e1533160b5015`; `origin/develop=ae0846b22953527d74835febf963169e2093238d` синхронизирован merge-коммитом `c2a653e05da96802ddc58104f0c789eea32640d6`.
+- Изменяемые пути: `backend/apps/submissions/services.py`, `errors.py`, `views.py`, `README.md`, `test_settings.py`, `tests/`, эта карточка и новый аудит. При sync сохранены `SubmissionsConfig` и `ProblemsConfig` в `INSTALLED_APPS`.
 - Acceptance: только SQLite busy/locked вызывает bounded retry всей admission transaction; исчерпание преобразуется в retryable 503; сохраняется исходный `received_at`; file-backed concurrent TransactionTestCase покрывает разные/одинаковые idempotency keys, capacity и rollback ledger/event без 500.
+- Реализация проверена: максимум 3 попытки всего, retry только SQLite `BUSY/LOCKED`, после исчерпания `503 queue_busy`; `received_at` вычисляется до цикла. File-backed submissions suite `29/29`; полный backend `134` tests, `OK`, один ожидаемый skip для file-backed-specific assertion при стандартной SQLite in-memory конфигурации.
 - PR #15 и его worktree — существующие артефакты этого agent-3 checkout; не менять чужие ветки/worktrees. Общий `context/STATE.md` не редактировать.
-- Следующий шаг: закончить merge, реализовать и проверить P3-04.1, обновить PR #15 без rebase/force push; далее P3-03 согласно ROADMAP v3.
+- Следующий шаг: включить код и audit в commit, fast-forward push в существующую feature-ветку и обновить описание PR #15 без rebase/force push; затем начать P3-03 в отдельной feature-ветке от актуального `origin/develop`.

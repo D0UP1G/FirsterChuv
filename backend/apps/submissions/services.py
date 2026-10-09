@@ -5,16 +5,19 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+import sqlite3
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from time import sleep
 from uuid import UUID, uuid4
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, connection, transaction
 from django.db.models import Case, DateTimeField, F, Value, When
 from django.utils import timezone
 
 from .errors import (
+    AdmissionBusy,
     IdempotencyConflict,
     IntegrationUnavailable,
     QueueFull,
@@ -39,6 +42,8 @@ MAX_METRIC_COUNT = 32
 MAX_LEASE_SECONDS = 15 * 60
 MAX_RETRY_ATTEMPTS = 5
 MAX_CLAIM_COLLISIONS = 8
+MAX_ADMISSION_ATTEMPTS = 3
+ADMISSION_RETRY_DELAYS = (0.025, 0.075)
 MAX_MATCH_PARTICIPANTS = 2
 SUPPORTED_VERDICTS = frozenset(Submission.Verdict.values)
 LANGUAGE_ID_RE = re.compile(r"[a-z0-9][a-z0-9_-]{0,63}")
@@ -122,6 +127,42 @@ def _source_bytes(source: str, max_source_bytes: int) -> bytes:
     if not encoded or len(encoded) > max_source_bytes:
         raise SubmissionError("source is empty or exceeds the configured limit")
     return encoded
+
+
+def _is_sqlite_lock_error(error: OperationalError) -> bool:
+    if connection.vendor != "sqlite":
+        return False
+
+    current: BaseException | None = error
+    saw_sqlite_error_code = False
+    while current is not None:
+        code = getattr(current, "sqlite_errorcode", None)
+        if isinstance(code, int):
+            saw_sqlite_error_code = True
+            if (code & 0xFF) in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                return True
+        current = current.__cause__ or current.__context__
+
+    if saw_sqlite_error_code:
+        return False
+
+    message = " ".join(str(error).lower().split())
+    return (
+        message == "database is locked"
+        or message == "database table is locked"
+        or message.startswith("database table is locked: ")
+        or message == "database schema is locked"
+        or message.startswith("database schema is locked: ")
+    )
+
+
+def _retry_admission_after_lock(error: OperationalError, attempt: int) -> bool:
+    if not _is_sqlite_lock_error(error):
+        return False
+    if attempt + 1 >= MAX_ADMISSION_ATTEMPTS:
+        raise AdmissionBusy("submission admission stayed busy after bounded retries") from error
+    sleep(ADMISSION_RETRY_DELAYS[attempt])
+    return True
 
 
 def _metadata(record: Submission) -> SubmissionMetadata:
@@ -254,27 +295,31 @@ class SubmissionService:
             language_id,
             source_bytes,
         )
-
-        existing = Submission.objects.filter(actor_id=actor_id, idempotency_sha256=key_digest).first()
-        if existing is not None:
-            if existing.request_sha256 != request_digest:
-                raise IdempotencyConflict("idempotency key was already used for another request")
-            return _metadata(existing)
-
-        competition, event_writer, language_registry = self._require_admission_ports()
-        if not language_registry.is_supported(language_id):
-            raise SubmissionError("language is not available")
         accepted_at = received_at or timezone.now()
         if not timezone.is_aware(accepted_at):
             raise SubmissionError("received_at must be timezone-aware")
 
-        try:
+        def existing_idempotent_submission() -> SubmissionMetadata | None:
+            existing = Submission.objects.filter(actor_id=actor_id, idempotency_sha256=key_digest).first()
+            if existing is None:
+                return None
+            if existing.request_sha256 != request_digest:
+                raise IdempotencyConflict("idempotency key was already used for another request")
+            return _metadata(existing)
+
+        def admit_once() -> SubmissionMetadata:
+            existing = existing_idempotent_submission()
+            if existing is not None:
+                return existing
+
+            competition, event_writer, language_registry = self._require_admission_ports()
+            if not language_registry.is_supported(language_id):
+                raise SubmissionError("language is not available")
+
             with transaction.atomic():
-                existing = Submission.objects.filter(actor_id=actor_id, idempotency_sha256=key_digest).first()
+                existing = existing_idempotent_submission()
                 if existing is not None:
-                    if existing.request_sha256 != request_digest:
-                        raise IdempotencyConflict("idempotency key was already used for another request")
-                    return _metadata(existing)
+                    return existing
 
                 _reserve_capacity(
                     actor_id,
@@ -336,13 +381,26 @@ class SubmissionService:
                     },
                 )
                 return _metadata(record)
-        except IntegrityError:
-            existing = Submission.objects.filter(actor_id=actor_id, idempotency_sha256=key_digest).first()
-            if existing is None:
+
+        for attempt in range(MAX_ADMISSION_ATTEMPTS):
+            try:
+                return admit_once()
+            except IntegrityError:
+                try:
+                    existing = existing_idempotent_submission()
+                except OperationalError as error:
+                    if _retry_admission_after_lock(error, attempt):
+                        continue
+                    raise
+                if existing is None:
+                    raise
+                return existing
+            except OperationalError as error:
+                if _retry_admission_after_lock(error, attempt):
+                    continue
                 raise
-            if existing.request_sha256 != request_digest:
-                raise IdempotencyConflict("idempotency key was already used for another request") from None
-            return _metadata(existing)
+
+        raise AssertionError("bounded admission loop exited unexpectedly")
 
     @staticmethod
     def get_author_metadata(*, actor_id: UUID, submission_id: UUID) -> AuthorSubmissionResult:

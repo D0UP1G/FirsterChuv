@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 
 from backend.apps.accounts.permissions import IsParticipant
 from backend.apps.submissions.errors import (
+    AdmissionBusy,
     IdempotencyConflict,
     IntegrationUnavailable,
     QueueFull,
@@ -32,6 +33,12 @@ class SubmissionUnavailable(APIException):
     status_code = 503
     default_code = "integration_unavailable"
     default_detail = "Приём посылок временно недоступен."
+
+
+class SubmissionQueueBusy(APIException):
+    status_code = 503
+    default_code = "queue_busy"
+    default_detail = "Очередь посылок временно занята; повторите запрос с тем же Idempotency-Key."
 
 
 class SubmissionRateThrottle(ScopedRateThrottle):
@@ -98,6 +105,8 @@ class MatchSubmissionsView(PrivateSubmissionAPIView):
             raise SubmissionConflict(str(error), code="queue_full") from error
         except IntegrationUnavailable as error:
             raise SubmissionUnavailable() from error
+        except AdmissionBusy as error:
+            raise SubmissionQueueBusy() from error
         except SubmissionError as error:
             raise ValidationError({"submission": str(error)}) from error
         return Response(_submission_metadata(record), status=202)

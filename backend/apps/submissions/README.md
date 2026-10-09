@@ -10,6 +10,10 @@
 
 Исходник ограничен 32 KiB UTF-8. Условные SQL-обновления ограничивают общее число ожидающих посылок, число на автора и число на матч; лимиты по умолчанию — 1000, 10 и 20 (два участника MVP × 10). HTTP submit дополнительно ограничен 30 запросами в минуту на автора/матч. Throttle использует настроенный Django cache; для нескольких API-процессов нужен общий cache, а proxy/network rate limit остаётся отдельной задачей P1-03. Переполнение не удаляет уже принятые посылки.
 
+SQLite `BUSY`/`LOCKED` при admission откатывает всю короткую транзакцию и повторяет её не более двух раз после первой попытки, сохраняя исходный серверный `received_at`. После исчерпания попыток API возвращает retryable `503 queue_busy`; клиент повторяет запрос с тем же `Idempotency-Key`. Другие `OperationalError` не маскируются и не повторяются.
+
+Race/rollback тесты нужно запускать на файловой SQLite: `DJANGO_DEBUG=true SQLITE_TEST_PATH=/tmp/submissions-tests.sqlite3 uv run --locked python manage.py test backend.apps.submissions.tests --settings=backend.apps.submissions.test_settings`. Путь можно задать через `SQLITE_TEST_PATH`; test database удаляется Django после завершения тестов.
+
 ## Worker и восстановление
 
 Доверенный worker забирает FIFO-посылку условным переходом состояния, без надежды на row locks SQLite. Claim имеет уникальный lease token, ограниченный срок и может продлеваться только пока lease активен. Просроченная работа повторяется с экспоненциальной задержкой; после пяти попыток переходит в `INFRA_FAILED` без verdict. Старый worker не может завершить новый claim. `received_at` и elapsed остаются неизменными после повторов.
