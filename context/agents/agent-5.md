@@ -13,6 +13,18 @@
 
 ## Исторические записи до ROADMAP v5
 
+## Текущий срез: P5-02 минимальная адаптивность и keyboard focus
+
+- Статус: PR #65 открыт, все 5 CI jobs прошли на code head `c735e675200420479cb3ac285411572b2f45b8ec`; ожидает review/merge. Отдельный P5-01 PR #64 открыт, 5/5 CI jobs прошли на head `dc124bcc7a5d0f8fe3ebb76dc7cce2a970f73c43`.
+- PR: https://github.com/D0UP1G/FirsterChuv/pull/65; ветка `feature/agent-5-p5-02-responsive`; code commit `c735e675200420479cb3ac285411572b2f45b8ec`.
+- База ветки: свежий `origin/develop` `85e0cd0d2b82fce9996106af3922171dcee17c76` после merge PR #62; develop не сдвинулся, дополнительный sync merge не требовался.
+- Пути: `frontend/src/App.tsx`, новый `frontend/src/responsive.css`, `frontend/src/workspace/workspace.css`, `frontend/src/spectator/spectator.css`, эта карточка и append-only audit текущей сессии.
+- Область: mobile shell/forms/admin, workspace и public spectator; видимый keyboard focus, forced-colors outline, перенос длинных названий/ошибок/диагностик и устранение overflow на 320 px. Существующий projector mode сохраняется без специальной новой компоновки. CodeMirror, безопасный Markdown/URL, TeX, локальные черновики и runtime data не менялись.
+- Проверки: `npm test -- --maxWorkers=2` — 18 файлов / 84 теста PASS; `npm run typecheck` PASS; `npm run lint` exit 0 с 5 прежними workspace warnings; `npm run build` PASS с предупреждением о крупных CodeMirror/KaTeX chunks; `git diff --check` PASS.
+- Browser QA в DEV-сценариях: workspace и spectator при 320 px без горизонтального overflow, spectator также просмотрен при 390 px; Tab показывает skip-link с `:focus-visible` и outline 3 px; console errors не наблюдались.
+- Уточнение приоритета команды: отдельную projector-компоновку/полировку отложить до рабочего матча M0.
+- Следующий приоритет: реальный browser M0 путь; доступные endpoints подключать по одному, каждый отсутствующий port фиксировать как `WAITING_CONNECT` и продолжать независимую READY UI-работу.
+
 ## Передача координатором 2026-10-10T01:11:53+03:00
 
 - Назначен прямым запросом команды, новая отдельная задача Codex «Агент 5 — frontend и дизайн BLITZ_ARENA», thread 01a122b2-27f9-7af0-ab77-dd282807d489.

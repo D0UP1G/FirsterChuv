@@ -124,6 +124,21 @@
   .spectator-match-topline { align-items: start; flex-direction: column; gap: 7px; }
   .spectator-page-projector { padding: 14px; }
 }
+@media (max-width: 480px) {
+  .spectator-page { padding-top: 25px; }
+  .spectator-page-heading { gap: 14px; margin-bottom: 17px; }
+  .spectator-page-heading h1 { overflow-wrap: anywhere; }
+  .spectator-page-heading > div:first-child > p:last-child { font-size: 12px; }
+  .spectator-view-actions { width: 100%; }
+  .spectator-view-actions > a { min-height: 40px; }
+  .spectator-live-status { align-items: flex-start; gap: 6px; line-height: 1.5; }
+  .spectator-reconnect-banner { align-items: flex-start; flex-direction: column; gap: 9px; }
+  .spectator-score-player > span { max-width: 100%; overflow-wrap: anywhere; }
+  .spectator-match-summary > span:nth-child(2) { flex-basis: 100%; }
+  .spectator-task-grid { gap: 5px; }
+  .spectator-task-state { min-height: 58px; padding: 6px; overflow-wrap: anywhere; }
+  .spectator-task-attempts, .spectator-task-verdict { white-space: normal; }
+}
 @media (prefers-reduced-motion: reduce) {
   .spectator-runner, .spectator-track-line::before { transition: none !important; }
   .spectator-announcements span { animation: none; }

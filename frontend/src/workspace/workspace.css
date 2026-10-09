@@ -88,3 +88,24 @@
   .workspace-toolbar-actions select { flex: 1; }
   .code-editor, .workspace-editor-wrap { height: 420px; }
 }
+
+@media (max-width: 480px) {
+  .workspace-page { padding-top: 24px; padding-bottom: 42px; }
+  .workspace-header { gap: 12px; }
+  .workspace-header h1 { overflow-wrap: anywhere; }
+  .workspace-meta { font-size: 9px; }
+  .workspace-task-list { grid-template-columns: minmax(0, 1fr); }
+  .workspace-task-button { min-height: 48px; }
+  .workspace-task-name strong { white-space: normal; overflow-wrap: anywhere; }
+  .workspace-main-toolbar { align-items: flex-start; }
+  .workspace-toolbar-actions { align-items: stretch; }
+  .workspace-toolbar-actions > select, .workspace-toolbar-actions > button, .workspace-toolbar-actions > a, .workspace-toolbar-actions .workspace-draft-status { width: 100%; min-width: 0; }
+  .workspace-statement-panel { max-height: 48vh; padding: 13px 11px; }
+  .problem-statement table { display: block; max-width: 100%; overflow-x: auto; }
+  .workspace-history-item { grid-template-columns: auto minmax(0, 1fr); }
+  .workspace-history-item .submission-state { grid-column: 1 / -1; }
+  .workspace-submit-row { align-items: stretch; }
+  .workspace-submit-row > * { width: 100%; }
+  .workspace-diagnostics { max-width: 100%; overflow-wrap: anywhere; }
+  .workspace-conflict-actions > * { flex: 1 1 100%; }
+}
