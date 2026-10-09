@@ -2,14 +2,6 @@
 
 Перепланировано координатором по поручению команды 2026-10-09; audit history владельца сохранена.
 
-## Текущий срез
-
-- `IN_PROGRESS` — P2-02.2 full first-round pairing/reset API и idempotent command receipt; ветка `feature/bracket-runtime`, база `origin/develop` `03a463650828774d5767e086a69183f83c38006b`.
-- Пути среза: competition command receipt model/migration/service, `views.py`, `urls.py`, bracket API tests, эта карточка и новый audit. Использовать существующие pairing/reset services, DTO и admin+CSRF permission; не менять чужие apps.
-- P2-01/P2-02.1 остаются в PR #7; sync с `fb9edb3` опубликован, PR был OPEN/CLEAN. Рабочая ветка сейчас сливает свежий develop `03a4636`; после проверки обновить PR.
-- PR #16, #34, #38 и #41 уже MERGED. Чистые pure cores не переписывать; production/persistence задачи остаются отдельными срезами.
-- P2-03 publication audit содержит опечатку в полном SHA базы (`6320b4b…`); исправить отдельным audit, не править исторические записи.
-
 - Проверены/integration feature: pure clock #11 28d6cda и score #13 19bbf88, по 12 tests. Доступность в develop — после MERGED общего integration PR; cores не заменяют persistence/API.
 - Первое READY P2-02.1: fix #7 1952244 generate/reset/pairings только draft/scheduled, SQLite transactional lifecycle guard + regression. Ordinary registration/rank/import уже готовы. Затем merge #7 и P2-02.2 HTTP/idempotency/reason/full pairings.
 - Второй короткий READY P2-06.1: fix #16 8340014 SOLVED/lastVerdict WA/CE roundtrip без ослабления public whitelist.
@@ -55,3 +47,10 @@
 - Publication audit: [PR #41](../audits/2026-10-09T234419+0300-agent-2-P2-05-command-publication.md).
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
+
+## Авторский checkpoint синхронизации #7, 2026-10-10
+
+- Source head f3001505fb70e9e810cd5da774a9a6dda996240f: обычный merge develop fb9edb3 в feature/bracket-runtime; 25 bracket/175 backend (2 skips), check/drift PASS у автора.
+- [Оригинальный sync audit](../audits/2026-10-10T000400+0300-agent-2-P2-02-1-develop-sync.md) сохранён без изменений. Исторический source card доступен в ancestry f300150.
+- Автор продолжает независимый P2-06.2 в собственной event feature во время review #7. Прежние readiness/ledger/command checkpoints этой карточки сохранены.
+- Код P2-01/P2-02.1 уже в develop через MERGED #44 (03a4636); текущий coordinator closeout объединяет поздний source sync и audit. После его MERGED обновить свою ветку из fresh develop и продолжить готовый подпункт.
