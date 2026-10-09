@@ -1,3 +1,4 @@
+<!-- Статус реализации: снимок в context/STATE.md. Будущие routes не означают реализованные endpoints. Контракты независимой разработки: parallel-contracts.md. -->
 # API и права доступа
 
 Целевой contract DRF API. A1-01 реализовал платформенную основу, A1-02 — auth slice, A1-03.1/.2 в feature-ветке добавили admin-only tournament CRUD, participant directory и roster API. Capacity/freeze hardening остаётся в A1-03.3. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.
@@ -33,7 +34,7 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 
 Не добавлять public endpoint смены роли. Bootstrap admin — management command. Если команда позже захочет admin role-management, это отдельное защищённое и аудируемое решение.
 
-Успешная регистрация возвращает `201` с `{id, displayName, role}`; login возвращает тот же user summary и обновлённый `csrfToken` после session/CSRF rotation. Auth responses и `/me` имеют `Cache-Control: no-store`. Текущие scoped limits: register `20/hour`, login `10/minute` на клиентский IP; reverse proxy topology должна соответствовать `NUM_PROXIES` в settings. Account endpoints, базовые application-role permission probes и bootstrap command покрыты тестами в `feature/account-roles`; реальные admin tournament writes добавлены в `feature/tournament-roster`. Roster и participant-specific match ownership ещё не интегрированы; T02 остаётся открытым, а T20 не проходила как полный security suite.
+Успешная регистрация возвращает `201` с `{id, displayName, role}`; login возвращает тот же user summary и обновлённый `csrfToken` после session/CSRF rotation. Auth responses и `/me` имеют `Cache-Control: no-store`. Текущие scoped limits: register `20/hour`, login `10/minute` на клиентский IP; reverse proxy topology должна соответствовать `NUM_PROXIES` в settings. Account endpoints, базовые application-role permission probes и bootstrap command интегрированы PR #5 и покрыты tests; реальные admin tournament writes интегрированы PR #8. Roster интегрирован PR #8; participant-specific match ownership ещё не реализован; T02 остаётся открытым, а T20 не проходила как полный security suite.
 
 Пример создания турнира:
 
@@ -75,6 +76,8 @@ Participant `seed` принимает `null` или целое значение 
 | GET `/problems` | A | Доступные версии, READY/NOT_READY |
 | PUT `/tournaments/{id}/problems` | A | Набор готовых задач из пакета |
 | POST `/tournaments/{id}/bracket/generate` | A | `{seedingMode: "manual"}`, atomic generation |
+| PUT `/tournaments/{id}/bracket/pairings` | A | Полный первый раунд `{pairings:[{position,leftUserId,rightUserId}],reason}`, atomic; v1 уточняет DTO |
+| POST `/tournaments/{id}/bracket/reset` | A | `{reason}`, idempotency key; только до первого start, тот же frozen roster |
 | GET `/tournaments/{id}/bracket` | A / joined P | Bracket DTO, без source |
 | PATCH `/matches/{id}` | A | Пары, готовые задачи, duration/startMode до start |
 | GET `/matches/{id}/problems` | A / Own P | Meta до старта; condition только после start (admin может inspect) |

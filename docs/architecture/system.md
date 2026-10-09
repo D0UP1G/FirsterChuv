@@ -1,6 +1,6 @@
 # Компоненты и границы системы
 
-Командный стек: Django REST Framework, React, SQLite3. Для MVP предлагается один Django-проект с разделением ответственности на apps, один worker и собственная Docker-песочница. Все названия каталогов — план, исходного кода пока нет.
+Командный стек: Django REST Framework, React, SQLite3. Для MVP предлагается один Django-проект с разделением ответственности на apps, один worker и собственная Docker-песочница. Backend/common/accounts/tournaments уже integrated (PR #2/#5/#8); остальные компоненты — цель. Фактический снимок в context/STATE.md.
 
 ```mermaid
 flowchart LR
@@ -46,7 +46,7 @@ Domain service не зависит от DRF view/serializer: view проверя
 - `EventWriter.append(scope, type, publicPayload)` пишет event в той же транзакции, что изменяемый state. При rollback event не виден.
 - `PublicProjection.snapshot(matchId)` формирует whitelist-представление без private code, email, tests и compiler logs.
 
-Интерфейсы фиксируются в A1-01 вместе с владельцами. Они описывают собственную платформу, не непроверенные методы внешнего API.
+Базовые Protocol уже добавлены A1-01; уточнённые порты, accepted ledger и независимые consumers задаёт [parallel-contracts v1](parallel-contracts.md). Они описывают собственную платформу, не непроверенные методы внешнего API.
 
 ## SQLite и очередь
 
