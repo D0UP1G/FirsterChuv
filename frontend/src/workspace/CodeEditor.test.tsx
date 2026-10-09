@@ -1,9 +1,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CodeEditor } from './CodeEditor'
 
 afterEach(() => cleanup())
+
+function ControlledCodeEditor() {
+  const [value, setValue] = useState('int main() {}')
+  return <CodeEditor value={value} languageId="cpp20" ariaLabel="Исходный код" onChange={setValue} />
+}
 
 describe('CodeEditor', () => {
   it('exposes an accessible editor and reports typed source', async () => {
@@ -15,6 +21,19 @@ describe('CodeEditor', () => {
     await user.type(editor, 'int main()')
 
     expect(onChange).toHaveBeenLastCalledWith('int main()')
+  })
+
+  it('keeps typed characters when the parent echoes each controlled value', async () => {
+    const user = userEvent.setup({ delay: 1 })
+    render(<ControlledCodeEditor />)
+
+    const editor = screen.getByRole('textbox', { name: 'Исходный код' })
+    editor.focus()
+    for (const character of 'draftA') {
+      await user.keyboard(character)
+    }
+
+    expect(editor).toHaveTextContent('draftA')
   })
 
   it('invokes the submit callback on Ctrl+Enter', async () => {
