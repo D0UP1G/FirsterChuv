@@ -75,7 +75,7 @@ Participant `seed` принимает `null` или целое значение 
 | POST `/problem-imports` | A | Multipart official package, ограничения размера/путей, checksum |
 | GET `/problem-imports/{id}` | A | Import status/errors без secrets |
 | POST `/problem-imports/yandex` | A | Планируемое `{contestId, problemIds}`; server-config source, не arbitrary URL |
-| GET `/problems` | A | Доступные версии, READY/NOT_READY |
+| GET `/problems` | A | Пагинированные версии и READY/NOT_READY; только public metadata/languages, без checksum и private artifacts; `limit` ограничен 100 |
 | PUT `/tournaments/{id}/problems` | A | Набор готовых задач из пакета |
 | POST `/tournaments/{id}/bracket/generate` | A | `{seedingMode: "manual"}`, atomic generation |
 | PUT `/tournaments/{id}/bracket/pairings` | A | Полный первый раунд `{pairings:[{position,leftUserId,rightUserId}],reason}`, atomic; v1 уточняет DTO |
