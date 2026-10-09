@@ -10,7 +10,7 @@
 body{margin:0}
 a{color:#ccff00}a:hover{color:#00ff66}
 .ba-state-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
-.ba-state{display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid rgba(0,229,255,.22);background:rgba(0,229,255,.03)}
+.ba-state{display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid rgba(0,229,255,.22);background-color:rgba(0,229,255,.03)}
 .ba-state-label{color:#5d7c82;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 .ba-state-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 @media (max-width:760px){.ba-state-grid{grid-template-columns:minmax(0,1fr)}}
@@ -30,7 +30,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
 
       <div class="ba-state-grid">
         <!-- READY / до старта -->
-        <article class="ba-state" data-state="READY">
+        <article class="ba-state ba-grid" data-state="READY">
           <span class="ba-state-label">До старта · READY / WAITING</span>
           <div class="ba-state-top"><span class="ba-tag ba-tag-active">READY</span><span class="ba-timer is-paused">20:00</span></div>
           <div class="ba-nodes">
@@ -44,7 +44,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
         </article>
 
         <!-- RUNNING, критический таймер -->
-        <article class="ba-state" data-state="RUNNING-critical">
+        <article class="ba-state ba-grid" data-state="RUNNING-critical">
           <span class="ba-state-label">Идёт · последняя минута</span>
           <div class="ba-state-top"><span class="ba-tag ba-tag-live">RUNNING</span><span class="ba-timer is-critical">00:42</span></div>
           <p class="ba-mono-muted">Таймер становится Alarm Red, когда остаётся меньше 60 секунд. Отправка доступна.</p>
@@ -52,7 +52,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
         </article>
 
         <!-- PAUSED -->
-        <article class="ba-state" data-state="PAUSED">
+        <article class="ba-state ba-grid" data-state="PAUSED">
           <span class="ba-state-label">Пауза · PAUSED</span>
           <div class="ba-state-top"><span class="ba-tag ba-tag-neutral">PAUSED</span><span class="ba-timer is-paused">08:15</span></div>
           <div class="ba-banner"><span class="ba-tag ba-tag-neutral">PAUSE</span><span>Организатор приостановил матч: <span data-field="reason">технические работы</span>. Часы остановлены, отправка недоступна. Редактор работает.</span></div>
@@ -60,7 +60,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
         </article>
 
         <!-- FINALIZING -->
-        <article class="ba-state" data-state="FINALIZING">
+        <article class="ba-state ba-grid" data-state="FINALIZING">
           <span class="ba-state-label">Время вышло · FINALIZING</span>
           <div class="ba-state-top"><span class="ba-tag ba-tag-queued">FINALIZING</span><span class="ba-timer is-critical">00:00</span></div>
           <div class="ba-banner"><span class="spinner" aria-hidden="true"></span><span>Время матча вышло. Проверяем решения, отправленные до конца матча, — результат появится автоматически.</span></div>
@@ -68,7 +68,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
         </article>
 
         <!-- FINISHED win -->
-        <article class="ba-state" data-state="FINISHED-win" style="border-color: #00ff66; background: rgba(0,255,102,.05)">
+        <article class="ba-state ba-grid" data-state="FINISHED-win" style="border-color: #00ff66; background-color: rgba(0,255,102,.05)">
           <span class="ba-state-label">Итог · победа</span>
           <div class="ba-state-top"><span class="ba-tag ba-tag-ok">SYSTEM BREACHED</span><span class="ba-terminal" style="font-size: 40px; color: #00ff66">3 : 2</span></div>
           <p class="ba-h2">Победа. Вы проходите в финал</p>
@@ -77,7 +77,7 @@ a{color:#ccff00}a:hover{color:#00ff66}
         </article>
 
         <!-- FINISHED loss / TIED -->
-        <article class="ba-state" data-state="FINISHED-loss · TIED">
+        <article class="ba-state ba-grid" data-state="FINISHED-loss · TIED">
           <span class="ba-state-label">Итог · поражение / равенство</span>
           <div class="ba-state-top"><span class="ba-tag ba-tag-locked">ACCESS DENIED</span><span class="ba-terminal" style="font-size: 40px; color: #ff3333">2 : 3</span></div>
           <p class="ba-h2">Матч завершён</p>

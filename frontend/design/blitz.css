@@ -20,7 +20,8 @@
   --ba-grid-fill-strong: rgba(0, 229, 255, 0.10);
   --ba-grid-line: rgba(0, 229, 255, 0.22);
   --ba-grid-line-soft: rgba(0, 229, 255, 0.10);
-  --ba-grid-pattern: rgba(0, 229, 255, 0.045);
+  --ba-grid-pattern: rgba(0, 229, 255, 0.07);   /* линии сетки внутри элементов */
+  --ba-grid-step: 24px;
   --ba-acid-fill: rgba(204, 255, 0, 0.08);
   --ba-acid-line: rgba(204, 255, 0, 0.45);
   --ba-alarm-fill: rgba(255, 51, 51, 0.10);
@@ -74,14 +75,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--ba-acid); outline-offset: 2px; }
 .ba-sr-only, .workspace-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* Техническая сетка поверх Void */
+/* Фон страницы — чистый Void; сетка только внутри элементов (раздел 15) */
 .app-frame {
   min-height: 100vh;
   background-color: var(--ba-void);
-  background-image:
-    linear-gradient(var(--ba-grid-pattern) 1px, transparent 1px),
-    linear-gradient(90deg, var(--ba-grid-pattern) 1px, transparent 1px);
-  background-size: 48px 48px;
 }
 .main-content { max-width: var(--ba-container); margin: 0 auto; padding: 0 var(--ba-space-6) var(--ba-space-8); }
 .skip-link { position: fixed; top: 8px; left: 8px; z-index: 10; padding: 8px 12px; color: var(--ba-void); background: var(--ba-acid); font-family: var(--ba-font-ui); font-weight: 700; transform: translateY(-160%); }
@@ -348,7 +345,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) { .ba-anim-solve, .ba-anim-overtake, .ba-tag-running, .spinner { animation: none; } }
 
 /* ---------- 13. Big Screen Mode ---------- */
-.app-frame-projector { background-size: 64px 64px; }
 .spectator-page-projector .spectator-score-player strong { font-size: 120px; }
 .spectator-page-projector .ba-timer { font-size: 112px; }
 .spectator-page-projector .ba-badge-name b { font-size: 32px; }
@@ -356,6 +352,22 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .spectator-page-projector .spectator-task-state { font-size: 16px; padding: 14px 16px; }
 .spectator-page-projector .spectator-task-label { font-size: 22px; }
 .spectator-page-projector .spectator-track { height: 64px; }
+
+/* ---------- 15. Тех-сетка внутри элементов ----------
+ * Брендбук: Tech Grid — подложка карточек. Фон страницы без сетки.
+ * Правило стоит после всех компонентов, чтобы shorthand `background` выше не стирал сетку;
+ * цвет подложки компоненты задают через background-color.
+ * Без сетки: фон страницы, шапка, подвал, поля, кнопки, теги, редактор кода, внутренние чёрные блоки. */
+.ba-grid,
+.ba-panel, .management-panel, .workspace-panel, .auth-card, .dashboard-card, .invite-preview-card,
+.tournament-card, .spectator-match-card, .empty-state, .success-panel, .workspace-conflict,
+.workspace-statement-panel, .spectator-bracket, .spectator-page-projector {
+  background-image:
+    linear-gradient(var(--ba-grid-pattern) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ba-grid-pattern) 1px, transparent 1px);
+  background-size: var(--ba-grid-step) var(--ba-grid-step);
+  background-position: -1px -1px;
+}
 
 /* ---------- 14. Узкие экраны ---------- */
 @media (max-width: 760px) {
