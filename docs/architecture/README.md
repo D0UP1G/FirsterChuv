@@ -16,3 +16,5 @@
 | [security.md](security.md) | Какие угрозы, меры защиты и проверки обязательны? |
 
 Изменение общих контрактов требует обновления документа и потребителей в связанных PR. Все документы используют единые IDs `tournamentId`, `matchId`, `runId`, `problemId`, `submissionId`. После реализации API Django/DRF OpenAPI-схема должна соответствовать этому описанию; если контракт изменился, документ обновляется вместе с кодом.
+
+- [Runtime handoffs и failure sink](runtime-handoffs.md).

@@ -12,6 +12,7 @@ DOMAIN_SUITES = (
     Path("backend/apps/competition/tests/test_bracket.py"),
     Path("backend/apps/competition/tests/test_clock.py"),
     Path("backend/apps/competition/tests/test_scoring.py"),
+    Path("backend/apps/competition/tests/test_admin_actions.py"),
 )
 
 

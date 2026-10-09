@@ -4,7 +4,7 @@
 
 ## Приоритет и версия
 
-Выполненные auth/tournament/roster endpoints остаются совместимыми с кодом `develop` на `146b2cb`. Будущие REST endpoints описаны в [api.md](api.md), доменные правила — в [match-engine.md](match-engine.md), события — в [realtime.md](realtime.md). Этот документ уточняет nullable seed, независимое тестирование и порты. При расхождении проверять фактическую реализацию и исправлять контракт явно, не переключать потребителя на свой формат молча.
+Выполненные auth/tournament/roster endpoints остаются совместимыми с кодом `develop` на базе повторной ревизии `dd80c93` (включая invitations/CI). Будущие REST endpoints описаны в [api.md](api.md), доменные правила — в [match-engine.md](match-engine.md), события — в [realtime.md](realtime.md). Этот документ уточняет nullable seed, независимое тестирование и порты. При расхождении проверять фактическую реализацию и исправлять контракт явно, не переключать потребителя на свой формат молча.
 
 `contracts/mvp-v1/*.json` — примеры DTO, не backend и не все возможные состояния. `v1` — версия соглашения. Новое optional поле допустимо с обновлением примера; изменение обязательного поля/enum/семантики требует версии и migration plan. Fixtures не подтверждают выполнение требований кейса.
 
@@ -93,3 +93,7 @@ Frontend `ApiTransport` имеет HTTP implementation и отдельный dev
 Если include optional field или отдельный endpoint не определён, зафиксировать предложение потребителя в contract request и продолжать готовые экраны; не заменять уже описанные DTO несовместимыми формами. Raw invite/share credential в dev примере synthetic и не работает, в runtime выдаётся только разрешённой admin операции. Share link и invite token не взаимозаменяемы.
 
 При подключении достаточно одного готового provider: merge develop в свою ветку, реализовать тонкий adapter, выполнить contract + smoke checks, audit/PR. Владелец app добавляет её AppConfig и URL include в общие settings/API root в том же PR с модулем — это явно разрешённая минимальная передача, ожидание агента 1 не нужно. Для CompetitionConfig рецепт: строка `backend.apps.competition.apps.CompetitionConfig` в INSTALLED_APPS и `path("", include("backend.apps.competition.urls"))` в common/api_urls.py. Новые apps A3 регистрируются аналогично вместе с собственным кодом. Если provider не готов, продолжить свою независимую очередь. Нужное изменение контракта фиксировать отдельным файлом `context/contracts/<agent>-<topic>.md`: поля, причина, совместимость, затронутые потребители и fallback; это сообщение в Git, не разрешение автоматически писать другим агентам/людям.
+
+## Передача runtime после повторной ревизии
+
+[Runtime handoffs](runtime-handoffs.md) задаёт production owners/queue receipt adapters, immutable job snapshots и отдельный additive infrastructure failure port. Core не заменяет provider. #7 lifecycle и #16 SOLVED.lastVerdict требуют исправлений; детали — [отчёт](../reviews/2026-10-09-integration-review.md). Старые ссылки a89b8fc выше фиксируют происхождение serializer/rank, не последний HEAD (#7 сейчас 1952244).

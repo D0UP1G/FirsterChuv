@@ -1,7 +1,7 @@
 <!-- Статус реализации: снимок в context/STATE.md. Будущие routes не означают реализованные endpoints. Контракты независимой разработки: parallel-contracts.md. -->
 # API и права доступа
 
-Целевой contract DRF API. На `develop` интегрированы A1-01/02/03 и invite backend-срез P1-01 (PR #12): платформа, auth, tournament CRUD, directory, roster с capacity/freeze guards и invitations. Браузерный invite flow остаётся CONNECT для P4-02, полный T04 ещё не принят. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.
+Целевой contract DRF API. Match/workspace/public/import endpoints ниже остаются целевыми: текущая ревизия не выдаёт pure cores/catalog за работающие HTTP routes. Их текущий статус — STATE и повторная ревизия. На `develop` интегрированы A1-01/02/03 и invite backend-срез P1-01 (PR #12): платформа, auth, tournament CRUD, directory, roster с capacity/freeze guards и invitations. Браузерный invite flow остаётся CONNECT для P4-02, полный T04 ещё не принят. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; в A1-01 выбран вариант без завершающего `/`. В этом документе пути указаны без slash.
 
 Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csrf` выдаёт `csrfToken` в JSON и HttpOnly CSRF cookie; frontend посылает `X-CSRFToken`. Register/login/logout имеют явную CSRF protection, не полагаются только на SessionAuthentication. Публичные GET не требуют login.
 

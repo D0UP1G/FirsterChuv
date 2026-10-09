@@ -1,6 +1,6 @@
 # Документация FirsterChuv
 
-Документы задают контракты и приёмку. На проверенном develop 146b2cb есть backend, auth и tournament/roster/freeze; open PR #3/#7 ещё не integrated. Полного MVP нет. Сверять факты с STATE и [ревизией PR](reviews/2026-10-09-repository-audit.md); [ROADMAP v2](../ROADMAP.md) заменяет старые блокирующие зависимости.
+Документы задают контракты и приёмку. Платформа/auth/CRUD/roster/invites/CI integrated; проверенные sandbox/pure clock/score/catalog собраны новым integration feature. Полного MVP нет. Сверять GitHub merge и [STATE](../context/STATE.md) с [повторной ревизией](reviews/2026-10-09-integration-review.md); [ROADMAP v3](../ROADMAP.md) задаёт runtime задачи четырёх агентов.
 
 | Документ | Что в нём |
 |---|---|
@@ -22,3 +22,5 @@
 | [Приёмка](quality/mvp-acceptance.md) | Проверки MVP и доказательства выполнения |
 
 Назначения четырёх агентов: [ROADMAP.md](../ROADMAP.md). Текущая работа и аудиты: [context](../context/README.md).
+
+- [Передача production adapters и infra failure](architecture/runtime-handoffs.md).
