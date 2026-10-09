@@ -1,6 +1,6 @@
 # Приёмка MVP
 
-Статус всех полных сценариев: **NOT_RUN**. В несмерженных feature-срезах Agent 1 есть частичные API evidence для auth/roles/admin bootstrap и A1-03.1–.4 tournament/roster flows, включая bounded SQLite concurrency checks, freeze rollback, повторную проверку entrant account/role и frozen roster mutation boundary. Полные T02/T03/T05/T20 требуют интеграции с bracket runtime, сквозных API/browser проверок, реального played history и полной security матрицы. Таблица остаётся планом end-to-end проверки. Владелец после выполнения записывает команду/сценарий, среду, SHA, результат и ограничения в audit. Координатор переносит доказательства integrated develop в STATE.
+Статус всех полных сценариев: **NOT_RUN**. Backend/auth/roster срезы Agent 1 уже integrated PR #2/#5/#8; 37 tests повторены ревизией на develop 146b2cb. Алгоритм PR #7 и sandbox PR #3 ещё не integrated. Harness имеет F01/F07; 4 diagnostic smoke cases после временного исправления не являются PASS исходного PR, official package или T18. Полные T02/T03/T05/T20 требуют domain/browser/history/security проверки. Команды, среда и SHA — в [ревизии](../reviews/2026-10-09-repository-audit.md). Новый план задач P1–P4 — ROADMAP v2; acceptance ID T01–21 сохранены.
 
 Готовность по кейсу требует блоки 1–3; команда также включает базовую визуализацию. Первый working slice — промежуточный результат, не повод пропускать обязательные строки.
 

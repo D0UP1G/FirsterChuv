@@ -1,50 +1,41 @@
 # Состояние интеграции
 
-Обновлено: `2026-10-09T15:13:39+03:00`. Ответственный за дальнейшее обновление: агент 1.
+Снимок ревизии 2026-10-09, Europe/Moscow. База кода: origin/develop `146b2cb64a6273472c2de9cae04bfad21acd1782` (PR #9). Ревизионная документация подготовлена через feature/parallel-agent-roadmap; этот SHA — база изученного кода до её документационного PR. Статус её слияния проверяется отдельно в GitHub и не меняет состав приложения. Ответственный за дальнейшие снимки — координатор интеграции, агент 1 по умолчанию; ожидание STATE PR не блокирует работу после подтверждённого code merge.
 
-## Проверенный статус
+Документационная ревизия: [PR #10](https://github.com/D0UP1G/FirsterChuv/pull/10), первый HEAD 80d286a опубликован и проверен 2026-10-09T16:44:37+03:00. Состав приложения ниже относится к базе #9; после MERGED #10 общий develop получает новый план/контракты, без нового application code. Перед началом следующего среза fetch/merge актуального develop обязателен.
 
-GitFlow начат пустым корневым commit `e9fc0ef` на `main`; документация интегрирована PR #1. Bootstrap A1-01 принят PR #2, account/auth A1-02 — PR #5; текущий `develop` merge SHA `c64555c`. После PR #5 на интегрированном SHA повторно прошли 16 account/common tests, Django system check, migration drift check и `scripts/manage.sh check`. Это ограниченная проверка account slice, не полная T02/T20 или T01.
+## Компоненты
 
-| Компонент | Статус | Доказательство |
+| Компонент | Реальное положение | Доказательство/оставшаяся работа |
 |---|---|---|
-| Требования, архитектура, план агентов | В `develop` | PR #1, merge в `e5f421b` |
-| PDF кейса | В `develop` | `docs/source/Кейс_Платформа_соревнований.pdf`; SHA-256 записан в `docs/source/README.md` |
-| Django/DRF backend bootstrap | В `develop` | PR #2, merge SHA `2484d86`; custom User, общие contracts, health/error handling |
-| Auth, register/login/CSRF, account permissions, bootstrap admin | В `develop` | PR #5, merge SHA `c64555c`; 16 account/common tests и post-merge checks; полные T02/T20 открыты |
-| Tournament CRUD, roster и invites | Не реализованы | Следующий срез A1-03/A1-04; перед API согласовать roster freeze с Agent 2 |
-| Сетка, match-clock, score/advancement | Не интегрированы | Владение агента 2; PR/branch integration не подтверждено |
-| Sandbox/judge runtime | Не интегрирован | PR #3 агента 3 открыт в `develop`; T18/T20 и продуктовую приёмку не утверждать |
-| Frontend | Не реализован | Владение агента 4; отдельные feature changes не интегрированы |
-| CI | Не настроен | GitHub PR #5 вернул пустой checks/statusCheckRollup; branch protection для `develop` не настроена |
-| Official package и его README | Не получены | Нужны для реальных условий/checkers и полной проверки T12/T14/T21 |
-| Полная T01/T02/T20 и demo/video | Не пройдены | Есть только ограниченные backend/account checks; сквозной сценарий не запускался |
+| PDF/архитектура/контекст | Integrated PR #1 | SHA PDF сверён, все 8 страниц прочитаны; план обновлён отдельной ревизией |
+| Backend/common/User | Integrated PR #2 | Bootstrap/SQLite/API; Compose полный runtime не готов |
+| Auth/CSRF/roles/bootstrap admin | Integrated PR #5 | Account tests; full T02/T20 открыты |
+| Tournament CRUD/roster/freeze | Integrated PR #8 | Nullable seed/cap/role/rollback; 37 backend tests повторены на этой базе; full T03/T05 открыты |
+| Приглашения | Не integrated | P1-01; существующая ветка/checkout agent 1 может быть начата, опубликованного результата нет |
+| Алгоритм сетки | Open draft PR #7, a89b8fc | ORM/run models/generate/reset/pairing service появились; 58 tests с временной app registration прошли. Clock/score/штатное подключение отсутствуют; F08 archived reset открыт |
+| Sandbox harness | Open PR #3, 3a0d865 | 8 unit tests, image build успешен; исходный runner FAIL invalid PID mode. Diagnostic fix проходит 4 smoke cases, не исходный PR |
+| LocalJudge/official importer/queue/drafts | Не integrated | P3-02–06, реальные verdicts/recovery ещё не доказаны |
+| Frontend/public SSE/карта | Не integrated | P2-06/P4-01–06; frontend публичная ветка не обнаружена |
+| CI/review gate | Не настроен | Все 9 PR без checks/reviews; main/develop protected=false; P1-02 |
+| Официальный package/README | Не получены | Только P3-06/final T12/T14/T21 ждут внешние материалы, другая разработка продолжается |
+| Full demo/video/release | Не готовы | T01–21 в целом NOT_RUN, main bootstrap, тегов/release нет |
 
-## Подтверждённые remote refs
+## Git / PR
 
-Проверено `2026-10-09T15:13:24+03:00` через `git ls-remote origin` и GitHub PR API; PR #5 имеет статус `MERGED`, merge SHA `c64555c`.
+- main `e9fc0ef97dcb83d2beffa41f42cb873ebcde71bc`: пустой bootstrap, не релиз.
+- develop `146b2cb64a6273472c2de9cae04bfad21acd1782`: PR #1/#2/#4/#5/#6/#8/#9 merged.
+- Open #3 feature/sandbox-proof: `3a0d86503b22b95b5004625ef8998cd1cc4c11c3`.
+- Open draft #7 feature/bracket-runtime: `a89b8fc8d5dce0657f44a559c302ae97c5b0a5b4`.
+- Feature refs/история сохранены. Все опубликованные merges используют merge commits; force push ревизия не делала.
 
-- `main`: `e9fc0ef97dcb83d2beffa41f42cb873ebcde71bc` — пустая начальная инициализация.
-- `develop`: `c64555cc1a65cfc5e1bf0832668d9d30e3947176` — PR #1, A1-01 PR #2, state sync PR #4 и A1-02 PR #5.
-- `feature/docs-mvp-context`: `edd10ea2c5cb1db8a885cd052e4425cb48d2faed`; PR #1 merged, ref сохранена.
-- `feature/platform-bootstrap`: `ccf8eeac09df34e8df836541c529e68c846825d9`; PR #2 merged в `develop`, ref сохранена.
-- `feature/a1-01-state-sync`: `7e10d0dc446e9e0a22a7d0ed768b3e585f642812`; PR #4 merged в `develop`, ref сохранена.
-- `feature/account-roles`: `3b1be0c2e5580a2bae629c05278f8dfc8c08da90`; PR #5 merged в `develop` merge commit `c64555c`, ref сохранена.
-- `feature/sandbox-proof`: `3a0d86503b22b95b5004625ef8998cd1cc4c11c3`; принадлежит агенту 3, PR #3 открыт и не интегрирован в указанный SHA.
+Полный список PR/замечаний/аудитов/команд — [отчёт проверки](../docs/reviews/2026-10-09-repository-audit.md). Снимок требует fetch/GitHub проверки перед новым merge, не заменяет актуальные refs.
 
-Снимок относится к указанным времени и SHA и не заменяет повторную проверку refs перед merge/release. `main` ещё не содержит выпуска MVP.
+## Следующая работа одновременно
 
-## Следующие действия
+1. A1: P1-01 invites; во время review — CI/proxy/access/Compose.
+2. A2: P2-01 штатное подключение PR #7 (минимальная передача общих файлов), P2-02 F08/HTTP pairing/reset; затем clock/scoring/events. Canonical rank и package import уже реализованы. Не ждать A1-03.
+3. A3: P3-01 исправить Docker argv и протокольную границу, real tests; параллельная очередь storage/queue/drafts без ожидания A1/A2 или package.
+4. A4: P4-01 React + real auth/roster, остальные экраны по v1 dev fixtures; CONNECT по одному готовому endpoint.
 
-1. После merge этого STATE sync PR начать A1-03 в `feature/tournament-roster` от актуального `origin/develop`; перед изменениями roster API согласовать freeze/participant lifecycle с владельцем A2.
-2. Реализовать admin-only CRUD турнира и roster/seed; проверить `T03`/`T05`, cap/uniqueness и сохранение истории сыгравшего участника.
-3. Выполнить A1-04 invites после A1-03: безопасный token, expiry/maxUses/revoke и транзакционный идемпотентный accept; проверка `T04`.
-4. Полный `T02` требует фактических admin/domain writes и browser sessions. Полный `T20` требует также IDOR, XSS/SQL/CSRF/SSRF/archive/command, runtime isolation и leakage checks; account audit содержит только partial evidence.
-5. Интегрировать изменения других агентов только после их PR/review, сверки миграций/contracts и доступных checks; не менять чужие ветки. Сквозной полуфинал → финал пока не выполнялся.
-6. Официальный package, demo и видео, полная матрица T01–T21 и release gate остаются обязательными до `release/0.1.0`/`v0.1.0`.
-
-## Блокеры
-
-Official package и README формата не предоставлены. Это блокирует проверку настоящих условий/checkers и финальную judge/demo приёмку, но не A1-03/A1-04. PR #3 sandbox proof всё ещё открыт; сам по себе он не закрывает T18/T20. Яндекс Контест остаётся только опцией импорта и не заменяет локальный пакет или собственную песочницу.
-
-Не менять статус компонента на «готов», если есть только документация, mock или несмерженная feature-ветка. Указывать SHA, PR и воспроизводимую проверку после интеграции.
+[ROADMAP v2](../ROADMAP.md) и [контракт v1](../docs/architecture/parallel-contracts.md) задают конкретные выходы. Полная системная интеграция нужна для финальной приёмки, отдельный mocked consumer её не закрывает. Runtime без реального provider/access port отказывает, не подделывает данные.
