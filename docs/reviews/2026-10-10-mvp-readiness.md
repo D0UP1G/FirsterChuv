@@ -98,3 +98,25 @@ A5 создан отдельной Codex задачей «Агент 5 — front
 Latest #58 733acc6, полученный после snapshot01:29: добавлены deadline→FINALIZING, ожидание accepted pending, persisted winner/downstream и public-safe score event. Exact export runtime/ledger13 tests PASS (11.679s). Реальные file-backed probes снова: config/accepted/result — один success и один OperationalError(database is locked); old result после modeled replacement не сохранён, LedgerPersistenceError. Participant fix из9eb394c ветки#59 не входит в733acc6. Обе ветки нужно sync вместе с этими исправлениями, не считать feature branch base безопасной заменой GitFlow.
 
 A5 follow-up о merge доставлен, compact wait подтверждает active: агент обновляет refs и продолжает local auth slice/card→PR, затем brand/responsive CONNECT по ROADMAP. A1–A4 получили назначения в документации; их внешние checkout/сессии coordinator не переключал. [Closing audit](../../context/audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md). Working MVP по кейсу ещё не объявляется готовым.
+
+
+## Последнее уточнение команды: три владельца и M0
+
+2026-10-10T01:56:32+03:00. Активны A3, A4 (прежний A1/координатор), A5. A4 принимает весь competition backlog выбывшего A2 и API/common/events, A3 runtime/queue/tasks/judge и config/Compose/CI/system acceptance, A5 весь frontend. ROADMAP v5 сохранил все 30 parent P-ID; v4 сохранён в docs/history. 37 требований/21 сценарий остаются открыты в части полной acceptance. Чужие ветки/checkout/старые audit blobs не изменяются.
+
+### Доступные и проверенные изменения
+
+- #61 docs closeout MERGED (develop f327fbc), #62 auth safe-return-path MERGED (develop 85e0cd0), source abdc12e, CI38000494517 пять SUCCESS. Exact frontend source62:84 tests/18files PASS, type/lint/build PASS.
+- #63 e116c03 reference conditions/assets/table/task attempts/manual pairs/visibility и уточнение ADR18: case p6 допускает commentary code после матча как optional, проект сохраняет author-only MVP. Runtime backend/frontend source не меняется. CI38000623798 attempt1 backend FAIL в concurrent same-key admission, sqlite3.OperationalError: database table is locked: submissions_queuecounter; attempt2 пять SUCCESS. Сбой сохранён и назначен A3 P3-04.1, rerun не fix.
+- #64 dc124bcc React CSS/tokens/header/footer/metadata, 9 files including own card/3audits. Сохранены editor/router/auth safe next/HTTP permissions/DTO, Google Fonts имеет CSS fallbacks. CI38001142045 пять SUCCESS. Ordinary merge source63/source64 сохранён в coordinator feature/three-agent-mvp от85e0cd0. Combined frontend typecheck/lint/test/build exit0; 5 existing lint warnings/612.88kB editor chunk warning. New browser/layout/contrast acceptance NOT_RUN.
+- #65 c735e67 basic responsive/focus: полный diff прочитан, source CI38001939464 пять SUCCESS. Backend/auth/API/editor behavior не меняет. В первом head own audit отсутствует, автору отправлено уточнение добавить его; после фактического merge/new audit результат фиксируется отдельным checkpoint.
+
+### Runtime branches остаются на исправлении
+
+#57 5ae4af5 — ordinary sync с develop, runtime.py unchanged относительно0073fbd, найденный configure race остаётся. #58 dc884e6 и #59 dcc9997 — последующие source checkpoints; actual admin_runtime.py unchanged относительно9eb394c, same-key replay и rematch/downstream finding не сняты. #59 содержит frozen participants плюс new clock/finalization, сохранить при исправлении. Это не утверждение о новых full suites: проверены incremental diff/unchanged affected source, прежние reproduced failures остаются evidence. #53 fd79038 cursor/equal-payload findings не исправлен. Ни один из этих failed runtime heads не включён.
+
+### Остаток до первого реального матча
+
+A4 safe persisted run/start/gateway/original participant+task snapshot/result+failure sinks/durable clock/winner; A3 actual compiler/import/executor/queue stability/factories/one-command runtime; A5 real endpoint CONNECT в существующий UI. M0 normalized tasks с настоящим verdict — промежуточный working slice, не полный обязательный MVP. Next M1: все management/both_ready/admin interventions/rich tasks/verdicts/drafts/recovery/security; M2: public SSE/map/projector/official/hostile/demo. Базовая безопасность обязательна до M0. [План](../../ROADMAP.md), [M0 gates](../quality/m0-demo.md), [source case](../source/Кейс_Платформа_соревнований.pdf).
+
+Новому A5 отправлен explicit follow-up с тремя ролями и приоритетом M0, compact wait подтверждает active. Остальные владельцы получили назначение в Git; coordinator не утверждает, что автоматически запустил их внешние sessions. Individual WAITING_CONNECT записывается per port/route/SHA и сменяется independent READY task в той же сессии; полный roadmap task не заканчивается после одного PR при наличии разрешённой независимой работы.

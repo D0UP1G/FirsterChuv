@@ -1,19 +1,19 @@
 # Runtime handoffs: ближайший рабочий сценарий
 
-Спецификация повторной ревизии 2026-10-09, ADOPTED планом команды. [Common v1](parallel-contracts.md) уже материализован в backend/apps/common/contracts.py, но реализаций CompetitionGateway/PublicAccess/JudgeProvider пока нет. Этот документ фиксирует передачу между пятью владельцами; наличие Protocol не означает runnable provider.
+Спецификация повторной ревизии 2026-10-09, ADOPTED планом команды. [Common v1](parallel-contracts.md) уже материализован в backend/apps/common/contracts.py, CompetitionGateway/PublicAccess и production worker factory ещё не подключены; LocalJudge core реализован, его наличие не означает готовый production worker. Этот документ фиксирует передачу между тремя активными владельцами A3/A4(прежний A1)/A5; наличие Protocol не означает runnable provider.
 
 ## Владельцы и независимые выходы
 
 | Граница | Производитель | Потребитель | Что писать до CONNECT |
 |---|---|---|---|
-| PublicAccessV1 | A1: public/unlisted token/expiry/revoke | A4: public snapshot/SSE | Store/projector/transport с test access; production без provider закрыт |
-| CompetitionGatewayV1 | A2: trusted actor/run/time/workspace/ledger/result | A3: submissions/drafts/problem views | A2 tests с typed receipts; A3 queue/draft services с injected ports |
-| ProblemCatalogV1 | A3: normalized immutable catalog | A2: task snapshots/start; A3 judge | Catalog core уже в #14; verified compiler остаётся runtime gate |
-| JudgeProvider + LanguageRegistry | A3: реальный compile/test/checker | A3 worker, A1 startup | Нормализованная программно импортированная smoke-задача, настоящие verdicts |
-| EventWriter | A4: allowlisted durable events | A2 lifecycle/result, A3 queue | Event store/validation tests; source/CE запрещены |
+| PublicAccessV1 | A4: public/unlisted token/expiry/revoke | A4: public snapshot/SSE | Store/projector/transport с test access; production без provider закрыт |
+| CompetitionGatewayV1 | A4: trusted actor/run/time/workspace/ledger/result | A3: submissions/drafts/problem views | A4 tests с typed receipts; A3 queue/draft services с injected ports |
+| ProblemCatalogV1 | A3: normalized immutable catalog | A4: task snapshots/start; A3 judge | Catalog core уже в #14; verified compiler остаётся runtime gate |
+| JudgeProvider + LanguageRegistry | A3: реальный compile/test/checker | A3 worker/startup | Нормализованная программно импортированная smoke-задача, настоящие verdicts |
+| EventWriter | A4: allowlisted durable events | A4 lifecycle/result, A3 queue | Event store/validation tests; source/CE запрещены |
 | Browser transport | A5: typed client + real available endpoints | Все UI | Auth/CRUD/invites подключать сейчас; будущие fixtures только dev/test |
 
-Владельцы apps сами добавляют AppConfig/URL include в своих PR, сохраняя все ранее integrated apps/CI. Остальное shared factory/config wiring — A1 и принимающий владелец коротким срезом. Не ждать всю дорожку соседа.
+Владельцы apps сами добавляют AppConfig/URL include в своих PR, сохраняя все ранее integrated apps/CI. Остальное shared factory/config wiring — A3 и принимающий владелец коротким срезом. Не ждать всю дорожку соседа.
 
 ## Admission/result transaction
 
@@ -28,7 +28,7 @@ SQLite DEFERRED read→write race #15 требует bounded busy/locked retry �
 
 ## Additive infrastructure failure handoff
 
-Проблема #15: exhausted infra retries освобождают queue capacity без contestant result; accepted ledger A2 иначе может навсегда ждать отсутствующий receipt. Нельзя выдавать infra failure за WA/RE/поражение. Принят отдельный additive внутренний port, будущая реализация P1-02.5/P2-04/P3-04.4; существующий ResultReceipt и verdict enum v1 неизменны.
+Проблема #15: exhausted infra retries освобождают queue capacity без contestant result; accepted ledger A4 иначе может навсегда ждать отсутствующий receipt. Нельзя выдавать infra failure за WA/RE/поражение. Принят отдельный additive внутренний port, будущая реализация P1-02.5/P2-04/P3-04.4; существующий ResultReceipt и verdict enum v1 неизменны.
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -42,21 +42,21 @@ class InfrastructureFailureSink(Protocol):
     def record_infrastructure_failure(self, receipt: InfrastructureFailureReceipt) -> None: ...
 ```
 
-A1 добавляет DTO/Protocol/import tests. A2 реализует idempotent ledger transition для известного accepted submission/run: pending → technical failure; такой run не получает автоматического победителя, текущий FINALIZING показывает необходимость восстановления/ручного решения. Повторная доставка не дублирует effect, superseded run не меняет текущий score. A3 хранит durable failure outbox и доставляет его после exhausted retries; startup требует реальный failure sink вместе с result sink.
+A4 добавляет DTO/Protocol/import tests и реализует idempotent ledger transition для известного accepted submission/run: pending → technical failure; такой run не получает автоматического победителя, текущий FINALIZING показывает необходимость восстановления/ручного решения. Повторная доставка не дублирует effect, superseded run не меняет текущий score. A3 хранит durable failure outbox и доставляет его после exhausted retries; startup требует реальный failure sink вместе с result sink.
 
-Восстановление/повтор проверки использует тот же accepted submission и original received_at/elapsed, а не создаёт новую выгодную позднюю попытку. Администратор может выполнить документированное техническое завершение/rematch с reason; infrastructure failure сам не выбирает победителя. A2/A3 проверяют requeue/terminal/manual policy tests до runtime wiring.
+Восстановление/повтор проверки использует тот же accepted submission и original received_at/elapsed, а не создаёт новую выгодную позднюю попытку. Администратор может выполнить документированное техническое завершение/rematch с reason; infrastructure failure сам не выбирает победителя. A4/A3 проверяют requeue/terminal/manual policy tests до runtime wiring.
 
 Это новая отдельная граница, не изменение обязательных полей старого v1. Новые public DTO/events по технической ошибке требуют явной версии/schema/fixtures; до этого private API показывает понятную техническую ошибку, public event не содержит diagnostics. Исполнители записывают фактическую реализацию/выбранный retry policy в audit/decisions.
 
 ## Проверка готовности и milestones
 
 - R0: cores совместно imports/migrate/tests/CI; отсутствующие providers не подделываются.
-- R1: реальный React → API → persisted run → queue → isolated judge → durable receipt → score/promotion на программно импортированной smoke-задаче. Synthetic здесь — данные задачи, verdict реально вычисляется. Это не official acceptance.
-- R2: обязательные actions/code persistence/recovery/privacy и public map/SSE.
-- R3: official package/README/checkers, T01–21, hostile probes, одна команда и demo/видео/release.
+- M0 (уточняет R1): реальный React → API → persisted run → queue → isolated judge → durable receipt → score/promotion на программно импортированной smoke-задаче. Synthetic здесь — данные задачи, verdict реально вычисляется. Это не official acceptance.
+- M1 (обязательные блоки 1–3) и M2 (public): обязательные actions/code persistence/recovery/privacy и public map/SSE.
+- M2 (уточняет R3): official package/README/checkers, T01–21, hostile probes, одна команда и demo/видео/release.
 
-Короткий CONNECT содержит producer SHA, consumer SHA, adapter path/config, реальный сценарий и следующий независимый подпункт. WAITING относится к подключению, не ко всей роли. [ROADMAP v4](../../ROADMAP.md) задаёт порядок.
+Короткий CONNECT содержит producer SHA, consumer SHA, adapter path/config, реальный сценарий и следующий независимый подпункт. WAITING относится к подключению, не ко всей роли. [ROADMAP v5](../../ROADMAP.md) задаёт порядок.
 
 ## Принятые уточнения 2026-10-10
 
-[Ответы координатора](../../context/contracts/2026-10-10-mvp-boundaries.md): immutable RunProblemSnapshot/Provider отдельным additive портом, snapshot version/checksum сохраняется при admission; InfrastructureFailureReceipt/Sink без изменения verdict enum; GET draft runId selector и missing404; registry owner/submission/claim-token/lease для own orphan cleanup. A1 материализует common typing, A2 producer run/gateway/ledger, A3 actual executor/consumer, A4 public transport/system acceptance, A5 frontend. Tests до CONNECT используют typed injections; production без реального provider отказывает.
+[Ответы координатора](../../context/contracts/2026-10-10-mvp-boundaries.md): immutable RunProblemSnapshot/Provider отдельным additive портом, snapshot version/checksum сохраняется при admission; InfrastructureFailureReceipt/Sink без изменения verdict enum; GET draft runId selector и missing404; registry owner/submission/claim-token/lease для own orphan cleanup. A4 материализует common typing, producer run/gateway/ledger/public transport; A3 actual executor/consumer/config/startup/system acceptance, A5 весь frontend. Tests до CONNECT используют typed injections; production без реального provider отказывает.

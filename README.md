@@ -4,15 +4,15 @@
 
 ## Текущее состояние
 
-Актуальная ревизия 2026-10-10: интегрированы auth/roles/CRUD/roster/invites, bracket foundation, clock/score/readiness/ledger cores, queue/worker/outboxes, LocalJudge и React UI. Новые проверенные draft CAS, pairings/reset API, frontend CI и BLITZ_ARENA design references входят в coordinator integration feature до её MERGED. Полного рабочего MVP пока нет: нужно подключить real match/run/gateway/ledger/providers и public HTTP/SSE; #53 snapshot имеет два correctness blockers.
+Auth/roles/CRUD/roster/invites, bracket/manual pairings/reset, clock/score/readiness/ledger cores, queue/worker/outboxes, normalized catalog, LocalJudge, drafts CAS и React editor/map интегрированы через #60/#61/#62. Полного рабочего MVP пока нет: требуется production run/gateway/providers/worker/sinks и реальный browser сценарий. #53/#57–59 требуют correctness fixes и пока не слиты. #63/#64 reference/React бренд входят в текущую coordinator feature до её MERGED.
 
-Точный снимок и gate: [STATE](context/STATE.md), [новая ревизия и покрытие кейса](docs/reviews/2026-10-10-mvp-readiness.md). [ROADMAP v4](ROADMAP.md) распределяет пять владельцев: A1 платформа/запуск, A2 competition/runtime, A3 judge/workspace, A4 events/SSE/приёмка, новый A5 весь frontend/брендбук. [Контракты v1](docs/architecture/parallel-contracts.md), [runtime handoffs](docs/architecture/runtime-handoffs.md) и [принятые уточнения](context/contracts/2026-10-10-mvp-boundaries.md). Дизайн — [frontend/design](frontend/design/README.md), без runtime verdicts.
+[ROADMAP v5](ROADMAP.md): три активных владельца — A4 (прежний A1) API/domain/events/common contracts, A3 judge/tasks/queue + config/Compose/startup/CI/acceptance, A5 весь frontend. Первым делаем [M0: реальный матч двух участников](docs/quality/m0-demo.md); полные обязательные блоки кейса остаются отдельной приёмкой. [STATE](context/STATE.md), [review/проверки](docs/reviews/2026-10-10-mvp-readiness.md), [contracts](docs/architecture/parallel-contracts.md), [handoffs](docs/architecture/runtime-handoffs.md), [дизайн](frontend/design/README.md).
 
 ## Начать работу
 
 1. Прочитать [инструкции для агентов](AGENTS.md).
 2. Проверить [контекст проекта](context/PROJECT.md), [актуальное состояние](context/STATE.md) и собственную карточку в [context/agents](context/agents/README.md).
-3. Выбрать задачу из [роадмапа пяти владельцев](ROADMAP.md), прочитать контракт v1 и занять READY задание в своей карточке.
+3. Выбрать задачу из [роадмапа трёх владельцев](ROADMAP.md), прочитать контракт v1 и занять READY задание в своей карточке.
 4. Создать `feature/<краткое-название>` от актуальной `develop`. Работа идёт строго по [GitFlow](docs/operations/gitflow.md).
 5. После работы записать отдельный [аудит](context/audits/README.md), обновить свою карточку и создать PR в `develop`.
 

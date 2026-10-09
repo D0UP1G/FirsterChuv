@@ -1,4 +1,17 @@
-# Агент 3: sandbox, задачи, код
+# Агент 3: задачи, очередь, песочница и запуск
+
+## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
+
+- Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
+- Статус назначения READY; actual IN_PROGRESS/branch/base/paths владелец фиксирует перед своими edits. Датированная передача не запускает остановленную сессию.
+- Первое действие: P3-04.1 admission contention и P3-04.2 actual LocalJudge executor/factory + normalized import/compiler smoke.
+- Независимый резерв: P3-02 import/assets/checker/registry probes; P1-04 build/Compose/settings/readiness; P3-05 private workspace/drafts; P4-08 disposable system harness.
+- Владение: problems/submissions/drafts/judge/sandbox, backend/config, deploy/Compose/start scripts/.github CI/scripts/acceptance/docs/quality/evidence. Common contracts и API/domain принадлежат A4.
+- Передача: A4 gateway/snapshot/result+failure sinks → A3 factories/queue/worker; не ждать HTTP для собственного judge smoke. CI #63 attempt1 admission lock не исправляется rerun.
+- Fresh develop base этой ревизии 85e0cd0d2b82fce9996106af3922171dcee17c76; #60/#61/#62 MERGED. #63/#64 доступны после MERGED coordinator PR; #53/#57–59 пока не integrated. Не ждать отдельный STATE sync.
+- M0 → [ROADMAP v5](../../ROADMAP.md), [приёмка](../../docs/quality/m0-demo.md). При WAITING записать конкретный port/producer/consumer/SHA и в той же сессии взять следующий READY пункт. Explicit user stop имеет приоритет. Ни одна готовая часть/чужой audit не удаляется.
+
+## Исторические записи до ROADMAP v5
 
 ## Назначение координатора 2026-10-10T01:11:53+03:00: Реальная проверка и workspace
 

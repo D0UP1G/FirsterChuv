@@ -1,5 +1,7 @@
 # Целевой запуск, восстановление и защита MVP
 
+Текущий приоритет ROADMAP v5: A3/A4(прежний A1)/A5 и [первый матч M0](../quality/m0-demo.md). Одна команда ниже целевая, не подтверждённый runnable MVP; A3 отвечает за её реальную сборку/config/readiness. Для M0 два participant и normalized programmatic tasks; полная защита с полуфиналом→финалом/official tasks остаётся следующим этапом.
+
 Полный demo и команда `./scripts/start-demo.sh` ещё не реализованы. В аудитах Agent 1 зафиксированы ограниченные проверки Django/миграций, `scripts/dev.sh`, сборки API image и Compose health после запуска/перезапуска; полная приёмка чистой установки и T01 не выполнялись. В backend есть начальный каркас и локальные dev helpers; Compose содержит API scaffold, opt-in web и незавершённые runtime profiles. `match-clock` и `judge-worker` станут запускаемыми после реализации команд агентами 2 и 3. Не сообщать, что MVP или demo уже запускаются.
 
 ## Одна команда запуска

@@ -1,4 +1,17 @@
-# Агент 5: полный frontend и дизайн BLITZ_ARENA
+# Агент 5: весь frontend и дизайн BLITZ_ARENA
+
+## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
+
+- Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
+- Статус назначения READY; actual IN_PROGRESS/branch/base/paths владелец фиксирует перед своими edits. Датированная передача не запускает остановленную сессию.
+- Первое действие: P5-03 real auth/invite/admin/bracket #50 CONNECT; #62 safe return path уже merged, #64 минимальный бренд проверяется coordinator integration.
+- Независимый резерв: typed match/workspace clients/loading/error states, private draft recovery/logout isolation/keyboard/basic responsive; actual config/start/problem/submit/history/result подключать по одному endpoint.
+- Владение: весь frontend/src/styles/design/runtime clients/editor/map/UI/browser checks; backend/code providers не изменять.
+- Передача: A4 API/run/result/public; A3 workspace/task/draft/queue/judge. Приоритет M0 real match, не полировка 13 static screens/projector до submit. Missing endpoint блокирует только CONNECT, не роль.
+- Fresh develop base этой ревизии 85e0cd0d2b82fce9996106af3922171dcee17c76; #60/#61/#62 MERGED. #63/#64 доступны после MERGED coordinator PR; #53/#57–59 пока не integrated. Не ждать отдельный STATE sync.
+- M0 → [ROADMAP v5](../../ROADMAP.md), [приёмка](../../docs/quality/m0-demo.md). При WAITING записать конкретный port/producer/consumer/SHA и в той же сессии взять следующий READY пункт. Explicit user stop имеет приоритет. Ни одна готовая часть/чужой audit не удаляется.
+
+## Исторические записи до ROADMAP v5
 
 ## Передача координатором 2026-10-10T01:11:53+03:00
 
