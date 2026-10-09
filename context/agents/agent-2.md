@@ -4,7 +4,7 @@
 
 - Статус: `IN_PROGRESS` — P2-03.1 pure clock core; persisted lifecycle/start/clock command и MatchPort ещё впереди.
 - Исполнитель: Codex в роли агента 2.
-- Текущая задача/ветка/база: `P2-03.1` / `feature/match-clock-start` / актуальная `origin/develop` `d9488e3`. Срез опубликован в PR [#11](https://github.com/D0UP1G/FirsterChuv/pull/11), ready for review; head `9a20a7d`.
+- Текущая задача/ветка/база: `P2-03.1` / `feature/match-clock-start` / актуальная `origin/develop` `d9488e3`. Срез опубликован в PR [#11](https://github.com/D0UP1G/FirsterChuv/pull/11), OPEN и ready for review; проверяемая remote ветка обновлена документирующим аудитом.
 - Рабочий checkout: `work/FirsterChuv-agent2-clock`.
 - Пути текущего среза: `backend/apps/competition/domain/clock.py`, `backend/apps/competition/tests/test_clock.py`, эта карточка и аудит.
 - P2-01: bracket algorithm/ORM/generation/read slice опубликован в PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7), HEAD `1952244`, OPEN/ready/CLEAN; штатная suite 58 passed, migration check чистый.
