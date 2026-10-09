@@ -330,4 +330,11 @@ def freeze_roster(tournament_id: UUID) -> list[TournamentParticipant]:
             )
         if len(roster) < 2:
             raise RosterNotReady("Для генерации сетки нужны как минимум два участника.")
+        if any(
+            not entry.user.is_active or entry.user.role != User.Roles.PARTICIPANT
+            for entry in roster
+        ):
+            raise RosterNotReady(
+                "В составе есть неактивная учётная запись или пользователь с ролью admin."
+            )
         return roster

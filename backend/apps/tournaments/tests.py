@@ -149,6 +149,36 @@ class TournamentAPITests(TestCase):
                 )
                 self.assertEqual(response.status_code, 400, response.content)
 
+    def test_patch_rejects_invalid_dates_and_capacity_below_active_roster(self):
+        tournament = self.create_tournament()
+        second = self.add_user("patch-second@example.test", "Second Player")
+        third = self.add_user("patch-third@example.test", "Third Player")
+        for user, seed in (
+            (self.participant, 1),
+            (second, 2),
+            (third, 3),
+        ):
+            assign_participant(tournament.id, user.id, seed=seed)
+
+        self.authenticate(self.admin)
+        url = f"{self.list_url}/{tournament.id}"
+        invalid_dates = self.client.patch(
+            url,
+            {"startsAt": (tournament.ends_at + timedelta(seconds=1)).isoformat()},
+            format="json",
+        )
+        undersized_cap = self.client.patch(
+            url,
+            {"participantLimit": 2},
+            format="json",
+        )
+
+        self.assertEqual(invalid_dates.status_code, 400, invalid_dates.content)
+        self.assertEqual(undersized_cap.status_code, 400, undersized_cap.content)
+        tournament.refresh_from_db()
+        self.assertEqual(tournament.active_participant_count, 3)
+        self.assertEqual(tournament.participant_limit, 4)
+
     def test_match_config_is_validated_and_defaults_are_documented(self):
         self.authenticate(self.admin)
         invalid_duration = self.client.post(
@@ -439,17 +469,50 @@ class TournamentAPITests(TestCase):
         self.assertEqual(row["status"], TournamentParticipant.Status.ACTIVE)
 
     def test_roster_changes_are_rejected_after_freeze(self):
-        tournament = self.create_tournament(frozen=True)
+        tournament = self.create_tournament()
+        second = self.add_user("frozen-second@example.test", "Second Player")
+        third = self.add_user("frozen-third@example.test", "Third Player")
         self.authenticate(self.admin)
         collection_url = f"{self.list_url}/{tournament.id}/participants"
-        assigned = self.client.post(
+        first_assignment = self.client.post(
             collection_url,
             {"userId": str(self.participant.id), "seed": 1},
             format="json",
         )
+        second_assignment = self.client.post(
+            collection_url,
+            {"userId": str(second.id), "seed": 2},
+            format="json",
+        )
+        freeze_roster(tournament.id)
+
+        assigned = self.client.post(
+            collection_url,
+            {"userId": str(third.id), "seed": 3},
+            format="json",
+        )
+        reseeded = self.client.patch(
+            f"{collection_url}/{self.participant.id}",
+            {"seed": 4},
+            format="json",
+        )
+        removed = self.client.delete(f"{collection_url}/{self.participant.id}")
         tournament.refresh_from_db()
+        first_entry = TournamentParticipant.objects.get(
+            tournament=tournament,
+            user=self.participant,
+        )
+        second_entry = TournamentParticipant.objects.get(tournament=tournament, user=second)
+        self.assertEqual(first_assignment.status_code, 201, first_assignment.content)
+        self.assertEqual(second_assignment.status_code, 201, second_assignment.content)
         self.assertEqual(assigned.status_code, 409)
-        self.assertEqual(tournament.active_participant_count, 0)
+        self.assertEqual(reseeded.status_code, 409)
+        self.assertEqual(removed.status_code, 409)
+        self.assertEqual(first_entry.status, TournamentParticipant.Status.ACTIVE)
+        self.assertEqual(first_entry.seed, 1)
+        self.assertEqual(second_entry.status, TournamentParticipant.Status.ACTIVE)
+        self.assertEqual(tournament.active_participant_count, 2)
+        self.assertIsNotNone(tournament.roster_frozen_at)
 
     def test_admin_user_directory_is_minimal_active_participant_only_and_bounded(self):
         self.add_user("other@example.test", "Other Player")
@@ -540,6 +603,24 @@ class RosterFreezeTests(TestCase):
 
         Tournament.objects.filter(pk=self.tournament.id).update(active_participant_count=2)
         with self.assertRaises(RosterInvariantViolation):
+            freeze_roster(self.tournament.id)
+        self.tournament.refresh_from_db()
+        self.assertIsNone(self.tournament.roster_frozen_at)
+
+    def test_freeze_revalidates_active_account_and_participant_role(self):
+        assign_participant(self.tournament.id, self.first.id)
+        assign_participant(self.tournament.id, self.second.id)
+        User.objects.filter(pk=self.second.id).update(is_active=False)
+
+        with self.assertRaises(RosterNotReady):
+            freeze_roster(self.tournament.id)
+
+        self.tournament.refresh_from_db()
+        self.assertEqual(self.tournament.active_participant_count, 2)
+        self.assertIsNone(self.tournament.roster_frozen_at)
+
+        User.objects.filter(pk=self.second.id).update(is_active=True, role=User.Roles.ADMIN)
+        with self.assertRaises(RosterNotReady):
             freeze_roster(self.tournament.id)
         self.tournament.refresh_from_db()
         self.assertIsNone(self.tournament.roster_frozen_at)
