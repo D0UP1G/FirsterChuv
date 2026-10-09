@@ -1,5 +1,14 @@
 # Агент 5: полный frontend и дизайн BLITZ_ARENA
 
+## Текущий срез: P5-02 адаптивность, доступность и проектор
+
+- Статус: `IN_PROGRESS`; независимая feature-ветка от свежего `develop`, PR #64 остаётся отдельным открытым срезом.
+- Ветка: `feature/agent-5-p5-02-responsive`; база на старте `85e0cd0d2b82fce9996106af3922171dcee17c76` (`origin/develop`, после merge PR #62).
+- До реализации зарезервированы пути: `frontend/src/App.tsx`, новый `frontend/src/responsive.css`, `frontend/src/workspace/workspace.css`, `frontend/src/spectator/spectator.css`, эта карточка и append-only audit текущей сессии. Тесты затрагивать только при необходимости подтвердить поведение.
+- Область: мобильная оболочка и формы, рабочее место участника, публичная карта, отдельный projector layout, видимый keyboard focus, reduced motion, читаемое переполнение ошибок и статусов. Существующие CodeMirror, безопасный Markdown/URL, TeX и локальные черновики сохраняются.
+- Проверки по ROADMAP: UI tests, typecheck, lint и build с ограниченными workers; визуально проверить обычный/mobile/projector сценарии в disposable browser session, если среда доступна.
+- Следующий READY после этого среза: P5-03 — подключать каждый доступный реальный provider отдельно; недостающий endpoint записывать как `WAITING_CONNECT`.
+
 ## Передача координатором 2026-10-10T01:11:53+03:00
 
 - Назначен прямым запросом команды, новая отдельная задача Codex «Агент 5 — frontend и дизайн BLITZ_ARENA», thread 01a122b2-27f9-7af0-ab77-dd282807d489.
