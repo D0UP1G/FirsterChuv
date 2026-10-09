@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "backend.apps.common.apps.CommonConfig",
     "backend.apps.accounts.apps.AccountsConfig",
+    "backend.apps.drafts.apps.DraftsConfig",
     "backend.apps.tournaments.apps.TournamentsConfig",
 ]
 
