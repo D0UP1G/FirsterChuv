@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import base64
+import subprocess
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from runner import (  # noqa: E402
+from backend.apps.judge.runner import (  # noqa: E402
+    CPP20_COMPILER_ARGV,
     IMAGE,
     MAX_INPUT_BYTES,
     MAX_SOURCE_BYTES,
@@ -33,6 +36,8 @@ class RequestProtocolTests(unittest.TestCase):
             encode_request(b"x", b"x" * (MAX_INPUT_BYTES + 1))
         with self.assertRaises(ValueError):
             encode_request(b"", b"")
+        expected_length = MAX_INPUT_BYTES + len(f"1 {MAX_INPUT_BYTES}\n") + 1
+        self.assertEqual(len(encode_request(b"x", b"i" * MAX_INPUT_BYTES)), expected_length)
 
 
 class DockerPolicyTests(unittest.TestCase):
@@ -44,8 +49,8 @@ class DockerPolicyTests(unittest.TestCase):
             "--platform=linux/amd64",
             "--network=none",
             "--read-only",
-            "--memory=512m",
-            "--memory-swap=512m",
+            "--memory=536870912",
+            "--memory-swap=536870912",
             "--cpus=1.0",
             "--pids-limit=64",
             "--user=65534:65534",
@@ -60,6 +65,35 @@ class DockerPolicyTests(unittest.TestCase):
         self.assertNotIn("--volume", command)
         self.assertFalse(any(item.startswith("--env") or item == "-v" for item in command))
         self.assertFalse(any("docker.sock" in item for item in command))
+        self.assertEqual(command[-1], "2000")
+
+    def test_task_limits_are_trusted_bounded_docker_arguments(self) -> None:
+        command = build_docker_create_args(
+            "firsterchuv-a3-01-" + "d" * 32,
+            "run",
+            memory_limit_bytes=128 * 1024 * 1024,
+            time_limit_ms=725,
+        )
+        self.assertIn("--memory=134217728", command)
+        self.assertIn("--memory-swap=134217728", command)
+        self.assertEqual(command[-1], "725")
+        for invalid in (True, 31 * 1024 * 1024, 512 * 1024 * 1024 + 1):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                build_docker_create_args("firsterchuv-a3-01-" + "e" * 32, "run", memory_limit_bytes=invalid)
+        for invalid in (True, 0, 120_001):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                build_docker_create_args("firsterchuv-a3-01-" + "f" * 32, "run", time_limit_ms=invalid)
+
+    def test_only_registry_compiler_matching_the_image_profile_is_supported(self) -> None:
+        runner = DockerRunner()
+        compiler = SimpleNamespace(
+            language_id="cpp20",
+            image=IMAGE,
+            source_filename="main.cpp",
+            compile_argv=CPP20_COMPILER_ARGV,
+        )
+        self.assertTrue(runner.supports_compiler(compiler))
+        self.assertFalse(runner.supports_compiler(SimpleNamespace(**{**vars(compiler), "image": "attacker/image"})))
 
     def test_container_name_cannot_be_supplied_by_a_caller(self) -> None:
         with self.assertRaises(ValueError):
@@ -68,7 +102,9 @@ class DockerPolicyTests(unittest.TestCase):
     def test_only_compile_and_run_modes_are_accepted(self) -> None:
         name = "firsterchuv-a3-01-" + "b" * 32
         self.assertEqual(build_docker_create_args(name, "compile")[-1], "compile")
-        self.assertEqual(build_docker_create_args(name, "run")[-1], "run")
+        run_command = build_docker_create_args(name, "run")
+        self.assertEqual(run_command[-2], "run")
+        self.assertEqual(run_command[-1], "2000")
         with self.assertRaises(ValueError):
             build_docker_create_args(name, "shell")
 
@@ -95,13 +131,24 @@ class ResponseProtocolTests(unittest.TestCase):
 
 
 class NoRuntimeClaimTests(unittest.TestCase):
-    @patch("runner._cleanup")
-    @patch("runner._run_docker", side_effect=RunnerInfrastructureError("daemon unavailable"))
+    @patch("backend.apps.judge.runner._cleanup")
+    @patch("backend.apps.judge.runner._run_docker", side_effect=RunnerInfrastructureError("daemon unavailable"))
     def test_missing_docker_daemon_fails_closed(self, _docker, _cleanup) -> None:
         # This test checks only fail-closed control flow; it never starts Docker or solution code.
         with self.assertRaises(RunnerInfrastructureError):
             DockerRunner().execute(b"int main() { return 0; }", b"")
         _cleanup.assert_called_once()
+
+    @patch("backend.apps.judge.runner._run_docker")
+    def test_oom_is_true_only_for_exact_docker_state(self, docker_call) -> None:
+        runner = DockerRunner()
+        docker_call.return_value = subprocess.CompletedProcess([], 0, b"true\n", b"")
+        self.assertTrue(runner._inspect_oom("a" * 64))
+        docker_call.return_value = subprocess.CompletedProcess([], 0, b"false\n", b"")
+        self.assertFalse(runner._inspect_oom("a" * 64))
+        docker_call.return_value = subprocess.CompletedProcess([], 0, b"unknown\n", b"")
+        with self.assertRaises(RunnerInfrastructureError):
+            runner._inspect_oom("a" * 64)
 
 
 class BoundedDockerPipeTests(unittest.TestCase):
@@ -133,7 +180,7 @@ class BoundedDockerPipeTests(unittest.TestCase):
         with self.assertRaisesRegex(RunnerInfrastructureError, "stderr exceeded"):
             _run_docker([sys.executable, "-c", script], timeout=5, stderr_limit=128)
 
-    @patch("runner.subprocess.Popen", side_effect=FileNotFoundError("docker is missing"))
+    @patch("backend.apps.judge.runner.subprocess.Popen", side_effect=FileNotFoundError("docker is missing"))
     def test_missing_docker_binary_is_tolerated_only_for_missing_container_cleanup(self, _popen) -> None:
         _cleanup("firsterchuv-a3-01-" + "c" * 32, missing_ok=True)
 
