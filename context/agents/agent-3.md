@@ -1,5 +1,12 @@
 # Агент 3: sandbox, задачи, код
 
+## Текущая сессия
+
+- P3-02.3 — `IN_REVIEW`; ветка `feature/problem-management-api`, база `origin/develop` SHA `f7f4e2d42b42170b2169b608d1e86b6eb7af6921`.
+- До завершения сверены `AGENTS.md`, PROJECT/STATE/карточка, ROADMAP v3, требования P01/P02/E02/S01, кейс (стр. 5–7), parallel contracts, архитектурные решения и аудиты P3-02.
+- Реализован P3-02.3: typed rejection для private artifact language IDs и invalid-manifest tests. Локально пройдены backend 106/106, app tests 8/8, Django/migration checks, contracts/import boundary/domain/sandbox suites, compileall и diff check.
+- Аудит: [2026-10-09T210104+0300-agent-3-P3-02.3-artifact-language-types.md](../audits/2026-10-09T210104+0300-agent-3-P3-02.3-artifact-language-types.md). Следующий шаг: feature PR в `develop`, дождаться PR CI/review; не сливать самостоятельно.
+
 Перепланировано координатором 2026-10-09 по поручению команды; исторические NOT_RUN/PASS владельца не переписаны.
 
 - Проверены/integration feature: #3 6950f10 harness F01/F07 fixes, 12 units/5 actual smoke/bounded isolation+cleanup+recovery; #14 9234951 normalized catalog/private split/immutable versions. GitHub MERGED общего PR определяет integration. Не повторять готовые cores.
