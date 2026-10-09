@@ -6,7 +6,6 @@ from collections.abc import Mapping
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
-from rest_framework.views import exception_handler as drf_exception_handler
 
 
 def _convert_keys(value, convert):
@@ -53,6 +52,10 @@ def _message_for(detail) -> str:
 
 
 def exception_handler(exc, context):
+    # Import lazily: importing APIView here at module load time makes DRF load
+    # this module's configured renderers while they are still being defined.
+    from rest_framework.views import exception_handler as drf_exception_handler
+
     response = drf_exception_handler(exc, context)
     if response is None:
         return None
