@@ -45,6 +45,12 @@
 - Реальный bracket/browser CONNECT не выполнялся. Draft GET/PUT provider #21 остаётся открытым с CAS blocker; anonymous event/SSE endpoint отсутствует. T15 и P4-06 не закрывать.
 - Этот конечный merge checkpoint фиксируется в feature/agent-4-p4-06-closeout-final-status, созданной от develop 659c45f. Работа остаётся документационной, следующая функциональная задача не начинается по прямому указанию пользователя.
 
+## Публикация финального статуса PR #49
+
+- Checkpoint времени 2026-10-10T00:33+03:00: PR #49 OPEN, base develop 659c45fe7e10250a0ea8dd14b637cce6b304a359, initial head 6f84ac6297d4a4c8f41edd996cdf35a19254cee7.
+- Первый snapshot CI на initial head: contracts-and-common-imports, backend, domain и sandbox-unit — все QUEUED. После push publication update проверить свежий final head.
+- Scope: только context/agents/agent-4.md и этот audit; кода, STATE, tests, контрактов и чужих work branches нет. Artifact PR #49 прикреплён.
+
 ## Следующий шаг
 
-Опубликовать финальную синхронизацию карточки/audit отдельным docs-only PR в develop и проверить его checks. После интеграции оставить checkout на синхронизированном develop и завершить сессию; новую функциональную работу не начинать.
+Опубликовать publication checkpoint в PR #49, проверить base/head и дождаться четырёх SUCCESS jobs на final head; затем выполнить обычный merge commit, fast-forward local develop и проверить clean/synced state. После этого остановиться, не начинать новую функциональную задачу.
