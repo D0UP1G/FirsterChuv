@@ -14,6 +14,8 @@ from runner import (  # noqa: E402
     MAX_SOURCE_BYTES,
     DockerRunner,
     RunnerInfrastructureError,
+    _cleanup,
+    _run_docker,
     build_docker_create_args,
     encode_request,
     parse_response,
@@ -41,7 +43,6 @@ class DockerPolicyTests(unittest.TestCase):
             "--pull=never",
             "--platform=linux/amd64",
             "--network=none",
-            "--pid=private",
             "--read-only",
             "--memory=512m",
             "--memory-swap=512m",
@@ -54,6 +55,7 @@ class DockerPolicyTests(unittest.TestCase):
             IMAGE,
         ):
             self.assertIn(required, joined)
+        self.assertFalse(any(item == "--pid" or item.startswith("--pid=") for item in command))
         self.assertNotIn("--mount", command)
         self.assertNotIn("--volume", command)
         self.assertFalse(any(item.startswith("--env") or item == "-v" for item in command))
@@ -100,6 +102,40 @@ class NoRuntimeClaimTests(unittest.TestCase):
         with self.assertRaises(RunnerInfrastructureError):
             DockerRunner().execute(b"int main() { return 0; }", b"")
         _cleanup.assert_called_once()
+
+
+class BoundedDockerPipeTests(unittest.TestCase):
+    def test_streams_stdin_and_drains_both_bounded_output_pipes(self) -> None:
+        payload = b"x" * (128 * 1024)
+        script = (
+            "import sys; data=sys.stdin.buffer.read(); "
+            "sys.stderr.buffer.write(b'e' * 131072); "
+            "sys.stdout.buffer.write(data)"
+        )
+        result = _run_docker(
+            [sys.executable, "-c", script],
+            timeout=5,
+            input_data=payload,
+            stdout_limit=len(payload),
+            stderr_limit=131072,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, payload)
+        self.assertEqual(result.stderr, b"e" * 131072)
+
+    def test_stdout_overflow_kills_the_docker_cli(self) -> None:
+        script = "import sys,time; sys.stdout.buffer.write(b'x'*4096); sys.stdout.flush(); time.sleep(10)"
+        with self.assertRaisesRegex(RunnerInfrastructureError, "stdout exceeded"):
+            _run_docker([sys.executable, "-c", script], timeout=5, stdout_limit=128)
+
+    def test_stderr_overflow_kills_the_docker_cli(self) -> None:
+        script = "import sys,time; sys.stderr.buffer.write(b'x'*4096); sys.stderr.flush(); time.sleep(10)"
+        with self.assertRaisesRegex(RunnerInfrastructureError, "stderr exceeded"):
+            _run_docker([sys.executable, "-c", script], timeout=5, stderr_limit=128)
+
+    @patch("runner.subprocess.Popen", side_effect=FileNotFoundError("docker is missing"))
+    def test_missing_docker_binary_is_tolerated_only_for_missing_container_cleanup(self, _popen) -> None:
+        _cleanup("firsterchuv-a3-01-" + "c" * 32, missing_ok=True)
 
 
 if __name__ == "__main__":

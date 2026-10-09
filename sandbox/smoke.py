@@ -11,13 +11,23 @@ from runner import DockerRunner, ExecutionResult, RunnerInfrastructureError
 
 ROOT = Path(__file__).resolve().parent
 FIXTURES = ROOT / "fixtures"
-EXPECTED_VERDICTS = {"ok": "OK", "wa": "WA", "timeout": "TIME_LIMIT", "output-limit": "OUTPUT_LIMIT"}
+EXPECTED_VERDICTS = {
+    "ok": "OK",
+    "wa": "WA",
+    "timeout": "TIME_LIMIT",
+    "output-limit": "OUTPUT_LIMIT",
+    "protocol-write": "BLOCKED",
+}
 
 
 def evaluate(name: str, result: ExecutionResult, expected: bytes) -> str:
     if result.status == "INFRASTRUCTURE_ERROR":
         raise RunnerInfrastructureError("sandbox returned an infrastructure failure")
     target = EXPECTED_VERDICTS[name]
+    if target == "BLOCKED":
+        if result.status != "EXITED" or result.exit_code != 0 or result.stdout != b"blocked\n":
+            raise RuntimeError(f"{name}: supervisor protocol stream was not protected")
+        return target
     if target in {"OK", "WA"}:
         if result.status != "EXITED" or result.exit_code != 0:
             raise RuntimeError(f"{name}: expected a completed process, got {result.status}")

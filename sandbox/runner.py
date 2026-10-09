@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import re
+import selectors
 import subprocess
+import time
 import uuid
 from dataclasses import dataclass
 
@@ -16,6 +19,8 @@ MAX_INPUT_BYTES = 64 * 1024
 MAX_OUTPUT_BYTES = 32 * 1024
 MAX_DIAGNOSTICS_BYTES = 8 * 1024
 MAX_RESPONSE_BYTES = 12 * 1024 * 1024
+MAX_DOCKER_STDERR_BYTES = 64 * 1024
+DOCKER_READ_CHUNK_BYTES = 64 * 1024
 OUTER_TIMEOUT_SECONDS = 25
 CREATE_TIMEOUT_SECONDS = 15
 CLEANUP_TIMEOUT_SECONDS = 10
@@ -74,7 +79,6 @@ def build_docker_create_args(container_name: str, mode: str) -> list[str]:
         "--attach=stdout",
         "--attach=stderr",
         "--network=none",
-        "--pid=private",
         "--read-only",
         "--memory=512m",
         "--memory-swap=512m",
@@ -119,33 +123,102 @@ def parse_response(data: bytes) -> ExecutionResult:
     return ExecutionResult(payload["status"], exit_code, signal, stdout, stderr, artifact)
 
 
-def _run_docker(args: list[str], *, timeout: int, input_data: bytes | None = None) -> subprocess.CompletedProcess[bytes]:
+def _run_docker(
+    args: list[str],
+    *,
+    timeout: int,
+    input_data: bytes | None = None,
+    stdout_limit: int = MAX_RESPONSE_BYTES,
+    stderr_limit: int = MAX_DOCKER_STDERR_BYTES,
+) -> subprocess.CompletedProcess[bytes]:
+    process: subprocess.Popen[bytes] | None = None
+    selector = selectors.DefaultSelector()
+    stdout = bytearray()
+    stderr = bytearray()
+    input_offset = 0
+    stdin_pipe = None
     try:
-        return subprocess.run(
+        process = subprocess.Popen(
             args,
-            input=input_data,
+            stdin=subprocess.PIPE if input_data else subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=timeout,
-            check=False,
             shell=False,
         )
+        assert process.stdout is not None and process.stderr is not None
+        os.set_blocking(process.stdout.fileno(), False)
+        os.set_blocking(process.stderr.fileno(), False)
+        selector.register(process.stdout, selectors.EVENT_READ, ("stdout", stdout, stdout_limit))
+        selector.register(process.stderr, selectors.EVENT_READ, ("stderr", stderr, stderr_limit))
+        if input_data:
+            stdin_pipe = process.stdin
+            assert stdin_pipe is not None
+            os.set_blocking(stdin_pipe.fileno(), False)
+            selector.register(stdin_pipe, selectors.EVENT_WRITE, input_data)
+
+        deadline = time.monotonic() + timeout
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RunnerInfrastructureError("Docker CLI or daemon timed out")
+            for key, _ in selector.select(min(remaining, 0.1)):
+                if isinstance(key.data, tuple) and key.data[0] in {"stdout", "stderr"}:
+                    stream_name, target, limit = key.data
+                    try:
+                        chunk = os.read(key.fileobj.fileno(), min(DOCKER_READ_CHUNK_BYTES, limit - len(target) + 1))
+                    except BlockingIOError:
+                        continue
+                    if not chunk:
+                        selector.unregister(key.fileobj)
+                        key.fileobj.close()
+                        continue
+                    if len(target) + len(chunk) > limit:
+                        raise RunnerInfrastructureError(f"Docker {stream_name} exceeded its output cap")
+                    target.extend(chunk)
+                    continue
+
+                if input_data is not None and input_offset < len(input_data):
+                    try:
+                        written = os.write(
+                            key.fileobj.fileno(),
+                            input_data[input_offset:input_offset + DOCKER_READ_CHUNK_BYTES],
+                        )
+                    except (BrokenPipeError, ConnectionResetError):
+                        written = 0
+                        input_offset = len(input_data)
+                    except BlockingIOError:
+                        continue
+                    input_offset += written
+                if input_data is None or input_offset >= len(input_data):
+                    selector.unregister(key.fileobj)
+                    key.fileobj.close()
+                    stdin_pipe = None
+
+        returncode = process.wait(timeout=max(0.001, deadline - time.monotonic()))
+        return subprocess.CompletedProcess(args, returncode, bytes(stdout), bytes(stderr))
+    except RunnerInfrastructureError:
+        raise
     except (FileNotFoundError, PermissionError, subprocess.TimeoutExpired, OSError) as error:
         raise RunnerInfrastructureError("Docker CLI or daemon is unavailable") from error
+    finally:
+        selector.close()
+        if process is not None:
+            for pipe in (stdin_pipe, process.stdout, process.stderr):
+                if pipe is not None and not pipe.closed:
+                    pipe.close()
+            if process.poll() is None:
+                process.kill()
+                process.wait()
 
 
 def _cleanup(container_ref: str, *, missing_ok: bool = False) -> None:
     try:
-        result = subprocess.run(
+        result = _run_docker(
             ["docker", "rm", "--force", container_ref],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             timeout=CLEANUP_TIMEOUT_SECONDS,
-            check=False,
-            shell=False,
         )
-    except (FileNotFoundError, PermissionError, subprocess.TimeoutExpired, OSError) as error:
-        if not missing_ok or not isinstance(error, FileNotFoundError):
+    except RunnerInfrastructureError as error:
+        if not missing_ok or not isinstance(error.__cause__, FileNotFoundError):
             raise RunnerInfrastructureError("failed to remove the runner-owned container") from error
         return
     if result.returncode != 0:

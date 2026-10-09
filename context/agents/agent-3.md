@@ -1,5 +1,16 @@
 # Агент 3: sandbox, задачи и код
 
+## Текущая сессия: P3-01
+
+- ID задачи: `P3-01`; статус: `IN_PROGRESS`.
+- Ветка: `feature/sandbox-proof`; база `origin/develop`: `d9488e3bf960c6a2248fd4399ba5848a091b8769`; исходный HEAD: `932c1a9deff64b222ecbebc9154c72547ac08ab8`.
+- Пути в работе: `sandbox/runner.py`, `sandbox/container_runner.cpp`, `sandbox/tests/test_runner.py`, `sandbox/smoke.py`, `sandbox/README.md`, эта карточка и отдельный аудит сессии.
+- Объём: устранить несовместимый `--pid=private`, закрыть доступ недоверенного процесса к stdout управляющего процесса и ограничить чтение stdout/stderr на хосте; выполнить локальные проверки и реальный runtime только при доступном Docker Engine.
+- Проверено перед началом: рабочее дерево чистое; ветка содержит актуальный `origin/develop` merge; Docker socket в этом окружении ранее недоступен.
+- Сделано локально: PID-флаг удалён; supervisor вызывает `PR_SET_DUMPABLE=0`; host runner ограничивает оба Docker pipe и завершает CLI при превышении; добавлены unit tests и smoke fixture `protocol-write`.
+- Проверки: 12/12 sandbox unit tests, Python compile, C++20 syntax (`-Wall -Wextra -Werror`) и `git diff --check` прошли. `docker info` не подключился к `/var/run/docker.sock`; `python3 sandbox/smoke.py --case protocol-write` завершился `NOT_VERIFIED`, поэтому runtime probe и Engine inspect не подтверждены.
+- Ограничение и следующий шаг: P3-01 остаётся `IN_PROGRESS` до runtime/hostile checks на доступном Docker Engine; затем синхронизировать/обновить PR #3. Независимый P3-02 выполнить в отдельной `feature/*` ветке от актуального `origin/develop`; внешний формат пакета не предполагать.
+
 Перепланировано координатором 2026-10-09 по PR #3. Историческое NOT_RUN сохранено в аудитах владельца.
 
 - Реализация: harness в feature/sandbox-proof, HEAD 3a0d865, PR [#3](https://github.com/D0UP1G/FirsterChuv/pull/3) OPEN, пока не integrated; полного LocalJudge/worker/API нет.

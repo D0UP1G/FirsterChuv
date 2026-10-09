@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <sys/resource.h>
+#include <sys/prctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -352,6 +353,11 @@ void run_program(const std::string& artifact, const std::string& input) {
 }
 
 int main(int argc, char* argv[]) {
+  // Same-UID solution processes must not inspect /proc/1/fd and write into this protocol stream.
+  if (::prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) != 0) {
+    emit_infrastructure_error();
+    return 0;
+  }
   if (argc != 2 || (std::string_view(argv[1]) != "compile" &&
                     std::string_view(argv[1]) != "run") ||
       !make_directory("/work/tmp")) {
