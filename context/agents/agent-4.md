@@ -4,7 +4,7 @@
 
 ## Текущая задача
 
-- Документационный checkpoint по PR #45: merge audit и актуализация карточки выполняются в feature/agent-4-p4-06-draft-reconnect-merge-audit, созданной от origin/develop 03a463650828774d5767e086a69183f83c38006b; функциональная следующая задача не открывается.
+- Checkpoint P4-06 reconnect: merge evidence PR #45 и актуальная сверка внешних зависимостей опубликованы документационной веткой feature/agent-4-p4-06-draft-reconnect-merge-audit от develop 03a463650828774d5767e086a69183f83c38006b в [PR #47](https://github.com/D0UP1G/FirsterChuv/pull/47); publication audit: [checkpoint](../audits/2026-10-10T001529+0300-agent-4-P4-06-draft-reconnect-audit-publication.md). Следующая функциональная задача не начиналась по прямому указанию пользователя.
 
 - `P4-02` — `DONE` по интеграции: [PR #24](https://github.com/D0UP1G/FirsterChuv/pull/24) merged commit `505a2bc0cee82281becb431996bf3a62827edac8`; merge checkpoint — `context/audits/2026-10-09T210237+0300-agent-4-P4-02-merge.md`. Полный T03–T05 остаётся частично принят по ограничениям implementation audit.
 
