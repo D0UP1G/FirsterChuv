@@ -19,5 +19,7 @@
 - Пути: `backend/apps/competition/domain/command_store.py`, tests в `backend/apps/competition/tests/test_admin_actions.py`, эта карточка и новый audit. Не менять persisted models/API/shared wiring.
 - Подзадача: строгая fingerprint для intent (match/key/actor/action/reason/arguments), exact retry возвращает первоначальный plan, тот же key с другим payload — conflict; чистый helper не заявляется как durable production store.
 - Audit P2-05: [command receipt core](../audits/2026-10-09T234217+0300-agent-2-P2-05-command-store.md).
+- Реализация опубликована в [PR #41](https://github.com/D0UP1G/FirsterChuv/pull/41), head `5c5740a34fb5cc498167cbb44cc8596741332b89`, OPEN; при publication: contracts/sandbox-unit выполнялись, backend/domain были в очереди.
+- Publication audit: [PR #41](../audits/2026-10-09T234419+0300-agent-2-P2-05-command-publication.md).
 
 [ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
