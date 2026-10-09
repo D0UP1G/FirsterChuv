@@ -28,7 +28,9 @@
 | V03 | WebSocket/SSE, анимация сдачи/обгона/победы | Стр. 6, блок 4 | P2-06, P4-05 / T17 |
 | V04 | Режим большого экрана/проектора | Стр. 6, блок 4 | P4-05 / T16 |
 
-P1-01 закрывает backend-подпроверки M02/T04 для invite API в своей feature-ветке до merge. Его participant/auth guard покрывает только вход через invite; полное S02 также включает private source, spectator read-only, object access и admin/browser paths и остаётся открытым.
+P1-01 интегрирован PR #12 и закрывает backend-подпроверки M02/T04 для invite API. Его participant/auth guard покрывает только вход через invite; полное S02 также включает private source, spectator read-only, object access и admin/browser paths и остаётся открытым.
+
+P1-02 добавляет PR checks для backend/domain/schema/common-import boundaries, а отдельный manual workflow — запуск реального Docker smoke с явным подтверждением. GitHub dispatch станет доступен после обычной интеграции workflow в default branch `main`; до того времени Docker smoke остаётся отдельной ручной проверкой. Это повторяемый CI и частичная поддержка D02/S01/T20; сам workflow не включает branch protection, а отсутствие private data в полной системе, runtime isolation и полные S02/T20 остаются отдельной приёмкой.
 
 План MVP выбирает ручной посев и одиночное выбывание. Рейтинг и другие форматы не нужны для покрытия минимального требования. Автозапуск реализуется по готовности обоих; расписание можно добавить после него. Диапазоны 3–5 задач и 15–30 минут на стр. 2 описывают обычный блиц, не являются объявленным жёстким лимитом API. Для demo: четыре задачи, 20 минут; короткая длительность для проверки допустима.
 
