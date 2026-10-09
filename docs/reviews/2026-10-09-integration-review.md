@@ -8,7 +8,7 @@
 
 Обновлены независимые review auth/invites/common CI, bracket/clock/scoring/events, catalog/queue и весь sandbox. Использованы три read-only reviewers, изолированные copies и временные SQLite; исходные feature refs и чужие незакоммиченные checkout не изменялись. Неопубликованная работа/фактический будущий demo-host этим не подтверждаются.
 
-На исходном снимке 12 PR merged и 7 open. Четыре среза прошли review: #3 harness, #11 pure clock, #13 pure scoring, #14 normalized catalog. В ту же сборку добавлен проверенный pure admin guards slice 8f5b762. Они объединены merge commits в coordinator-owned feature/mvp-integration-review-2; общий PR в develop проходит CI на совместном коде. Их исходные commits сохранены в ancestry. #7/#15/#16 не включены из-за воспроизведённых дефектов ниже. Полный MVP ещё не работает: нет frontend, persisted match runtime/gateway, LocalJudge/worker/drafts/production SSE.
+На исходном снимке 12 PR merged и 7 open. Четыре среза прошли review: #3 harness, #11 pure clock, #13 pure scoring, #14 normalized catalog. В ту же сборку добавлен проверенный pure admin guards slice 8f5b762. Они объединены merge commits в coordinator-owned feature/mvp-integration-review-2; общий PR в develop должен пройти CI на совместном коде до merge. Их исходные commits сохранены в ancestry. #7/#15/#16 не включены из-за воспроизведённых дефектов ниже. Полный MVP ещё не работает: нет frontend, persisted match runtime/gateway, LocalJudge/worker/drafts/production SSE.
 
 ## Все PR на исходном снимке
 

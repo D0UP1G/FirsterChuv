@@ -20,7 +20,7 @@
 1. API извлекает trusted authenticated User; server received_at фиксируется один раз до bounded SQLite retry. Клиент не задаёт actor/elapsed/scoring version.
 2. A3 queue в одной SQLite transaction вызывает gateway authorize_submission(actor UUID, match/run/problem/received), сохраняет source/submission/capacity, register_accepted(common AttemptReceipt), allowlisted accepted event. Commit предшествует 202; callback не пишет вне этой transaction.
 3. Queue local receipts имеют дополнительный match_id. Adapter оставляет его на стороне queue, проецирует неизменённый common v1 receipt; не переименовывает обязательные поля под локальную модель.
-4. Worker получает version/checksum из immutable текущего run snapshot, а не active latest catalog. Проверяет checksum/allowlist, создаёт TrustedJudgeJob и вызывает настоящий provider. Не выполняет присланный код или package scripts на host.
+4. Worker получает version/checksum из immutable snapshot того run, в котором submission была принята (`submission.run_id`), а не нового current run матча или active latest catalog. После rematch старая очередь продолжает проверяться по своему snapshot; apply_result не меняет score нового run. Проверяет checksum/allowlist, создаёт TrustedJudgeJob и вызывает настоящий provider. Не выполняет присланный код или package scripts на host.
 5. Queue durable result/outbox → gateway apply_result(ResultReceipt). ResultApplication.applied=false означает уже применённый/устаревший результат, доставка может считаться выполненной; exception означает retry. Duplicate/late result не удваивает score.
 6. Gateway решает score/FINALIZING/winner/downstream/event атомарно. Последняя WA после OK не отменяет SOLVED: score/event projector сохраняет first OK и честный lastVerdict.
 
