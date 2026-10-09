@@ -5,7 +5,7 @@
 - Текущая задача/ветка/база: `A1-03` / `feature/tournament-roster` / `3b2b0ad` (`origin/develop`).
 - Пути текущего среза: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/`, `manage.py`, `pyproject.toml`, `uv.lock`, `backend/Dockerfile`, `compose.yaml`, `.env.example`, `scripts/`, `deploy/nginx/`.
 - Задачи роли: `A1-01`–`A1-06` из `ROADMAP.md`.
-- Последний аудит/PR/проверки: [A1-03.2 roster API](../audits/2026-10-09T153601+0300-agent-1-A1-03-2-roster-api.md) — локальный feature-only срез; [A1-03.1 CRUD audit](../audits/2026-10-09T152726+0300-agent-1-A1-03-1-tournament-crud.md); [PR #6](https://github.com/D0UP1G/FirsterChuv/pull/6) merged at `3b2b0ad`.
+- Последний аудит/PR/проверки: [A1-03.3 freeze/concurrency](../audits/2026-10-09T154243+0300-agent-1-A1-03-3-roster-freeze-concurrency.md) — локальный feature-only срез; [A1-03.2 roster API](../audits/2026-10-09T153601+0300-agent-1-A1-03-2-roster-api.md); [A1-03.1 CRUD](../audits/2026-10-09T152726+0300-agent-1-A1-03-1-tournament-crud.md).
 
 ## Разбивка задач на малые шаги
 
@@ -33,7 +33,7 @@
 
 - [x] A1-03.1 Модель и admin-only CRUD турнира: поля M01, strict input, config, даты/status, безопасный delete/archive; API contract и миграции. Feature-only, audit attached to implementation; not merged.
 - [x] A1-03.2 Participant directory и roster: список active accounts, назначение, список, числовой seed, удаление/логическое снятие. Feature-only; audit при implementation.
-- [ ] A1-03.3 Capacity/uniqueness: транзакционный условный счётчик, ограничения БД, inactive/admin/duplicate guards; `freeze_roster(tournament_id)` вызывается при создании bracket в той же внешней atomic transaction согласно `docs/architecture/match-engine.md` и API contract. Решение пользователя: следовать docs; ответ получен 2026-10-09.
+- [x] A1-03.3 Capacity/uniqueness: транзакционный условный счётчик, ограничения БД, inactive/admin/duplicate guards; `freeze_roster(tournament_id)` вызывается при создании bracket в той же внешней atomic transaction согласно `docs/architecture/match-engine.md` и API contract. Решение пользователя: следовать docs; hook и rollback/concurrency tests готовы в feature.
 - [ ] A1-03.4 Сверить M01/M03 и T03/T05 с PDF, проверить историю played entrants, записать аудит с фактическими ограничениями сценариев.
 
 Подшаги исполнения: .1 contract/model → migration → CRUD/security; .2 participant model → admin directory → roster API; .3 concurrency/freeze/replacement boundary → API tests; .4 case cross-check → feature review/audit/PR. После каждого завершённого среза сверить `ROADMAP.md`, API/data-model docs и кейс. `context/STATE.md` меняется только после подтверждённой интеграции в `develop`.
@@ -64,4 +64,4 @@
 - Владею: `backend/config/`, `backend/apps/common/`, `backend/apps/accounts/`, `backend/apps/tournaments/` (включая invites/participants), root tooling, Compose/CI, общей цепочкой миграций, интеграцией и релизом.
 - Не менять пути агентов 2–4 без согласованной передачи. Общие контракты и миграции сверять с потребителями до изменения.
 - Передача агентам 2–4: стабильные пути, auth dependency, ID-модели, конфигурация, миграционная база и локальный запуск.
-- Следующий шаг: A1-03.3 — провалидировать concurrent capacity behavior, добавить идемпотентный `freeze_roster(tournament_id)` hook в ownership Agent 1, покрыть atomic boundary и сохранить отсутствие правок Agent 2 paths.
+- Следующий шаг: A1-03.4 — повторно сверить M01/M03/T03/T05 с кейсом и API, проверить soft removal/frozen history boundary, выполнить final feature review/audit и PR; не менять чужие module paths и общий STATE до merge.

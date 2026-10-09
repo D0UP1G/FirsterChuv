@@ -1,6 +1,6 @@
 # Приёмка MVP
 
-Статус всех полных сценариев: **NOT_RUN**. В несмерженных feature-срезах Agent 1 есть частичные API evidence для auth/roles/admin bootstrap и A1-03.1/.2 tournament/roster flows. Полные T02/T03/T05/T20 требуют concurrency/freeze hardening, интеграции, сквозных API/browser проверок и security матрицы. Таблица остаётся планом end-to-end проверки. Владелец после выполнения записывает команду/сценарий, среду, SHA, результат и ограничения в audit. Координатор переносит доказательства integrated develop в STATE.
+Статус всех полных сценариев: **NOT_RUN**. В несмерженных feature-срезах Agent 1 есть частичные API evidence для auth/roles/admin bootstrap и A1-03.1–.3 tournament/roster flows, включая bounded SQLite concurrency checks и freeze rollback. Полные T02/T03/T05/T20 требуют интеграции с bracket runtime, сквозных API/browser проверок, реального played history и полной security матрицы. Таблица остаётся планом end-to-end проверки. Владелец после выполнения записывает команду/сценарий, среду, SHA, результат и ограничения в audit. Координатор переносит доказательства integrated develop в STATE.
 
 Готовность по кейсу требует блоки 1–3; команда также включает базовую визуализацию. Первый working slice — промежуточный результат, не повод пропускать обязательные строки.
 

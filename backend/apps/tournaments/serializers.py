@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 
+from django.utils import timezone
 from rest_framework import serializers
 
 from backend.apps.accounts.models import User
@@ -9,6 +10,11 @@ from backend.apps.tournaments.models import (
     Tournament,
     TournamentParticipant,
     default_match_config,
+)
+from backend.apps.tournaments.services import (
+    EDITABLE_TOURNAMENT_STATUSES,
+    RosterFrozen,
+    TournamentUpdateConflict,
 )
 
 
@@ -180,11 +186,41 @@ class TournamentSerializer(StrictInputSerializer, serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        instance.default_match_config = self._merged_match_config(
-            validated_data,
-            instance=instance,
+        protected_fields = {
+            "starts_at",
+            "ends_at",
+            "format",
+            "participant_limit",
+            "match_duration_sec",
+            "start_mode",
+            "scoring_rule",
+        }
+        protects_roster = bool(protected_fields.intersection(validated_data))
+        config = self._merged_match_config(validated_data, instance=instance)
+        updates = dict(validated_data)
+        updates["default_match_config"] = config
+        updates["updated_at"] = timezone.now()
+
+        queryset = Tournament.objects.filter(
+            pk=instance.pk,
+            updated_at=instance.updated_at,
+            status__in=EDITABLE_TOURNAMENT_STATUSES,
         )
-        return super().update(instance, validated_data)
+        if protects_roster:
+            queryset = queryset.filter(roster_frozen_at__isnull=True)
+        if queryset.update(**updates) == 0:
+            current = Tournament.objects.filter(pk=instance.pk).first()
+            if current is None:
+                raise TournamentUpdateConflict("Турнир больше не существует.")
+            if protects_roster and current.roster_frozen_at is not None:
+                raise RosterFrozen("Поля состава нельзя изменить после его заморозки.")
+            if current.status not in EDITABLE_TOURNAMENT_STATUSES:
+                raise RosterFrozen("Турнир нельзя изменить в текущем состоянии.")
+            raise TournamentUpdateConflict(
+                "Турнир успел измениться; обновите данные и повторите запрос."
+            )
+        instance.refresh_from_db()
+        return instance
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

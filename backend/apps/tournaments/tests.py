@@ -1,14 +1,28 @@
 """API and lifecycle checks for the tournament management slice."""
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from threading import Barrier
 
+from django.db import transaction
+from django.db import close_old_connections
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 
 from backend.apps.accounts.models import User
 from backend.apps.tournaments.models import Tournament, TournamentParticipant
+from backend.apps.tournaments.serializers import TournamentSerializer
+from backend.apps.tournaments.services import (
+    RosterInvariantViolation,
+    RosterMutationError,
+    RosterNotReady,
+    assign_participant,
+    freeze_roster,
+    remove_participant,
+    set_participant_seed,
+)
 
 
 def tournament_payload(**overrides):
@@ -455,3 +469,237 @@ class TournamentAPITests(TestCase):
         self.assertNotIn("email", response.json()["results"][0])
         self.assertEqual(invalid_role.status_code, 400)
         self.assertEqual(long_search.status_code, 400)
+
+
+class RosterFreezeTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            email="freeze-admin@example.test",
+            display_name="Freeze Admin",
+            password="valid-test-password-123",
+            role=User.Roles.ADMIN,
+        )
+        self.first = User.objects.create_user(
+            email="freeze-one@example.test",
+            display_name="First Player",
+            password="valid-test-password-123",
+        )
+        self.second = User.objects.create_user(
+            email="freeze-two@example.test",
+            display_name="Second Player",
+            password="valid-test-password-123",
+        )
+        self.third = User.objects.create_user(
+            email="freeze-three@example.test",
+            display_name="Third Player",
+            password="valid-test-password-123",
+        )
+        now = timezone.now()
+        self.tournament = Tournament.objects.create(
+            title="Freeze test",
+            description="",
+            starts_at=now,
+            ends_at=now + timedelta(hours=1),
+            participant_limit=4,
+            created_by=self.admin,
+        )
+
+    def test_freeze_is_idempotent_and_returns_seeded_then_unseeded_roster(self):
+        assign_participant(self.tournament.id, self.second.id)
+        assign_participant(self.tournament.id, self.first.id, seed=1)
+
+        roster = freeze_roster(self.tournament.id)
+        self.tournament.refresh_from_db()
+        frozen_at = self.tournament.roster_frozen_at
+        repeated_roster = freeze_roster(self.tournament.id)
+        self.tournament.refresh_from_db()
+
+        self.assertEqual([entry.user_id for entry in roster], [self.first.id, self.second.id])
+        self.assertEqual(
+            [entry.id for entry in repeated_roster],
+            [entry.id for entry in roster],
+        )
+        self.assertEqual(self.tournament.roster_frozen_at, frozen_at)
+
+        with self.assertRaises(RosterMutationError):
+            assign_participant(self.tournament.id, self.third.id)
+        with self.assertRaises(RosterMutationError):
+            set_participant_seed(self.tournament.id, self.first.id, 2)
+        with self.assertRaises(RosterMutationError):
+            remove_participant(self.tournament.id, self.first.id)
+
+    def test_freeze_requires_two_active_rows_and_consistent_count(self):
+        with self.assertRaises(RosterNotReady):
+            freeze_roster(self.tournament.id)
+
+        assign_participant(self.tournament.id, self.first.id)
+        with self.assertRaises(RosterNotReady):
+            freeze_roster(self.tournament.id)
+        self.tournament.refresh_from_db()
+        self.assertIsNone(self.tournament.roster_frozen_at)
+
+        Tournament.objects.filter(pk=self.tournament.id).update(active_participant_count=2)
+        with self.assertRaises(RosterInvariantViolation):
+            freeze_roster(self.tournament.id)
+        self.tournament.refresh_from_db()
+        self.assertIsNone(self.tournament.roster_frozen_at)
+
+    def test_outer_bracket_transaction_rollback_also_rolls_back_freeze(self):
+        assign_participant(self.tournament.id, self.first.id)
+        assign_participant(self.tournament.id, self.second.id)
+
+        with self.assertRaisesMessage(RuntimeError, "simulated bracket failure"):
+            with transaction.atomic():
+                roster = freeze_roster(self.tournament.id)
+                self.assertEqual(len(roster), 2)
+                self.tournament.refresh_from_db()
+                self.assertIsNotNone(self.tournament.roster_frozen_at)
+                raise RuntimeError("simulated bracket failure")
+
+        self.tournament.refresh_from_db()
+        self.assertIsNone(self.tournament.roster_frozen_at)
+        self.assertEqual(self.tournament.active_participant_count, 2)
+
+    def test_stale_tournament_patch_cannot_change_roster_config_after_freeze(self):
+        assign_participant(self.tournament.id, self.first.id, seed=1)
+        assign_participant(self.tournament.id, self.second.id, seed=2)
+        stale_instance = Tournament.objects.get(pk=self.tournament.id)
+        freeze_roster(self.tournament.id)
+
+        serializer = TournamentSerializer(
+            stale_instance,
+            data={"participant_limit": 8},
+            partial=True,
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        with self.assertRaises(RosterMutationError):
+            serializer.save()
+        self.tournament.refresh_from_db()
+        self.assertEqual(self.tournament.participant_limit, 4)
+
+
+class RosterCapacityConcurrencyTests(TransactionTestCase):
+    reset_sequences = True
+
+    def test_simultaneous_assignments_never_exceed_capacity(self):
+        admin = User.objects.create_user(
+            email="concurrent-admin@example.test",
+            display_name="Concurrent Admin",
+            password="valid-test-password-123",
+            role=User.Roles.ADMIN,
+        )
+        players = [
+            User.objects.create_user(
+                email=f"concurrent-{index}@example.test",
+                display_name=f"Concurrent Player {index}",
+                password="valid-test-password-123",
+            )
+            for index in range(3)
+        ]
+        now = timezone.now()
+        tournament = Tournament.objects.create(
+            title="Concurrent roster",
+            description="",
+            starts_at=now,
+            ends_at=now + timedelta(hours=1),
+            participant_limit=2,
+            created_by=admin,
+        )
+        barrier = Barrier(len(players))
+
+        def assign(player, seed):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=10)
+                try:
+                    entry, created = assign_participant(
+                        tournament.id,
+                        player.id,
+                        seed=seed,
+                    )
+                    return ("assigned", entry.id, created)
+                except RosterMutationError as error:
+                    return ("rejected", error.code)
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=len(players)) as executor:
+            futures = [
+                executor.submit(assign, player, index + 1)
+                for index, player in enumerate(players)
+            ]
+            results = [future.result(timeout=20) for future in futures]
+
+        tournament.refresh_from_db()
+        active_count = tournament.participants.filter(
+            status=TournamentParticipant.Status.ACTIVE
+        ).count()
+        self.assertEqual(sum(result[0] == "assigned" for result in results), 2, results)
+        self.assertEqual(sum(result[0] == "rejected" for result in results), 1, results)
+        self.assertEqual(tournament.active_participant_count, 2)
+        self.assertEqual(active_count, 2)
+
+    def test_assignment_racing_freeze_is_either_in_roster_or_rejected(self):
+        admin = User.objects.create_user(
+            email="freeze-race-admin@example.test",
+            display_name="Freeze Race Admin",
+            password="valid-test-password-123",
+            role=User.Roles.ADMIN,
+        )
+        players = [
+            User.objects.create_user(
+                email=f"freeze-race-{index}@example.test",
+                display_name=f"Freeze Race Player {index}",
+                password="valid-test-password-123",
+            )
+            for index in range(3)
+        ]
+        now = timezone.now()
+        tournament = Tournament.objects.create(
+            title="Freeze assignment race",
+            description="",
+            starts_at=now,
+            ends_at=now + timedelta(hours=1),
+            participant_limit=4,
+            created_by=admin,
+        )
+        assign_participant(tournament.id, players[0].id, seed=1)
+        assign_participant(tournament.id, players[1].id, seed=2)
+        barrier = Barrier(2)
+
+        def add_last_player():
+            close_old_connections()
+            try:
+                barrier.wait(timeout=10)
+                try:
+                    entry, created = assign_participant(tournament.id, players[2].id, seed=3)
+                    return ("assigned", entry.id, created)
+                except RosterMutationError as error:
+                    return ("rejected", error.code)
+            finally:
+                close_old_connections()
+
+        def freeze():
+            close_old_connections()
+            try:
+                barrier.wait(timeout=10)
+                entries = freeze_roster(tournament.id)
+                return {entry.user_id for entry in entries}
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            add_future = executor.submit(add_last_player)
+            freeze_future = executor.submit(freeze)
+            assignment_result = add_future.result(timeout=20)
+            frozen_user_ids = freeze_future.result(timeout=20)
+
+        tournament.refresh_from_db()
+        active_user_ids = set(
+            tournament.participants.filter(status=TournamentParticipant.Status.ACTIVE)
+            .values_list("user_id", flat=True)
+        )
+        self.assertIn(assignment_result[0], {"assigned", "rejected"})
+        self.assertEqual(frozen_user_ids, active_user_ids)
+        self.assertEqual(len(active_user_ids), tournament.active_participant_count)
+        self.assertIsNotNone(tournament.roster_frozen_at)

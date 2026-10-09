@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from django.db import transaction
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from rest_framework import generics, status, viewsets
@@ -146,25 +147,44 @@ class TournamentViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
-        with transaction.atomic():
-            instance = self.get_object()
-            serializer = self.get_serializer(instance, data=request.data, partial=partial)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                self.perform_update(serializer)
+        except RosterMutationError as error:
+            raise_roster_error(error)
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
         with transaction.atomic():
-            instance = self.get_object()
+            now = timezone.now()
             if (
                 instance.status == Tournament.Status.DRAFT
                 and instance.roster_frozen_at is None
+                and Tournament.objects.filter(
+                    pk=instance.pk,
+                    updated_at=instance.updated_at,
+                    status=Tournament.Status.DRAFT,
+                    roster_frozen_at__isnull=True,
+                ).update(status=Tournament.Status.ARCHIVED, updated_at=now)
             ):
-                instance.delete()
+                Tournament.objects.filter(pk=instance.pk).delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            instance.status = Tournament.Status.ARCHIVED
-            instance.save(update_fields=("status", "updated_at"))
+            current = Tournament.objects.filter(pk=instance.pk).first()
+            if current is None or current.status == Tournament.Status.ARCHIVED:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            archived = Tournament.objects.filter(
+                pk=current.pk,
+                updated_at=current.updated_at,
+            ).update(status=Tournament.Status.ARCHIVED, updated_at=now)
+            if archived == 0:
+                raise_roster_error(
+                    RosterMutationError("Турнир успел измениться; повторите удаление.")
+                )
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["get", "post"], url_path="participants")

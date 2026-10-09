@@ -1,10 +1,12 @@
 """Transactional roster operations; HTTP policy remains in the API layer."""
 
 from dataclasses import dataclass
+from functools import wraps
+import time
 from typing import ClassVar
 from uuid import UUID
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 from django.db.models import F
 from django.utils import timezone
 
@@ -44,6 +46,24 @@ class SeedConflict(RosterMutationError):
     code = "seed_conflict"
 
 
+class RosterNotReady(RosterMutationError):
+    code = "roster_not_ready"
+
+
+class RosterInvariantViolation(RosterMutationError):
+    status_code = 500
+    code = "roster_invariant_violation"
+
+
+class RosterDatabaseBusy(RosterMutationError):
+    status_code = 503
+    code = "database_busy"
+
+
+class TournamentUpdateConflict(RosterMutationError):
+    code = "tournament_changed"
+
+
 class AlreadyAssigned(Exception):
     """Internal savepoint signal used to undo a duplicate capacity increment."""
 
@@ -52,6 +72,26 @@ EDITABLE_TOURNAMENT_STATUSES = (
     Tournament.Status.DRAFT,
     Tournament.Status.SCHEDULED,
 )
+
+
+def retry_sqlite_locked_write(function):
+    """Retry brief SQLite write-lock collisions; never hide other DB errors."""
+
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        for attempt in range(3):
+            try:
+                return function(*args, **kwargs)
+            except OperationalError as exc:
+                if "locked" not in str(exc).lower():
+                    raise
+                if attempt == 2:
+                    raise RosterDatabaseBusy(
+                        "База занята; повторите изменение состава позже."
+                    ) from exc
+                time.sleep(0.01 * (attempt + 1))
+
+    return wrapped
 
 
 def _capacity_increment(tournament_id: UUID) -> bool:
@@ -84,6 +124,7 @@ def _raise_capacity_or_frozen(tournament_id: UUID) -> None:
     raise RosterCapacityReached("Достигнут лимит участников турнира.")
 
 
+@retry_sqlite_locked_write
 def assign_participant(
     tournament_id: UUID,
     user_id: UUID,
@@ -162,31 +203,46 @@ def assign_participant(
         raise RosterMutationError("Не удалось сохранить состав; повторите запрос.") from exc
 
 
+@retry_sqlite_locked_write
 def set_participant_seed(tournament_id: UUID, user_id: UUID, seed: int | None):
     with transaction.atomic():
-        tournament = Tournament.objects.filter(pk=tournament_id).first()
-        if tournament is None:
-            raise EntrantNotFound("Турнир не найден.")
-        if (
-            tournament.roster_frozen_at is not None
-            or tournament.status not in EDITABLE_TOURNAMENT_STATUSES
-        ):
-            raise RosterFrozen("Seed нельзя изменить после заморозки состава.")
-        entry = TournamentParticipant.objects.select_related("user").filter(
-            tournament=tournament,
-            user_id=user_id,
-            status=TournamentParticipant.Status.ACTIVE,
-        ).first()
-        if entry is None:
-            raise EntrantNotFound("Активный участник не найден.")
-        entry.seed = seed
         try:
-            entry.save(update_fields=("seed",))
+            changed = TournamentParticipant.objects.filter(
+                tournament_id=tournament_id,
+                user_id=user_id,
+                status=TournamentParticipant.Status.ACTIVE,
+                tournament__roster_frozen_at__isnull=True,
+                tournament__status__in=EDITABLE_TOURNAMENT_STATUSES,
+            ).update(seed=seed)
         except IntegrityError as exc:
             raise SeedConflict("Этот seed уже используется в турнире.") from exc
-        return TournamentParticipant.objects.select_related("user").get(pk=entry.pk)
+        if changed == 0:
+            tournament = Tournament.objects.filter(pk=tournament_id).first()
+            if tournament is None:
+                raise EntrantNotFound("Турнир не найден.")
+            if (
+                tournament.roster_frozen_at is not None
+                or tournament.status not in EDITABLE_TOURNAMENT_STATUSES
+            ):
+                raise RosterFrozen("Seed нельзя изменить после заморозки состава.")
+            if not TournamentParticipant.objects.filter(
+                tournament_id=tournament_id,
+                user_id=user_id,
+                status=TournamentParticipant.Status.ACTIVE,
+            ).exists():
+                raise EntrantNotFound("Активный участник не найден.")
+            raise RosterMutationError("Не удалось обновить seed; повторите запрос.")
+        try:
+            entry = TournamentParticipant.objects.select_related("user").get(
+                tournament_id=tournament_id,
+                user_id=user_id,
+            )
+        except TournamentParticipant.DoesNotExist as exc:
+            raise EntrantNotFound("Активный участник не найден.") from exc
+        return entry
 
 
+@retry_sqlite_locked_write
 def remove_participant(tournament_id: UUID, user_id: UUID) -> bool:
     """Logically remove an entrant; never delete its row or user reference."""
     with transaction.atomic():
@@ -226,3 +282,52 @@ def remove_participant(tournament_id: UUID, user_id: UUID) -> bool:
             # Keep the counter and row change atomic when a request races a removal.
             raise EntrantNotFound("Активный участник не найден.")
         return True
+
+
+@retry_sqlite_locked_write
+def freeze_roster(tournament_id: UUID) -> list[TournamentParticipant]:
+    """Freeze and return the canonical active roster inside the caller's transaction.
+
+    Bracket generation must call this function from its own `transaction.atomic()`
+    block. This function's atomic block is a savepoint when called from that outer
+    transaction, so a later bracket error rolls the freeze back with the bracket.
+    """
+    now = timezone.now()
+    with transaction.atomic():
+        changed = Tournament.objects.filter(
+            pk=tournament_id,
+            roster_frozen_at__isnull=True,
+            status__in=EDITABLE_TOURNAMENT_STATUSES,
+            active_participant_count__gte=2,
+        ).update(roster_frozen_at=now, updated_at=now)
+        tournament = Tournament.objects.filter(pk=tournament_id).first()
+        if tournament is None:
+            raise EntrantNotFound("Турнир не найден.")
+        if changed == 0 and tournament.roster_frozen_at is None:
+            if tournament.status not in EDITABLE_TOURNAMENT_STATUSES:
+                raise RosterFrozen("Турнир нельзя заморозить в текущем состоянии.")
+            actual_count = TournamentParticipant.objects.filter(
+                tournament_id=tournament_id,
+                status=TournamentParticipant.Status.ACTIVE,
+            ).count()
+            if actual_count != tournament.active_participant_count:
+                raise RosterInvariantViolation(
+                    "Число активных участников не совпадает со счётчиком турнира."
+                )
+            raise RosterNotReady("Для генерации сетки нужны как минимум два участника.")
+
+        roster = list(
+            TournamentParticipant.objects.select_related("user")
+            .filter(
+                tournament_id=tournament_id,
+                status=TournamentParticipant.Status.ACTIVE,
+            )
+            .order_by(F("seed").asc(nulls_last=True), "user_id")
+        )
+        if len(roster) != tournament.active_participant_count:
+            raise RosterInvariantViolation(
+                "Число активных участников не совпадает со счётчиком турнира."
+            )
+        if len(roster) < 2:
+            raise RosterNotReady("Для генерации сетки нужны как минимум два участника.")
+        return roster

@@ -63,7 +63,7 @@ Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csr
 
 Participant `seed` принимает `null` или целое значение `1..2147483647`, уникальное среди активного состава одного турнира. Повтор активной assignment с тем же seed (или без seed) возвращает существующую запись; изменение seed — отдельный PATCH. POST/DELETE и active count изменяются в одной транзакции. Снятая запись остаётся в БД как `REMOVED`; повторный DELETE идемпотентен, повторная assignment до freeze реактивирует ту же строку.
 
-`POST /tournaments/{id}/bracket/generate` вызывается агентом 2 в одной внешней `transaction.atomic()` с `backend.apps.tournaments.services.freeze_roster(tournament_id)`. Успешная генерация и frozen roster коммитятся вместе; ошибка создания bracket откатывает freeze. Freeze идемпотентен, а любые последующие add/remove/seed изменения возвращают conflict. Match/bracket replacement после старта остаётся отдельным контролируемым action агента 2.
+`POST /tournaments/{id}/bracket/generate` вызывается агентом 2 в одной внешней `transaction.atomic()` с `backend.apps.tournaments.services.freeze_roster(tournament_id)`. Сервис возвращает active roster по seed ascending, null seed last, затем `userId` ascending. Успешная генерация и frozen roster коммитятся вместе; ошибка создания bracket откатывает freeze. Freeze идемпотентен, требует минимум двух active participants, а любые последующие add/remove/seed изменения возвращают conflict. Match/bracket replacement после старта остаётся отдельным контролируемым action агента 2.
 
 ## Задачи и сетка
 

@@ -44,7 +44,7 @@ Session/cookie storage использует стандартную Django sessio
 
 - `users.role` имеет только participant/admin, default participant. `is_staff`/`is_superuser` не назначаются из регистрации.
 - Назначается только активный `participant`, не admin. Активных игроков не больше cap; добавление/accept атомарно обновляет их число. Seed — положительное целое и уникален среди active entrants, если задан; один игрок не попадает дважды в раунд.
-- Изменения состава отклоняются после `rosterFrozenAt`. `freeze_roster(tournament_id)` идемпотентен и вызывается внутри транзакции генерации bracket; ошибка создания bracket откатывает freeze.
+- Изменения состава отклоняются после `rosterFrozenAt`. `freeze_roster(tournament_id)` идемпотентен, проверяет active count, возвращает seed-ascending roster (null seed last, `userId` tie-break) и вызывается внутри внешней транзакции генерации bracket; ошибка создания bracket откатывает freeze.
 - Пары и набор задач нельзя незаметно менять после старта. Run хранит immutable версии задачи/правил.
 - Unique `(userId, runId, idempotencyKey)` связывает повторный submission request с одним объектом; при том же ключе и другом source/language/problem возвращается 409.
 - Worker claim/recovery guarded by status и leaseToken. Старый worker не перезаписывает новый результат.
