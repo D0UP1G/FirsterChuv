@@ -1,7 +1,11 @@
+import os
+from io import StringIO
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.management import call_command, CommandError
 from django.test import TestCase
 
 from rest_framework.response import Response
@@ -25,6 +29,119 @@ class _ParticipantAccessProbe(APIView):
 
     def post(self, request):
         return Response({"allowed": True})
+
+
+class CreateAdminCommandTests(TestCase):
+    command_options = {
+        "email": "admin@example.test",
+        "display_name": "Tournament Admin",
+    }
+
+    def run_command(self, stdout=None):
+        return call_command("create_admin", stdout=stdout or StringIO(), **self.command_options)
+
+    def test_creates_application_admin_without_django_superuser_flags_or_secret_output(self):
+        secret = "N0n-Guessable Admin Passphrase 2026!"
+        output = StringIO()
+        with patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": secret}):
+            self.run_command(stdout=output)
+
+        admin = User.objects.get(email="admin@example.test")
+        self.assertEqual(admin.role, User.Roles.ADMIN)
+        self.assertTrue(admin.is_active)
+        self.assertFalse(admin.is_staff)
+        self.assertFalse(admin.is_superuser)
+        self.assertTrue(admin.check_password(secret))
+        self.assertNotIn(secret, output.getvalue())
+
+    def test_existing_admin_is_idempotent_and_password_is_not_rotated(self):
+        original = "Original-Safe-Admin-Passphrase-2026!"
+        replacement = "Different-Safe-Admin-Passphrase-2026!"
+        admin = User.objects.create_user(
+            email="admin@example.test",
+            display_name="Original Admin",
+            password=original,
+            role=User.Roles.ADMIN,
+        )
+        output = StringIO()
+
+        with patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": replacement}):
+            self.run_command(stdout=output)
+
+        admin.refresh_from_db()
+        self.assertTrue(admin.check_password(original))
+        self.assertFalse(admin.check_password(replacement))
+        self.assertEqual(admin.display_name, "Original Admin")
+        self.assertIn("unchanged", output.getvalue())
+        self.assertNotIn(replacement, output.getvalue())
+
+    def test_existing_participant_is_never_promoted(self):
+        participant = User.objects.create_user(
+            email="admin@example.test",
+            display_name="Existing Participant",
+            password="unused",
+        )
+
+        with patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": "N0n-Guessable Admin Passphrase 2026!"}):
+            with self.assertRaisesMessage(CommandError, "refusing to promote"):
+                self.run_command()
+
+        participant.refresh_from_db()
+        self.assertEqual(participant.role, User.Roles.PARTICIPANT)
+        self.assertEqual(User.objects.count(), 1)
+
+    def test_missing_secret_in_noninteractive_process_fails_closed(self):
+        with patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": ""}):
+            with patch(
+                "backend.apps.accounts.management.commands.create_admin.sys.stdin",
+                new=SimpleNamespace(isatty=lambda: False),
+            ):
+                with self.assertRaisesMessage(CommandError, "No interactive terminal"):
+                    self.run_command()
+        self.assertFalse(User.objects.exists())
+
+    def test_interactive_password_is_confirmed_before_creation(self):
+        secret = "Interactive-Safe-Admin-Passphrase-2026!"
+        with patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": ""}):
+            with patch(
+                "backend.apps.accounts.management.commands.create_admin.sys.stdin",
+                new=SimpleNamespace(isatty=lambda: True),
+            ):
+                with patch(
+                    "backend.apps.accounts.management.commands.create_admin.getpass.getpass",
+                    side_effect=[secret, secret],
+                ) as prompt:
+                    output = StringIO()
+                    self.run_command(stdout=output)
+
+        self.assertEqual(prompt.call_count, 2)
+        self.assertTrue(User.objects.get().check_password(secret))
+        self.assertNotIn(secret, output.getvalue())
+
+    def test_interactive_password_mismatch_does_not_create_account(self):
+        with patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": ""}):
+            with patch(
+                "backend.apps.accounts.management.commands.create_admin.sys.stdin",
+                new=SimpleNamespace(isatty=lambda: True),
+            ):
+                with patch(
+                    "backend.apps.accounts.management.commands.create_admin.getpass.getpass",
+                    side_effect=["First-Safe-Passphrase-2026!", "Different-Safe-Passphrase-2026!"],
+                ):
+                    with self.assertRaisesMessage(CommandError, "do not match"):
+                        self.run_command()
+        self.assertFalse(User.objects.exists())
+
+    def test_weak_password_is_rejected_without_echoing_it(self):
+        secret = "password"
+        output = StringIO()
+
+        with patch.dict(os.environ, {"DJANGO_ADMIN_PASSWORD": secret}):
+            with self.assertRaisesMessage(CommandError, "does not meet"):
+                self.run_command(stdout=output)
+
+        self.assertFalse(User.objects.exists())
+        self.assertNotIn(secret, output.getvalue())
 
 
 class AccountAuthenticationTests(TestCase):

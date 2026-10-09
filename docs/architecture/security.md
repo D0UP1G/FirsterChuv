@@ -36,7 +36,7 @@ Trusted API управляет состоянием, но не имеет Docker
 
 Password hashing штатным поддерживаемым Django hasher, а не собственной схемой. Login/register имеют rate limits и безопасные сообщения. Session cookie HttpOnly, Secure при HTTPS, SameSite; production DEBUG off, ALLOWED_HOSTS и trusted origins заданы. Logout инвалидирует session. Для локального HTTP исключение Secure только в dev settings, не в production.
 
-Application role admin не выдаёт Django superuser автоматически. Первичный admin создаётся management command без пароля в argv/Git/logs; использовать защищённое окружение/интерактивный ввод оператора. Public role promotion не существует. Деактивированный аккаунт не может submit/управлять.
+Application role admin не выдаёт Django superuser автоматически. `create_admin` создаёт первичный application admin с `is_staff=False` и `is_superuser=False`, запрашивает пароль без echo в TTY или читает его из `DJANGO_ADMIN_PASSWORD`, переданного через protected secret injection; пароль не является CLI argument и не выводится. Команда идемпотентна для существующего активного admin и не меняет его пароль; существующего participant она не повышает. Public role promotion не существует. Деактивированный аккаунт не может submit/управлять.
 
 CORS с credentials только для разрешённого origin; предпочтительно один origin через proxy. GET не меняет state. Login/register CSRF защищаются явно: DRF SessionAuthentication для анонимного запроса не заменяет эту меру. Private code/draft/diagnostics responses no-store, shared caches запрещены.
 
