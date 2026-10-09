@@ -20,6 +20,6 @@
   - `A3-07` — Яндекс import после локального пути и основного MVP; official read/import API пока не исследовался.
 - Зависимости: для `A3-01` приложение агента 1 не обязательно; интеграция worker ждёт `A1-01`. Submission API ждёт роль/DB/config агента 1 и `MatchPort`/result contract агентов 1–2. Удалённая ветка `feature/platform-bootstrap` существует; чужую feature-ветку не меняю.
 - Передача: испытанный собственный sandbox, импортированные задачи, языки, submission/draft API, доказательство реального вердикта; отдельно импорт из Яндекс Контеста.
-- Последний аудит/PR/проверки: `context/audits/2026-10-09T140224+0300-agent-3-A3-01c.md`; PR ещё нет; runtime sandbox-проверки `NOT_RUN`.
+- Последний аудит/PR/проверки: `context/audits/2026-10-09T143912+0300-agent-3-A3-01-pr.md`; PR [#3](https://github.com/D0UP1G/FirsterChuv/pull/3) открыт в `develop`; runtime sandbox-проверки `NOT_RUN`.
 
 Обновлять фактические поля после каждой рабочей сессии; не удалять предыдущие аудиты.
