@@ -15,11 +15,12 @@
 
 ## Текущий срез: P5-01 — перенос дизайн-системы в React
 
-- Статус: `IN_PROGRESS`; implementation slice ready locally; fresh develop advanced when auth PR #62 merged and must be merged into this feature before its PR.
+- Статус: `IN_PROGRESS`; implementation slice ready locally and synced with fresh develop; preparing a P5-01 design PR.
 - Ветка: `feature/agent-5-p5-01-design`, базовый SHA `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (`origin/develop` после merge #60).
-- Planned paths: `frontend/index.html`, `frontend/src/index.css`, `frontend/src/App.css`, `frontend/src/App.tsx`, `frontend/src/pages/Admin.css`, `context/audits/2026-10-10T014108+0300-agent-5-P5-01-design-system.md`, this card.
+- Sync: ordinary merge commit `afc4b26fc6934962a976aa53db97d3b000b4d5bd` with fresh `develop` `85e0cd0d2b82fce9996106af3922171dcee17c76`; no conflicts. Auth PR #62 is merged at that develop SHA.
+- Paths: `frontend/index.html`, `frontend/src/index.css`, `frontend/src/App.css`, `frontend/src/App.tsx`, `frontend/src/pages/Admin.css`, `context/audits/2026-10-10T014600+0300-agent-5-P5-01-design-system.md`, `context/audits/2026-10-10T014632+0300-agent-5-P5-01-design-sync.md`, and this card.
 - Цель: применить verified `frontend/design` / brandbook v2.0 tokens, type, grid, spacing and shared status/button/panel language to the existing React shell, auth, invite and bracket views; preserve current logic and HTTP states.
-- Paths include audit `context/audits/2026-10-10T014600+0300-agent-5-P5-01-design-system.md`; current local source base is `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa`. Remote `develop` is now `85e0cd0d2b82fce9996106af3922171dcee17c76` after auth PR #62 merged; feature sync is next. This slice has no PR yet and is not in develop. P5-03 provider status is independent; no new endpoint is needed.
+- Implementation commit: `aa3912b3414c4f9376af76d440e2e45fa5f42a79`. This slice has no PR yet and is not in develop. P5-03 provider status is independent; no new endpoint is needed.
 - Later P5-02 remains a separate feature slice for responsive/projector/accessibility/error-state review.
 
 ## Наблюдение координатора 2026-10-10T01:29:46+03:00
@@ -28,10 +29,11 @@
 
 ## Текущий срез: P5-01 auth return path
 
-- Статус: `IN_PROGRESS`; узкий auth-flow fix опубликован в открытом PR #62, ждёт CI/review/merge.
+- Статус: auth implementation/integration merged; full T02 acceptance remains partial.
 - PR: https://github.com/D0UP1G/FirsterChuv/pull/62; опубликованный кодовый head `71ca100579fa5081c1dab3cb4172d1619cc60c29`.
+- Merge: `85e0cd0d2b82fce9996106af3922171dcee17c76`; final PR head `abdc12e637005211b83ea095a273f25273636748` passed 5/5 CI jobs.
 - Ветка: `feature/agent-5-auth-return-path`.
 - Исходная база `cc204e62a060eb2ceb16067a1b0693a2e083d9ab`; после handoff выполнен merge commit `aae63faab8b432ce5b608c9fa94530d7e1569afd` с fresh `origin/develop` `723985f02b2f1c5fc4a38b3c67f6e055dd1ad8fa` (#60).
 - Пути среза: `frontend/src/App.tsx`, `frontend/src/pages/LoginPage.tsx`, `frontend/src/App.test.tsx`, `context/audits/2026-10-10T011119+0300-agent-5-P4-01-auth-return-path.md`, `context/audits/2026-10-10T013908+0300-agent-5-P5-01-auth-return-path-sync.md` и эта карточка.
 - Implementation: protected-route return path сохраняет pathname/query/hash и проверенный next переживает login→register. Integration: не в develop. Acceptance: 18 frontend test files / 84 tests, typecheck/build PASS; lint exit 0 с 5 прежними workspace warnings; браузерный backend CONNECT не выполнялся.
-- Следующий шаг: после компактного auth PR продолжить P5-01 на merged `frontend/design` tokens/shared layouts/auth/invite/bracket, затем P5-02 responsive/accessibility/projector. P5-03 CONNECT вести отдельно по exact endpoint SHA.
+- Следующий шаг: continue P5-01 design implementation; full browser/backend acceptance remains separate. P5-02 responsive/accessibility/projector and per-endpoint P5-03 CONNECT remain available.
