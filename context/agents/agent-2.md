@@ -4,7 +4,7 @@
 
 - Статус: `IN_PROGRESS` — P2-03.1 pure clock core; persisted lifecycle/start/clock command и MatchPort ещё впереди.
 - Исполнитель: Codex в роли агента 2.
-- Текущая задача/ветка/база: `P2-03.1` / `feature/match-clock-start` / актуальная `origin/develop` `d9488e3`. Чистый clock commit `c6789a7` сохранён, выполняется sync с новой документацией.
+- Текущая задача/ветка/база: `P2-03.1` / `feature/match-clock-start` / актуальная `origin/develop` `d9488e3`. Срез опубликован в draft PR [#11](https://github.com/D0UP1G/FirsterChuv/pull/11), HEAD `7baa1af`, состояние `CLEAN`.
 - Рабочий checkout: `work/FirsterChuv-agent2-clock`.
 - Пути текущего среза: `backend/apps/competition/domain/clock.py`, `backend/apps/competition/tests/test_clock.py`, эта карточка и аудит.
 - P2-01: bracket algorithm/ORM/generation/read slice опубликован в PR [#7](https://github.com/D0UP1G/FirsterChuv/pull/7), HEAD `1952244`, OPEN/ready/CLEAN; штатная suite 58 passed, migration check чистый.
@@ -13,6 +13,6 @@
 - Следующий шаг: завершить merge актуальной develop и публикацию проверяемого P2-03.1 slice; затем расширить clock/start state machine по `match.json` с immutable task/rule config и `manual`/`both_ready`. DB MatchRun wiring требует merge P2-01 и отсутствующие MatchRun lifecycle fields.
 - Порты: использовать `ProblemCatalogV1.describe_ready`, `CompetitionGatewayV1.authorize_submission/register_accepted/apply_result`, `EventWriter` только по v1. Отсутствующий runtime provider должен fail closed; test catalog допустим только в tests.
 - Владеет: `backend/apps/competition/`, `backend/apps/events/`, собственными migrations/tests; общие настройки и другие apps не менять без разрешённого узкого wiring.
-- Последние аудиты: [P2-03.1 clock core sync](../audits/2026-10-09T170108+0300-agent-2-P2-03-clock-core.md), исходный [clock core audit](../audits/2026-10-09T164411+0300-agent-2-A2-02-clock-domain.md). Домен проверен после merge актуального develop; остаются push и отдельный PR.
+- Последние аудиты: [P2-03.1 publication](../audits/2026-10-09T170300+0300-agent-2-P2-03-clock-publication.md), [clock core sync](../audits/2026-10-09T170108+0300-agent-2-P2-03-clock-core.md), исходный [clock core audit](../audits/2026-10-09T164411+0300-agent-2-A2-02-clock-domain.md). Следующее действие — расширить pure lifecycle/startMode по P2-03, сохраняя PR #11 отдельным.
 
 Разделять implementation, integration и full acceptance. Общий `context/STATE.md` обновляет координатор после merge.
