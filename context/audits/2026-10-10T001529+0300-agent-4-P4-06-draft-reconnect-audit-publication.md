@@ -30,6 +30,13 @@
 - Проверены ROADMAP, STATE, Agent 4 card и T15 case: после PR #46 приватные bracket generate/read routes доступны; draft provider #21 остаётся OPEN с CAS blocker; public HTTP/SSE route не зарегистрирован. Browser CONNECT и функциональный follow-up не начинались по прямому указанию пользователя.
 - Текущая ветка переноса содержит checkpoint commit 83be0de и replayed docs update 13d5cc4. Перед публикацией ещё раз проверить diff относительно свежего develop; scope должен оставаться только Agent 4 card/audit.
 
+## Публикация follow-up PR #48
+
+- Checkpoint времени 2026-10-10T00:26:29+03:00: PR #48 OPEN, title docs(agent-4): close reconnect audit follow-up, base develop 1b7cc9ef0d775b93259d719f767cf296106215a5, опубликованный head 9befd81913c267f260653fe5bbf5d325d41c4785.
+- Первый snapshot CI на этом head: contracts-and-common-imports, backend, domain, sandbox-unit — все четыре QUEUED. Это не финальные проверки; после публикации этого audit/card update нужно дождаться checks на новом PR head.
+- PR diff ограничен context/agents/agent-4.md и этим publication audit; API, application code, STATE, чужие feature branches и tests не меняются. PR #48 artifact прикреплён.
+- PR body сообщает base, scope, checks и ограничение T15/P4-06. Текущий feature создан от свежего develop; чужие изменения сохранены обычным merge/cherry-pick собственных docs правок.
+
 ## Следующий шаг
 
-Опубликовать этот изолированный docs-only diff отдельным PR из feature/agent-4-p4-06-closeout-refresh в develop. Проверить final head и все четыре CI jobs, выполнить обычный merge commit, синхронизировать локальный develop и остановиться. Новую функциональную задачу не начинать по прямому указанию пользователя.
+Опубликовать этот publication checkpoint в PR #48, проверить свежие base/head, дождаться четырёх SUCCESS jobs на final head, затем выполнить обычный merge commit и fast-forward local develop. После синхронизации сверить audit/card и остановиться; следующую функциональную задачу не начинать.
