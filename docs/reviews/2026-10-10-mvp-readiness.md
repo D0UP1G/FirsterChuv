@@ -15,7 +15,7 @@
 | #55 | 95b1cec06836cab0501f033ad6f8aa6eca732c30 | APPROVE publication docs; current author sections сохранены вместе с #50/#51 |
 | #56 | 3e99ae5368fd177f8342d49878ef137cd31974d9 | APPROVE Markdown brandbook reference; дополнительные идеи не расширяют MVP |
 | #57 | 0073fbd96d38f657368ffa318d6ca23bff5f8a2d | REQUEST_CHANGES configured-run SQLite read→write race; HTTP/gateway пока нет |
-| #58 | 1f3fae5fc3ee70ab4e2bff713fd3a6cd7439d6a8 | REQUEST_CHANGES accepted/result SQLite races и mutable participants старого run |
+| #58 | 733acc6c6d5928b219125fdbb817da1391418ef7 | REQUEST_CHANGES accepted/result SQLite races; FINALIZING/promotion добавлены, historical participant fix только в leaf #59 |
 | #59 | 9eb394c88c64b1d22d90685c2eb44d946f91d755 | REQUEST_CHANGES SQLite races и downstream after rematch; participant snapshot исправлен в этом leaf |
 
 #48/#49 после прежней ревизии меняют только A4 card/новые audits; входят в cc204e6, production/tests не меняли. Избранные source heads объединены ordinary merge commits; единственный docs conflict A2 card разрешён сохранением обеих секций. Shared app/include additions сохранили все существующие apps, drafts добавлена отдельно. Чужие feature refs/checkout не менялись, main bootstrap. Исторические docs/audits не считаются актуальным кодом.
@@ -90,3 +90,11 @@ A5 завершил первый UI срез локально: auth returnPath/q
 ## Новый агент и назначение остальных
 
 A5 создан отдельной Codex задачей «Агент 5 — frontend и дизайн BLITZ_ARENA», thread01a122b2-27f9-7af0-ab77-dd282807d489, active snapshot подтверждает own checkout/feature отcc204e6. Весь frontend передан ему; историческиеP4-01–06 сохранены. A1 common/access/build, A2 fix #57–59/run/gateway/ledger/promotion, A3 actual judge/worker/workspace, A4 events fix/SSE/system evidence. Координатор обновил собственные и owner cards с датированным назначением, не переключал их checkout. Одно WAITING_CONNECT не завершает роль, у каждой свой READY резерв.
+
+## Итог слияния и последний source checkpoint
+
+2026-10-10T01:36:20+03:00: #60 MERGED в develop723985f, final head9d7996d иCI37999734345 5/5 SUCCESS. #21/#50–52/#54–56 source PR такжеMERGED, original refs/main/audits сохранены. #53/#57–59 OPEN; base57–59 исправлен на develop без изменения source heads. #58/#59 имеют docs conflicts с новым handoff и должны ordinary merge fresh develop, сохранив author/coordinator sections. Слияние #60 снимает ожидание совместимой базы.
+
+Latest #58 733acc6, полученный после snapshot01:29: добавлены deadline→FINALIZING, ожидание accepted pending, persisted winner/downstream и public-safe score event. Exact export runtime/ledger13 tests PASS (11.679s). Реальные file-backed probes снова: config/accepted/result — один success и один OperationalError(database is locked); old result после modeled replacement не сохранён, LedgerPersistenceError. Participant fix из9eb394c ветки#59 не входит в733acc6. Обе ветки нужно sync вместе с этими исправлениями, не считать feature branch base безопасной заменой GitFlow.
+
+A5 follow-up о merge доставлен, compact wait подтверждает active: агент обновляет refs и продолжает local auth slice/card→PR, затем brand/responsive CONNECT по ROADMAP. A1–A4 получили назначения в документации; их внешние checkout/сессии coordinator не переключал. [Closing audit](../../context/audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md). Working MVP по кейсу ещё не объявляется готовым.
