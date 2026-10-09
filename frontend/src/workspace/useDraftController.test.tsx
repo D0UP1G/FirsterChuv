@@ -68,6 +68,40 @@ describe('useDraftController', () => {
     await waitFor(() => expect(result.current.source).toBe('solution B'))
   })
 
+  it('keeps offline local drafts isolated when the authenticated user scope changes', async () => {
+    const offline = new ApiError('Server drafts unavailable', 503, 'integration_unavailable')
+    const transport = makeTransport({
+      draft: vi.fn().mockRejectedValue(offline),
+      saveDraft: vi.fn().mockRejectedValue(offline),
+    })
+    const { result, rerender } = renderHook(
+      (props: { userId: string }) => useDraftController({ ...baseProps, ...props, transport }),
+      { initialProps: { userId: 'user-1' } },
+    )
+
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+    act(() => result.current.changeSource('private draft for user one'))
+    await waitFor(() => expect(transport.saveDraft).toHaveBeenCalled())
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+
+    rerender({ userId: 'user-2' })
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+    expect(result.current.source).toBe('template A')
+    expect(result.current.draft?.scope.userId).toBe('user-2')
+
+    act(() => result.current.changeSource('private draft for user two'))
+    await waitFor(() => expect(transport.saveDraft).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+
+    rerender({ userId: 'user-1' })
+    await waitFor(() => expect(result.current.source).toBe('private draft for user one'))
+    expect(result.current.draft?.scope.userId).toBe('user-1')
+
+    rerender({ userId: 'user-2' })
+    await waitFor(() => expect(result.current.source).toBe('private draft for user two'))
+    expect(result.current.draft?.scope.userId).toBe('user-2')
+  })
+
   it('restores the local copy after a reload when server draft reads and writes are unavailable', async () => {
     const offline = new ApiError('Server drafts unavailable', 503, 'integration_unavailable')
     const offlineTransport = () => makeTransport({
