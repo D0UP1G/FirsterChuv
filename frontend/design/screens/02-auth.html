@@ -30,10 +30,10 @@ a{color:#ccff00}a:hover{color:#00ff66}
           <h1 id="login-heading" class="ba-h1" style="font-size: 32px">Вход</h1>
         </div>
         <form class="auth-form">
-          <label class="form-field"><span>E-mail</span><input type="email" name="email" autocomplete="email" value="ira@example.org"></label>
-          <label class="form-field"><span>Пароль</span><input type="password" name="password" autocomplete="current-password" value="••••••••••"></label>
+          <label class="form-field"><span>E-mail</span><input type="email" name="email" autocomplete="email" value="ira@example.org" disabled="disabled"></label>
+          <label class="form-field"><span>Пароль</span><input type="password" name="password" autocomplete="current-password" value="••••••••••" disabled="disabled"></label>
           <div class="form-alert" role="alert">Неверный e-mail или пароль.</div>
-          <button class="button auth-submit" type="submit">Войти</button>
+          <button class="button auth-submit" type="button">Войти</button>
         </form>
         <p class="auth-footer ba-mono-muted">Нет аккаунта? <a href="#">Зарегистрироваться</a></p>
       </section>
@@ -44,11 +44,11 @@ a{color:#ccff00}a:hover{color:#00ff66}
           <h2 id="register-heading" class="ba-h1" style="font-size: 32px">Регистрация</h2>
         </div>
         <form class="auth-form">
-          <label class="form-field"><span>Отображаемое имя</span><input name="displayName" autocomplete="nickname" value="Ира"><small class="field-help">Видно сопернику и зрителям.</small></label>
-          <label class="form-field"><span>E-mail</span><input type="email" name="email" autocomplete="email" value="ira@example.org"><small class="field-help">Не показывается другим участникам и зрителям.</small></label>
-          <label class="form-field has-error"><span>Пароль</span><input type="password" name="password" autocomplete="new-password" value="•••"><small class="field-error">Пароль слишком короткий.</small></label>
+          <label class="form-field"><span>Отображаемое имя</span><input name="displayName" autocomplete="nickname" value="Ира" disabled="disabled"><small class="field-help">Видно сопернику и зрителям.</small></label>
+          <label class="form-field"><span>E-mail</span><input type="email" name="email" autocomplete="email" value="ira@example.org" disabled="disabled"><small class="field-help">Не показывается другим участникам и зрителям.</small></label>
+          <label class="form-field has-error"><span>Пароль</span><input type="password" name="password" autocomplete="new-password" value="•••" disabled="disabled"><small class="field-error">Пароль слишком короткий.</small></label>
           <p class="role-note ba-mono-muted"><span class="role-pill">участник</span> Новый аккаунт всегда получает роль участника.</p>
-          <button class="button auth-submit" type="submit">Создать аккаунт</button>
+          <button class="button auth-submit" type="button">Создать аккаунт</button>
         </form>
         <p class="auth-footer ba-mono-muted">Уже есть аккаунт? <a href="#">Войти</a></p>
       </section>

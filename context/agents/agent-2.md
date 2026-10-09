@@ -1,5 +1,16 @@
 # Агент 2: сетка и live backend
 
+## Назначение координатора 2026-10-10T01:11:53+03:00: Настоящий матч и результат
+
+- Источник: прямое поручение команды перераспределить оставшийся MVP и создать нового frontend owner. Это текущее назначение; прежние author checkpoints ниже сохранены как история.
+- Статус назначения: READY; фактический IN_PROGRESS выставляет владелец при начале edits в своём изолированном checkout.
+- Первое действие: P2-03.1 persisted configured run/get/config/start/ready + production gateway/snapshot; публиковать по одному endpoint.
+- Независимый резерв: P2-04 durable accepted/result/failure ledger→promotion; P2-05 effects/history.
+- Владение: competition/models/services/migrations/tests; events переданы A4.
+- Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
+- [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
+
+
 Перепланировано координатором по поручению команды 2026-10-09; audit history владельца сохранена.
 
 - Коррекция аудита P2-03: короткий ref `6320b4b` раскрывается в `6320b4bb75a0dbc5284946cb0161cb1842d15847`; две исходные записи не переписывались. См. [коррекционный аудит](../audits/2026-10-10T002548+0300-agent-2-P2-03-base-sha-correction.md).

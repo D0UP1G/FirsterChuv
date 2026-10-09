@@ -1,3 +1,28 @@
+# Состояние проекта: новая ревизия и frontend handoff
+
+Снимок 2026-10-10T01:15:16+03:00, Europe/Moscow. База develop cc204e6 включает code integrations#20/#32/#44/#46 и A4 docs#48/#49. Main e9fc0ef bootstrap. Проверенные новые#21/#50/#51/#52/#54/#55 объединены ordinary merge commits в coordinator feature/mvp-readiness-handoff; до MERGED integration PR статусIN_REVIEW, после фактического MERGED доступны из fresh develop. Отдельный STATE PR не prerequisite. [Report](../docs/reviews/2026-10-10-mvp-readiness.md), [outcome audit](audits/2026-10-10T011516+0300-coordinator-mvp-readiness-review.md), [ROADMAP v4](../ROADMAP.md).
+
+## Что изменилось
+
+- Прежний draft CAS blocker#21 исправлен на620f58e: file-backed concurrent first-create/update PASS, stale409, lock exhaustion503; production WorkspaceAccess отсутствует, полныйT15 открыт.
+- #50 даёт настоящий admin pairings/reset HTTP с User UUID mapping, CSRF/reason/idempotency/lifecycle/SQLite first-write. Match/config/start/ready/clock/ledger/promotion пока не runtime.
+- #52 добавляет frontend CI вместе с существующими4 jobs; combined feature ограничивает worker1.
+- #54 брендбук BLITZ_ARENA:13 HTML screens/tokens и собственный inert auth preview fix. React styling переносит новый A5, production UI ещё не branded этим PR.
+- #53fd79038 не включён: concurrent snapshot SQLite500/cursor loss и same-cursor different run overwrite. FixA4P4-07 READY, source PR остаётсяOPEN.
+- A5 создан и active в отдельной Codex задаче; frontend/P4-01–06 переданы ему. A4 владеет events/SSE/system acceptance. A1 common/access/build, A2 competition/run/ledger, A3 real judge/worker/workspace.
+
+## Проверенный этап и остаток
+
+R0 — совместимые модули; полныйR1 ещёNOT_ACCEPTED. Backend255 PASS/4skips first attempt, file-backed draft18/bracket24, domain68/sandbox15/schema9/import/check/drift, frontend82/typecheck/build PASS; lint5 прежних warnings/editor chunk warning. Combined remote CI публикуется на финальном SHA и отдельно gate перед merge. Actual Docker/hostile/official/full browser pipeline в этой ревизииNOT_RUN.
+
+R1 critical: persisted configured run/gateway → immutable accepted version/checksum → actual worker/LocalJudge providers → durable result/failure ledger → score/winner/promotion → real React endpoints. Для spectator дополнительноPublicAccess/fixed snapshots/producers/HTTP/SSE. R2: полные admin actions/server draft browser persistence/recovery/privacy. R3: official package/README/checkers, полныеT01–21, hostile, одна команда/demo/video/release. Отсутствие пакета блокирует official subset, не независимую normalized smoke разработку.
+
+## Следующая работа параллельно
+
+A1 — P1-02.5 common failure/snapshot typing, затем PublicAccess/build. A2 — P2-03 configured run/start/ready/gateway, reserve durable ledger/actions. A3 — real worker executor/factory+programmatic bundle, reserve import/drafts/fencing. A4 — snapshotfix#53, reserve public transport/system harness. A5 — branded shared UI+доступныеauth/invite/bracket, reserve responsive/editor/real CONNECT по одному endpoint. WAITING у конкретного adapter не завершает всю роль.
+
+## Предыдущие датированные snapshots
+
 # Состояние проекта после новой проверки PR
 
 Снимок 2026-10-10T00:10:11+03:00, Europe/Moscow. Основной integration #44 MERGED; develop `03a463650828774d5767e086a69183f83c38006b` включает также A4 #45. Closeout feature `feature/mvp-review-closeout` сохраняет поздний sync/audit source #7; production/tests не меняются. Main `e9fc0ef` остаётся bootstrap.

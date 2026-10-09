@@ -79,7 +79,7 @@ jobs:
       - name: Run frontend lint
         run: npm run lint
       - name: Run frontend tests
-        run: npm test
+        run: npm test -- --maxWorkers=1
       - name: Build frontend
         run: npm run build
 

@@ -4,17 +4,15 @@
 
 ## Текущее состояние
 
-Повторная ревизия 2026-10-09: в develop уже есть платформа/auth/roles/CRUD/roster/invites и CI. В текущий интеграционный feature объединены проверенные sandbox, pure clock/scoring/admin guards и normalized catalog (#3/#11/#13/#14 + 8f5b762); после MERGED общего PR они доступны всем. Совместно прошли 105 Django tests, 36 standalone domain и 12 sandbox unit tests, реальный Docker smoke. Полного рабочего MVP пока нет: frontend, persisted match/gateway/ledger, LocalJudge/worker/drafts и public SSE остаются задачами.
+Актуальная ревизия 2026-10-10: интегрированы auth/roles/CRUD/roster/invites, bracket foundation, clock/score/readiness/ledger cores, queue/worker/outboxes, LocalJudge и React UI. Новые проверенные draft CAS, pairings/reset API, frontend CI и BLITZ_ARENA design references входят в coordinator integration feature до её MERGED. Полного рабочего MVP пока нет: нужно подключить real match/run/gateway/ledger/providers и public HTTP/SSE; #53 snapshot имеет два correctness blockers.
 
-Точный снимок и факт merge: [STATE](context/STATE.md). Все 19 исходных PR/53 аудита/замечания: [повторная ревизия](docs/reviews/2026-10-09-integration-review.md). [ROADMAP v3](ROADMAP.md) даёт очереди четырёх агентов до рабочего сценария; [контракты v1](docs/architecture/parallel-contracts.md) и [runtime handoffs](docs/architecture/runtime-handoffs.md) задают границы. #7/#15/#16 требуют коротких fixes, старые дефекты запуска sandbox уже исправлены и перепроверены.
-
-Локальный backend: Python 3.14 + uv, `.env.example` → `.env`, `./scripts/dev.sh`. Полный Compose запуск web/clock/judge пока не готов. У аккаунта global participant/admin; регистрация всегда participant. Только admin управляет турнирами. Первый admin: `./scripts/manage.sh create_admin` с защищённым вводом пароля; anonymous spectator будет смотреть через public API.
+Точный снимок и gate: [STATE](context/STATE.md), [новая ревизия и покрытие кейса](docs/reviews/2026-10-10-mvp-readiness.md). [ROADMAP v4](ROADMAP.md) распределяет пять владельцев: A1 платформа/запуск, A2 competition/runtime, A3 judge/workspace, A4 events/SSE/приёмка, новый A5 весь frontend/брендбук. [Контракты v1](docs/architecture/parallel-contracts.md), [runtime handoffs](docs/architecture/runtime-handoffs.md) и [принятые уточнения](context/contracts/2026-10-10-mvp-boundaries.md). Дизайн — [frontend/design](frontend/design/README.md), без runtime verdicts.
 
 ## Начать работу
 
 1. Прочитать [инструкции для агентов](AGENTS.md).
 2. Проверить [контекст проекта](context/PROJECT.md), [актуальное состояние](context/STATE.md) и собственную карточку в [context/agents](context/agents/README.md).
-3. Выбрать задачу из [роадмапа для четырёх агентов](ROADMAP.md), прочитать контракт v1 и занять READY задание в своей карточке.
+3. Выбрать задачу из [роадмапа пяти владельцев](ROADMAP.md), прочитать контракт v1 и занять READY задание в своей карточке.
 4. Создать `feature/<краткое-название>` от актуальной `develop`. Работа идёт строго по [GitFlow](docs/operations/gitflow.md).
 5. После работы записать отдельный [аудит](context/audits/README.md), обновить свою карточку и создать PR в `develop`.
 

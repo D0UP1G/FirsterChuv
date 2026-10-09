@@ -100,3 +100,7 @@ P-ID выше ведут к ROADMAP v3, старые A-ID сохранены. Co
 [Ревизия 19 PR и 53 аудитов](reviews/2026-10-09-integration-review.md) содержит SHA/результаты/ограничения. Все полные T01–21 остаются NOT_RUN. Только official mapping/final T12/T14/T21 ждут package, остальные задачи выполняются независимо по [runtime handoffs](architecture/runtime-handoffs.md).
 
 Новая проверка 2026-10-09T23:54+03:00 уточняет implementation: #32 и frontend до #42 MERGED; #7/#16 corrections, #34 readiness, #37 worker/outboxes, #38 ledger и #41 command receipts проверены вместе в coordinator feature. Доступность после integration MERGED и конкретные следующие срезы — [STATE](../context/STATE.md), [новый audit](../context/audits/2026-10-09T235434+0300-coordinator-new-pr-review.md). Полные T01–21 по-прежнему открыты; pure core/DI tests не закрывают runtime/system acceptance.
+
+## Новый snapshot покрытия 2026-10-10
+
+ROADMAP v4 сохраняет все37 требований и21 acceptance. Новые#21 CAS/#50 pairings/reset/#52 frontend CI/#54 дизайн проверены в integration feature до MERGED; #53 snapshots исключён с correctness blockers. [Case comparison и exact SHA/проверки](reviews/2026-10-10-mvp-readiness.md). P4 UI задачи теперьA5; A4 public events/SSE и system evidence. GET draft selector и additive snapshot/failure/fencing [приняты](../context/contracts/2026-10-10-mvp-boundaries.md). Полные обязательные блоки1–3/official/hostile/one-command/demo ещё неaccepted; static design/pure tests не закрывают их.

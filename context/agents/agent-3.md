@@ -1,5 +1,16 @@
 # Агент 3: sandbox, задачи, код
 
+## Назначение координатора 2026-10-10T01:11:53+03:00: Реальная проверка и workspace
+
+- Источник: прямое поручение команды перераспределить оставшийся MVP и создать нового frontend owner. Это текущее назначение; прежние author checkpoints ниже сохранены как история.
+- Статус назначения: READY; фактический IN_PROGRESS выставляет владелец при начале edits в своём изолированном checkout.
+- Первое действие: P3-04.2 real LocalJudge executor/factory + programmatic immutable smoke bundle, runtime compiler readiness.
+- Независимый резерв: P3-02 import management; P3-05 WorkspaceAccess CONNECT; accepted snapshot fields и own fenced container recovery.
+- Владение: problems/submissions/drafts/judge/sandbox; shared config только A1.
+- Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
+- [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
+
+
 ## Актуальный checkpoint координатора: разблокирование 2026-10-09
 
 - По поручению команды координатор проверил опубликованные PR и аудиты. Конкретный merge-блокер normalized import management снят: [#25](https://github.com/D0UP1G/FirsterChuv/pull/25) `MERGED`, merge `ed14416fee0d1cccbd0b9a202e563d49f062572a` в `develop`.
