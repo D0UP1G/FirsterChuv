@@ -101,6 +101,13 @@
 - Implemented routes: pause, resume, extend, technical result, rematch and participant replacement. Strict API body serializers match `docs/architecture/api.md`; role, CSRF, idempotency, exact replay/conflict and mutation responses are covered.
 - Session audit: [P2-05 authenticated admin API](../audits/2026-10-10T014100+0300-agent-2-P2-05-admin-api.md).
 
+## P2-05 PR closeout refresh, 2026-10-10
+
+- PR #59 was synced with the latest PR #58 head `dc884e6`, which also carries the ordinary `origin/develop` merge `7ad8073`; merge commit on P2-05 is `dd8bd9d`.
+- Full backend suite on the synchronized P2-05 branch: 284 passed, 4 skipped. Django check passed, migration drift check reported no changes, compileall and diff check passed.
+- PR #57 exact synchronized-head CI is 5/5 green. PR #58 CI is in progress at time of this checkpoint; P2-05 CI will start after this branch is pushed.
+- Audit: [P2-05 PR synchronization](../audits/2026-10-10T024000+0300-agent-2-P2-05-pr-sync.md).
+
 ## Current publication closeout (2026-10-10)
 
 - P2-02.2 manual pairing/reset API is published in [PR #50](https://github.com/D0UP1G/FirsterChuv/pull/50).
