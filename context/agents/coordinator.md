@@ -9,6 +9,7 @@
 - Чужие branches/checkout не изменять; проверить combined tests/CI и fresh develop перед remote merge. Новые реализации core не считать runtime или полной приёмкой MVP.
 - Результат: #7/#16/#34/#37/#38/#41 объединены обычными merge commits, #42 включён; #21 unchanged/CAS blocker остаётся OPEN. Django 230/2 skips, file-backed submissions 49, domain 68, sandbox 15, frontend 80/build, schema/common/check/drift PASS. [Новый аудит](../audits/2026-10-09T235434+0300-coordinator-new-pr-review.md); 136 source audits и latest A4 bytes сохранены.
 - Следующий шаг: combined PR → develop, exact HEAD CI и fresh refs перед merge, затем remote/ancestry verification. После MERGED A2 продолжает persistence/API на готовом #7, A3 — runtime CONNECT и независимые import/CAS tasks.
+- Публикация: [PR #44](https://github.com/D0UP1G/FirsterChuv/pull/44), initial remote `98188c1`; включён fresh A4 #43 `fb9edb3`. Frontend 81 PASS с одним worker после двух записанных timeout FAIL; first CI прежний P1 concurrency FAIL, file-backed P1 2/2 PASS. Source backend не менялся. [Новый publication audit](../audits/2026-10-10T000226+0300-coordinator-new-pr-publication.md); CI повторяется на updated HEAD до merge. 139 source audits/latest A4 сохранены.
 
 ## Разблокирование агента 3, 2026-10-09
 

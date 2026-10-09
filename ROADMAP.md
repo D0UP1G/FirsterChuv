@@ -36,9 +36,13 @@
 
 PR #12 merged: create/list/revoke/preview/accept, hashed token/use/cap/freeze/idempotency. Не повторять backend. P4-02 проверяет register/invite browser flow, A1 помогает исправлять конкретные API дефекты. M02/S02; full T04 открыт.
 
+P1-01.1 READY: стабилизировать concurrent invite acceptance/retry. Прежний shared-cache race тест intermittently даёт 1 accepted + 2 database_busy, хотя capacity=2; пойман также первым combined CI #44. File-backed class PASS 2/2; код турниров не менялся в #44. Проверить contention/revoke/expiry/idempotency и bounded retry на real file DB; сохранять capacity safety и assertions. Независимая задача A1.
+
 ### P1-02 · CI/common contracts · DONE исходный срез, READY additive handoff
 
 PR #17 и docs #18/#19 merged; 4 GitHub jobs, strict schemas/common ports/import isolation. Не повторять bootstrap CI. **P1-02.5:** материализовать отдельные additive InfrastructureFailureReceipt/Sink по runtime-handoffs, не менять существующий ResultReceipt/verdicts. У A2/A3 до merge допустимы локальные compatible Protocol в tests/core. Admin guard suite уже включена в integration CI runner. Branch protection recommendation не объявлять включённой: сейчас правил нет. D02/S01/S02; T20 partial.
+
+P1-02.6 READY: frontend CI по lockfile (tests/typecheck/build), pinned Node и воспроизводимая ограниченная concurrency. Текущие 4 jobs не проверяют frontend. Default suite после #43 поймал два 5s timeout; полный maxWorkers=1 повтор прошёл 81/81 без изменения assertions/timeouts. Добавить CI независимо от backend providers.
 
 ### P1-03 · feature/platform-security-access · READY
 

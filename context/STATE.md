@@ -1,10 +1,10 @@
 # Состояние проекта после новой проверки PR
 
-Снимок 2026-10-09T23:54:34+03:00, Europe/Moscow. Координатор: `feature/mvp-integration-review-3`, база `623a179` (#40). Свежий develop `e1fb156a8d6a711967fe1284ce37b36b956763b5` (#42) включён обычным merge. Main `e9fc0ef` остаётся bootstrap.
+Снимок 2026-10-10T00:02:26+03:00, Europe/Moscow. Координатор: `feature/mvp-integration-review-3`, база `623a179` (#40). Свежий develop `fb9edb3d39dba22297febcb0523e389cef67ff02` (#43) включён обычным merge. Main `e9fc0ef` остаётся bootstrap.
 
-Предыдущий integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) MERGED: queue #15, LocalJudge #23 и admin catalog #26 доступны в develop. Frontend #33/#35/#36/#39/#40/#42 также MERGED; исходники и карточка активного A4 сохранены.
+Предыдущий integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) MERGED: queue #15, LocalJudge #23 и admin catalog #26 доступны в develop. Frontend #33/#35/#36/#39/#40/#42/#43 также MERGED; исходники и карточка активного A4 сохранены.
 
-Новая проверенная feature объединяет точные heads #7 `1a2b54a`, #16 `a0b1dcc`, #34 `730edd8`, #37 `d331927`, #38 `92af1d6`, #41 `c8b8043`. До MERGED её integration PR это проверенный feature-код; после MERGED доступен в develop. [Новый аудит](audits/2026-10-09T235434+0300-coordinator-new-pr-review.md). Фактические GitHub/remote refs определяют доступность; отдельный STATE PR после code merge не требуется.
+Новая проверенная feature объединяет точные heads #7 `1a2b54a`, #16 `a0b1dcc`, #34 `730edd8`, #37 `d331927`, #38 `92af1d6`, #41 `c8b8043`. До MERGED [integration PR #44](https://github.com/D0UP1G/FirsterChuv/pull/44) это проверенный feature-код; после MERGED доступен в develop. [Новый аудит](audits/2026-10-09T235434+0300-coordinator-new-pr-review.md), [publication/CI checkpoint](audits/2026-10-10T000226+0300-coordinator-new-pr-publication.md). Фактические GitHub/remote refs определяют доступность; отдельный STATE PR после code merge не требуется.
 
 ## Проверенная реализация и оставшаяся работа
 
@@ -22,11 +22,11 @@
 | Frontend | UI/regressions в develop, включая #42 | Browser CONNECT по готовым endpoint |
 | Official package/release | Package/README не получены; выпуск не готов | Official adapter, T01–21, one-command demo/video/release |
 
-Проверки: Django 230 tests PASS, 2 ожидаемых skips; file-backed submissions 49/49; domain 68; sandbox unit 15; strict fixtures 9/common imports; check/migration drift/diff PASS. Frontend #42: 18 files / 80 tests и TypeScript/Vite build PASS; dev workspace fixtures отсутствуют в production JS. 136 исходных аудитов и 40 изменённых code paths source PR сохранены; frontend/A4 card идентичны свежему develop. CI повторяется на публикуемом combined HEAD. Real Docker/browser/official/full acceptance в этой сессии не выполнялась.
+Проверки: Django 230 tests PASS, 2 ожидаемых skips; file-backed submissions 49/49; domain 68; sandbox unit 15; strict fixtures 9/common imports; check/migration drift/diff PASS. Frontend #43: 18 files / 81 tests PASS с maxWorkers=1 после двух default timeout FAIL; source/assertions не ослаблялись. TypeScript/Vite build PASS на идентичном production source, dev workspace fixtures отсутствуют. 139 исходных аудитов и 40 изменённых code paths source PR сохранены; frontend/A4 card идентичны fresh develop. Первый CI #44 поймал прежний P1 invite concurrency FAIL; отдельный file-backed P1 class PASS 2/2. CI повторяется на обновлённом combined HEAD, merge только после SUCCESS. Все попытки записаны в publication audit. Real Docker/browser/official/full acceptance в этой сессии не выполнялась.
 
 ## Следующие независимые срезы четырёх ролей
 
-1. A1: PublicAccess/share/proxy; common failure port и runtime wiring/readiness отдельными небольшими PR.
+1. A1: PublicAccess/share/proxy; common failure port и runtime wiring/readiness отдельными небольшими PR. Резерв P1-01.1 invite concurrency stability, P1-02.6 frontend CI.
 2. A2: после code merge #7 — persisted MatchRun/config/gateway/workspace API, затем persistent ledger/finalization/promotion/effects. Readiness/ledger/commands cores проверены. Резерв: reset/pairings API, typed events/projector/SSE tests.
 3. A3: normalized import management и CAS fix #21 доступны независимо; worker snapshot/providers CONNECT относится к конкретным подпунктам. Leases/outboxes/adapters проверены. Container owner/claim fencing и immutable run snapshot описаны в contract requests.
 4. A4: продолжать browser/API CONNECT по одному endpoint; bracket generate/read доступен после merge #7, server drafts #21 ещё ждёт исправления. Local editor recovery работает независимо.
