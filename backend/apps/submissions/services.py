@@ -206,6 +206,16 @@ def _counter_key(scope: str, value: UUID | None = None) -> str:
     return f"{scope}:{value}"
 
 
+def _acquire_admission_write_intent() -> None:
+    # Start the transaction with a write, before its idempotency read. SQLite
+    # shared-cache cannot reliably upgrade two concurrent read transactions
+    # to writers on QueueCounter; a no-op insert serializes them instead.
+    QueueCounter.objects.bulk_create(
+        [QueueCounter(scope_key=_counter_key("global"))],
+        ignore_conflicts=True,
+    )
+
+
 def _reserve_capacity(
     user_id: UUID,
     match_id: UUID,
@@ -348,6 +358,7 @@ class SubmissionService:
                 raise SubmissionError("language is not available")
 
             with transaction.atomic():
+                _acquire_admission_write_intent()
                 existing = existing_idempotent_submission()
                 if existing is not None:
                     return existing
