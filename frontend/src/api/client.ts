@@ -308,6 +308,22 @@ async function readBody(response: Response): Promise<unknown> {
   }
 }
 
+const genericMessages: Record<string, string> = {
+  not_found: 'Не найдено.',
+  permission_denied: 'Недостаточно прав для этого действия.',
+  not_authenticated: 'Нужно войти в аккаунт.',
+  throttled: 'Слишком много запросов. Подождите и повторите.',
+  method_not_allowed: 'Это действие не поддерживается сервером.',
+  parse_error: 'Сервер не смог разобрать запрос.',
+}
+
+// Server messages written in Russian are shown as is; untranslated framework defaults get a Russian fallback by code.
+function localizedMessage(code: unknown, message: unknown): string {
+  if (typeof message === 'string' && /[а-яё]/i.test(message)) return message
+  if (typeof code === 'string' && genericMessages[code]) return genericMessages[code]
+  return typeof message === 'string' && message ? message : 'Запрос не выполнен. Попробуйте ещё раз.'
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
@@ -333,7 +349,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const envelope = isRecord(body) && isRecord(body.error) ? body as ApiErrorBody : undefined
     const detail = envelope?.error
     throw new ApiError(
-      typeof detail?.message === 'string' ? detail.message : 'Запрос не выполнен. Попробуйте ещё раз.',
+      localizedMessage(detail?.code, detail?.message),
       response.status,
       typeof detail?.code === 'string' ? detail.code : 'request_error',
       detail?.fields ?? null,

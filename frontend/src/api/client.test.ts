@@ -209,6 +209,18 @@ describe('auth API client', () => {
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
+  it('replaces untranslated framework error messages with a Russian one by code', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: { code: 'not_found', message: 'Not found.', fields: null } }, 404))
+      .mockResolvedValueOnce(jsonResponse({ error: { code: 'brand_new_code', message: 'Something odd.', fields: null } }, 500))
+      .mockResolvedValueOnce(jsonResponse({}, 502))
+
+    await expect(api.tournament('t-1')).rejects.toMatchObject({ code: 'not_found', message: 'Не найдено.' })
+    await expect(api.tournament('t-1')).rejects.toMatchObject({ code: 'brand_new_code', message: 'Something odd.' })
+    await expect(api.tournament('t-1')).rejects.toMatchObject({ message: 'Запрос не выполнен. Попробуйте ещё раз.' })
+  })
+
   it('sends bracket and match commands as CSRF-protected idempotent v1 requests', async () => {
     const fetchMock = vi.mocked(fetch)
     const bracket = { tournamentId: 'tournament-1', bracketSize: 2, rosterFrozenAt: '2026-10-09T17:00:00Z', matches: [] }

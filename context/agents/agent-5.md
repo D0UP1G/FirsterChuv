@@ -1,5 +1,13 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Текущий срез: P5-03b — состояния loading/error/empty/retry и очистка приватных данных при выходе
+
+- Статус: `IN_PROGRESS`.
+- Ветка: `feature/agent-5-states-and-drafts`, база `origin/develop` `f9da1dda236fe66bcca30b79505f9f86e2fd426c` (merge #69). PR #70 (P5-03a) ещё не слит.
+- Пути: `frontend/src/auth/AuthContext.tsx`, новый `frontend/src/workspace/privateStorage.ts`, их тесты; при необходимости страницы workspace/spectator и их тесты. Backend не меняется.
+- Цель: logout удаляет локальные черновики и ключи отправки вышедшего пользователя (docs/architecture/security.md:71); проверить состояния ошибки и повтора в workspace/spectator на отсутствующих endpoint.
+- `WAITING_CONNECT` (проверено на develop `f9da1dd`): HTTP `GET/PATCH /matches/{id}`, start/ready, условие задачи, список языков, публичный снимок и SSE отсутствуют, в develop есть только сервисы run (#69). Владельцы: A4 (match/run/public), A3 (problem/language/submissions/draft).
+
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
 - Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
