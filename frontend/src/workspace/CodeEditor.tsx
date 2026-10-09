@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { languageExtension } from './languageModes'
-import { EditorState } from '@codemirror/state'
+import { EditorState, Prec } from '@codemirror/state'
 import { indentWithTab } from '@codemirror/commands'
 import { EditorView, keymap } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
@@ -35,18 +35,20 @@ export function CodeEditor({ value, languageId, disabled = false, ariaLabel, onC
     const state = EditorState.create({
       doc: valueRef.current,
       extensions: [
-        basicSetup,
-        ...(mode ? [mode] : []),
-        keymap.of([
-          indentWithTab,
+        Prec.highest(keymap.of([
           {
             key: 'Mod-Enter',
             run: () => {
-              onSubmitRef.current?.()
-              return Boolean(onSubmitRef.current)
+              const submit = onSubmitRef.current
+              if (disabled || !submit) return false
+              submit()
+              return true
             },
           },
-        ]),
+        ])),
+        basicSetup,
+        ...(mode ? [mode] : []),
+        keymap.of([indentWithTab]),
         EditorState.readOnly.of(disabled),
         EditorView.editable.of(!disabled),
         EditorView.contentAttributes.of({ 'aria-label': ariaLabel, spellcheck: 'false' }),

@@ -139,6 +139,16 @@ def _object(
     return value
 
 
+def _optional_language_id(value: Any, field: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ProblemBundleError(f"manifest {field} must be a registered language ID or null")
+    if value not in COMPILERS:
+        raise ProblemBundleError(f"manifest {field} is not registered")
+    return value
+
+
 def _text(value: Any, field: str, *, max_bytes: int, allow_empty: bool = False) -> str:
     if not isinstance(value, str) or (not value and not allow_empty):
         raise ProblemBundleError(f"manifest {field} must be text")
@@ -325,16 +335,14 @@ def parse_problem_bundle(archive_bytes: bytes) -> ProblemBundleV1:
             ("validator", "validatorPath", "validatorLanguageId", "private/validators/"),
             ("reference", "referenceSolutionPath", "referenceSolutionLanguageId", "private/references/"),
         ):
+            language_id = _optional_language_id(private_data[language_key], language_key)
             path = private_data[path_key]
             if path is not None:
                 contents = _file(files, path, prefix, field=path_key)
                 if not contents:
                     raise ProblemBundleError(f"manifest {path_key} references an empty file")
-                language_id = private_data[language_key]
-                if language_id is not None and language_id not in COMPILERS:
-                    raise ProblemBundleError(f"manifest {language_key} is not registered")
                 artifacts.append(PrivateArtifact(role, path, language_id, contents))
-            elif private_data[language_key] is not None:
+            elif language_id is not None:
                 raise ProblemBundleError(f"manifest {language_key} requires an artifact path")
 
     return ProblemBundleV1(

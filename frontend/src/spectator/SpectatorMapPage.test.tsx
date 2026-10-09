@@ -55,4 +55,28 @@ describe('anonymous spectator map', () => {
     expect(await screen.findByRole('link', { name: 'Обычный вид' })).toBeInTheDocument()
     expect(document.querySelector('.spectator-page-projector')).toBeInTheDocument()
   })
+
+  it('renders untrusted public names and titles as text, not executable HTML', async () => {
+    const base = createDevSpectatorTransport()
+    const payload = '<img src=x onerror=alert(1)>'
+    const transport = {
+      ...base,
+      async bracket(id: string) {
+        return { ...await base.bracket(id), title: payload }
+      },
+      async snapshot(id: string) {
+        const snapshot = await base.snapshot(id)
+        return {
+          ...snapshot,
+          players: snapshot.players.map((player) => ({ ...player, displayName: payload })) as typeof snapshot.players,
+        }
+      },
+    }
+
+    renderMap('?scenario=public-map', transport)
+
+    expect(await screen.findByRole('heading', { name: payload })).toBeInTheDocument()
+    expect(document.querySelector('img')).toBeNull()
+    expect(document.body.textContent).toContain(payload)
+  })
 })
