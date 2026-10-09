@@ -89,3 +89,9 @@
 - P2-06.2 durable public snapshots is published in [PR #53](https://github.com/D0UP1G/FirsterChuv/pull/53), latest head `fd79038`.
 - P3-05.1 draft CAS retry is already included in open [PR #21](https://github.com/D0UP1G/FirsterChuv/pull/21), latest head `620f58e`, with four successful CI checks.
 - Next independent implementation remains P2-03 persisted runtime; P2-06.3 public HTTP/SSE stays gated on PublicAccessV1.
+
+## PR closeout refresh, 2026-10-10
+
+- PR #57 (`feature/a2-p2-03-readiness-runtime`) was synced with `origin/develop` by merge commit `489f7b9`; no feature code was rewritten. The branch now includes the latest integration docs, API wiring and workflow changes.
+- Full backend suite passed on the prior P2-05 descendant containing this branch's code: 266 tests, 2 skipped. The exact post-sync #57 SHA is awaiting GitHub CI; no post-sync local run is claimed.
+- PR #57 description/checks need refresh after CI reports. Persisted run configuration/readiness remains implemented in this PR; later ledger/admin work is tracked separately by #58/#59.

@@ -1,12 +1,21 @@
 # Агент 4 (прежний 1): API и логика соревнования
 
+## Текущая работа · P2-03.1 · runtime configure race · 2026-10-10
+
+- Статус: IN_PROGRESS (implementation PASS, own PR/publication/merge pending). GitFlow feature `feature/a4-p2-03-persisted-run`, создана от fresh `origin/develop` на base `1f95b72385c9bbaea0d6271a98dccffc8f4caa2b` после merge P1-02.5.
+- Задача: сохранить готовый configuration/readiness slice открытого PR [#57](https://github.com/D0UP1G/FirsterChuv/pull/57) обычным merge source `feature/a2-p2-03-readiness-runtime` в эту feature; исправить подтверждённый configure read→write SQLite race и добавить file-backed regression/rollback checks. Источник `5ae4af5ab053e98b0c7410c0492a87334713e858` сохранён merge commit `00e6903aa43ecb9d1c07d7a3db53706935b3cd3d`; #57 ref/PR не менял.
+- Paths: `backend/apps/competition/models.py`, migration `0003_*`, `runtime.py`, `test_runtime.py`, новая `test_runtime_concurrency.py` + `test_settings.py`, этот card и append-only audits. PR #57 source branch/PR не редактировать и не переписывать.
+- Invariants: catalog/snapshot resolution вне короткой транзакции; первая ORM операция внутри transition — write reservation/update. SQLite busy/locked возвращается как controlled retryable response; неожиданные DB ошибки не маскировать. Сохранить исходные rules/language/task snapshots; #59 frozen participant fix пока остаётся отдельным source dependency следующего P2-03 среза.
+- File-backed baseline до fix воспроизвёл `OperationalError: database is locked`; после fix dedicated runtime suite 5/5 PASS (configure/readiness/start/rollback/503). Catalog lock тоже даёт 503, unrelated DB error пробрасывается; полный backend `270 tests / 9 skipped`, contracts/import, check/drift/compile PASS. [Audit P2-03.1](../audits/2026-10-10T022828+0300-agent-4-P2-03.1-configure-race.md); #57 ещё не integrated в develop до merge этой feature.
+- После P2-03.1: следующий M0 slice — real GET/PATCH/POST API и `CompetitionGatewayV1`/`WorkspaceAccess` + run snapshot producer; отдельно сохранить frozen participant fix #59 до использования. P2-04/P4-07 остаются резервами.
+
 ## Текущая работа · P1-02.5 · 2026-10-10
 
-- Статус: IN_PROGRESS (implementation PASS, publication/merge pending). GitFlow feature `feature/a4-p1-02-5-common-ports`, создана от `origin/develop` на base `a6083263b54538275317d86f23d1034125813848` после синхронизации с develop.
+- Статус: DONE по GitFlow: PR [#67](https://github.com/D0UP1G/FirsterChuv/pull/67) merged commit `1f95b72385c9bbaea0d6271a98dccffc8f4caa2b`; final head `323d1b600fd8fafa3a27a839426c744e23613e06`, CI 5/5 `SUCCESS`.
 - Scope: additive common frozen DTO/Protocol для `InfrastructureFailureReceipt/Sink` и `RunProblemSnapshot/Provider`; paths — `backend/apps/common/contracts.py`, `backend/apps/common/tests.py`, `scripts/check_contract_imports.py`, этот файл и отдельный append-only implementation audit.
 - Invariants: не менять `SubmissionPermit`, `AttemptReceipt`, `ResultReceipt`, `JudgeVerdict`; common contracts без импортов optional apps; producer/consumer runtime CONNECT не входит в этот срез.
 - Следующий READY после этого короткого порта: P2-03 file-backed SQLite race/config→READY/start/gateway; параллельный резерв P2-04 и P4-07 остаётся в ROADMAP.
-- Implementation checkpoint: четыре additive common type добавлены, v1 fields guard/immutability/signature tests проходят. Full backend `259 tests / 4 skipped`, focused common `8/8`, nine contract fixtures, import isolation, Django check, migration drift и compileall PASS. `ruff` не установлен в locked env. [Audit](../audits/2026-10-10T021642+0300-agent-4-P1-02-5-common-ports.md); runtime providers ещё не подключены.
+- Implementation audit: [P1-02.5](../audits/2026-10-10T021642+0300-agent-4-P1-02-5-common-ports.md); merge audit: [GitFlow merge](../audits/2026-10-10T021945+0300-agent-4-P1-02-5-merge.md). `develop` fast-forward-синхронизирован и чист на `1f95b72385c9bbaea0d6271a98dccffc8f4caa2b`. Full backend `259 tests / 4 skipped`, focused common `8/8`, nine contract fixtures, import isolation, Django check, migration drift и compileall PASS; `ruff` отсутствует в locked env. Runtime providers/consumer не подключены.
 
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
