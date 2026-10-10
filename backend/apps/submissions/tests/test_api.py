@@ -2,7 +2,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from backend.apps.accounts.models import User
@@ -61,6 +61,7 @@ class SubmissionAPITests(TestCase):
         self.assertEqual(response["Cache-Control"], "no-store")
         self.assertEqual(Submission.objects.count(), 1)
 
+    @override_settings(SUBMISSION_SERVICE_FACTORY=None)
     def test_default_runtime_fails_closed_and_does_not_store_source(self):
         response = self.post_submission()
 

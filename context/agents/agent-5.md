@@ -8,6 +8,15 @@
 - Пути: `backend/apps/events/{public_views.py,urls.py,services.py,tests/}`, эта карточка, собственный аудит.
 - Цель: `GET /public/tournaments`, `GET /public/tournaments/{id}/bracket` (DTO без идентификаторов аккаунтов), `GET /public/matches/{id}/events` (SSE: `Last-Event-ID`, heartbeat, `stream.resync_required`, лимит соединений, ограниченная длительность соединения). Событийное хранилище сейчас поддерживает только `score.changed` (ограничение БД); остальные типы (`submission.*`, `match.*`) требуют типизированных payload и миграции A4 и не добавляются.
 
+## Срез: волна 2 (1/4) — backend API участника: условие, языки, подключение провайдеров (по прямому поручению команды)
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-wave2-participant-api`, база `origin/develop` — см. аудит.
+- Поручение: пользователь передал A5 задачи волны 2 всех агентов (A3 условие/языки/черновики, A4 публичная сетка и SSE). Другие агенты по cards на этот момент волну 2 не начинали. Правки в зонах A3/A4 выполняются по прямому поручению и минимально, без смены контрактов v1.
+- Пути: `backend/apps/problems/{catalog.py,workspace_views.py,urls.py,tests/}`, `backend/apps/submissions/{runtime.py,tests/}`, `backend/config/settings.py`, `docs/architecture/api.md` (только уточнения реализованных маршрутов), эта карточка, собственный аудит.
+- Цель: `GET /matches/{id}/problems/{problemId}` (условие по закреплённой версии замороженного запуска, после старта) и `.../languages` (только проверенные компиляторы); задать `WORKSPACE_ACCESS_FACTORY` и `SUBMISSION_SERVICE_FACTORY`, чтобы API черновиков и посылок не отвечал 503 в рабочем окружении.
+- Остальные срезы волны 2: (2) frontend рабочее место P5-03c, (3) backend публичная сетка и SSE, (4) frontend карта на SSE.
+
 ## Срез: фикс O_BINARY в импортёре демо-задачи (по прямому поручению команды)
 
 - Статус: `IN_REVIEW`.
