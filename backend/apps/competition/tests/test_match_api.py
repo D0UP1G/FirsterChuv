@@ -11,6 +11,17 @@ from django.db import OperationalError
 from rest_framework.test import APIClient
 
 from backend.apps.accounts.models import User
+from backend.apps.common.contracts import (
+    AttemptReceipt,
+    InfrastructureFailureReceipt,
+    ResultReceipt,
+)
+from backend.apps.competition.domain.scoring import Verdict
+from backend.apps.competition.ledger_persistence import (
+    apply_result,
+    record_infrastructure_failure,
+    register_accepted,
+)
 from backend.apps.competition.models import (
     Match,
     MatchRun,
@@ -337,6 +348,47 @@ class MatchAPITests(TestCase):
         self.assertTrue(payload["problemVersions"][0]["conditionAvailable"])
         self.assertNotIn("print(1)", response.content.decode())
 
+    def test_match_get_exposes_only_safe_infrastructure_failure_state(self):
+        self.login_with_csrf(self.admin)
+        configured = self.configure()
+        self.assertEqual(configured.status_code, 200, configured.content)
+        run = MatchRun.objects.get(match=self.match)
+        started_at = timezone.now() - timedelta(seconds=40)
+        MatchRun.objects.filter(pk=run.pk).update(
+            status=MatchRun.Status.RUNNING,
+            started_at=started_at,
+        )
+        Match.objects.filter(pk=self.match.pk).update(status=Match.Status.RUNNING)
+        participant = self.match.slots.select_related("participant").get(slot_index=0).participant
+        accepted = AttemptReceipt(
+            submission_id=uuid4(),
+            run_id=run.pk,
+            user_id=participant.user_id,
+            problem_id=self.problem_id,
+            received_at=started_at + timedelta(seconds=10),
+            elapsed_ms=10_000,
+            scoring_version=run.scoring_version,
+        )
+        register_accepted(accepted)
+        record_infrastructure_failure(InfrastructureFailureReceipt(
+            submission_id=accepted.submission_id,
+            run_id=accepted.run_id,
+            reason_code="judge_infrastructure_error",
+            retryable=False,
+        ))
+
+        response = self.client.get(f"/api/v1/matches/{self.match.pk}")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        payload = response.json()
+        self.assertTrue(payload["resolutionRequired"])
+        self.assertEqual(
+            payload["infrastructureFailures"],
+            [{"reasonCode": "judge_infrastructure_error", "retryable": False}],
+        )
+        self.assertNotIn("diagnostic", response.content.decode().lower())
+        self.assertNotIn("traceback", response.content.decode().lower())
+
     def test_start_is_admin_only_csrf_protected_manual_and_idempotent(self):
         self.login_with_csrf(self.admin)
         configured = self.configure()
@@ -379,7 +431,7 @@ class MatchAPITests(TestCase):
 
     def create_submission(self, run, user, verdict, *, elapsed_ms):
         now = run.started_at + timedelta(milliseconds=elapsed_ms)
-        return Submission.objects.create(
+        submission = Submission.objects.create(
             actor=user,
             match_id=self.match.pk,
             run_id=run.pk,
@@ -391,8 +443,28 @@ class MatchAPITests(TestCase):
             idempotency_sha256=("c" if verdict == "WA" else "d") * 64,
             received_at=now,
             elapsed_ms=elapsed_ms,
-            scoring_version="rules-v1",
+            scoring_version=run.scoring_version,
             status=Submission.Status.FINISHED,
             verdict=verdict,
             available_at=now,
         )
+        accepted = register_accepted(AttemptReceipt(
+            submission_id=submission.pk,
+            run_id=run.pk,
+            user_id=user.pk,
+            problem_id=self.problem_id,
+            received_at=now,
+            elapsed_ms=elapsed_ms,
+            scoring_version=run.scoring_version,
+        ))
+        apply_result(ResultReceipt(
+            submission_id=accepted.submission_id,
+            run_id=accepted.run_id,
+            user_id=accepted.user_id,
+            problem_id=accepted.problem_id,
+            received_at=accepted.received_at,
+            elapsed_ms=accepted.elapsed_ms,
+            scoring_version=accepted.scoring_version,
+            verdict=Verdict(verdict),
+        ))
+        return submission

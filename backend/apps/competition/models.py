@@ -220,12 +220,15 @@ class MatchRun(models.Model):
         validators=[MinValueValidator(1)]
     )
     score_rule = models.JSONField(default=dict)
+    scoring_version = models.CharField(max_length=64, default="scoring-v1")
     start_mode = models.CharField(
         max_length=16,
         choices=StartMode.choices,
         default=StartMode.MANUAL,
     )
     problem_versions = models.JSONField(default=list)
+    participant_user_ids = models.JSONField(default=list)
+    score_snapshot = models.JSONField(default=dict)
     finished_at = models.DateTimeField(null=True, blank=True)
     winner = models.ForeignKey(
         "tournaments.TournamentParticipant",
@@ -269,6 +272,80 @@ class MatchRunReady(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=("run", "participant"), name="unique_match_run_ready_participant")
+        ]
+
+
+class AcceptedAttempt(models.Model):
+    """Immutable server-authored admission receipt for one submission."""
+
+    class Verdicts(models.TextChoices):
+        OK = "OK", "Accepted"
+        WA = "WA", "Wrong answer"
+        TL = "TL", "Time limit"
+        ML = "ML", "Memory limit"
+        RE = "RE", "Runtime error"
+        CE = "CE", "Compile error"
+
+    submission_id = models.UUIDField(primary_key=True)
+    run = models.ForeignKey(MatchRun, on_delete=models.PROTECT, related_name="accepted_attempts")
+    user_id = models.UUIDField()
+    problem_id = models.UUIDField()
+    received_at = models.DateTimeField()
+    elapsed_ms = models.PositiveBigIntegerField()
+    scoring_version = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("received_at", "submission_id")
+        constraints = [
+            models.CheckConstraint(condition=Q(elapsed_ms__gte=0), name="accepted_attempt_elapsed_nonnegative")
+        ]
+
+
+class AttemptResult(models.Model):
+    """One immutable verdict receipt paired with its accepted identity."""
+
+    accepted = models.OneToOneField(
+        AcceptedAttempt,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="result",
+    )
+    verdict = models.CharField(max_length=2, choices=AcceptedAttempt.Verdicts.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class InfrastructureFailureRecord(models.Model):
+    """A safe, durable infrastructure outcome for an accepted submission."""
+
+    accepted = models.OneToOneField(
+        AcceptedAttempt,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="infrastructure_failure",
+    )
+    reason_code = models.CharField(max_length=64)
+    retryable = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MatchAdminCommandReceipt(models.Model):
+    """Durable idempotency receipt for applied match administration commands."""
+
+    match = models.ForeignKey(Match, on_delete=models.PROTECT, related_name="admin_command_receipts")
+    actor = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="match_admin_command_receipts")
+    run = models.ForeignKey(MatchRun, null=True, blank=True, on_delete=models.PROTECT, related_name="admin_command_receipts")
+    command_id = models.CharField(max_length=128)
+    action = models.CharField(max_length=32)
+    request_sha256 = models.CharField(max_length=64)
+    reason = models.CharField(max_length=500, blank=True)
+    response_payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("match", "command_id"), name="unique_match_admin_command_id")
         ]
 
 

@@ -17,9 +17,15 @@ from backend.apps.competition.domain.scoring import (
     Verdict,
     calculate_match_score,
 )
-from backend.apps.competition.models import Match, MatchRun, MatchRunReady, MatchSlot
+from backend.apps.competition.ledger_persistence import INFRA_FAILURE_REASON_CODES
+from backend.apps.competition.models import (
+    AcceptedAttempt,
+    Match,
+    MatchRun,
+    MatchRunReady,
+    MatchSlot,
+)
 from backend.apps.events.models import MatchEvent
-from backend.apps.submissions.models import Submission
 
 
 class MatchProjectionError(ValueError):
@@ -95,26 +101,24 @@ def match_view_payload(match: Match, *, actor, now: datetime) -> dict:
     if not problem_ids or len(set(problem_ids)) != len(problem_ids):
         raise MatchProjectionError("Снимок задач запуска повреждён.")
 
-    # Source and compile diagnostics remain deferred and never enter this read DTO.
-    submissions = list(
-        Submission.objects.filter(run_id=run.pk)
-        .only(
-            "id",
-            "actor_id",
-            "problem_id",
-            "received_at",
-            "elapsed_ms",
-            "status",
-            "verdict",
+    if tuple(user_ids) != tuple(str(user_id) for user_id in run.participant_user_ids):
+        raise MatchProjectionError(
+            "Состав запуска не совпадает с текущими слотами матча."
         )
-        .order_by("received_at", "id")
+
+    # The accepted/result ledger, not queue delivery state, is the source of the
+    # private score projection. Source and compiler diagnostics are never read.
+    attempts = list(
+        AcceptedAttempt.objects.filter(run_id=run.pk)
+        .select_related("result")
+        .order_by("received_at", "submission_id")
     )
     allowed_users = set(user_ids)
     allowed_problems = set(problem_ids)
     if any(
-        str(item.actor_id) not in allowed_users
+        str(item.user_id) not in allowed_users
         or str(item.problem_id) not in allowed_problems
-        for item in submissions
+        for item in attempts
     ):
         raise MatchProjectionError(
             "Состав запуска не совпадает с текущими слотами матча."
@@ -124,14 +128,14 @@ def match_view_payload(match: Match, *, actor, now: datetime) -> dict:
         ScoredAttempt(
             submission_id=str(item.pk),
             run_id=str(run.pk),
-            user_id=str(item.actor_id),
+            user_id=str(item.user_id),
             problem_id=str(item.problem_id),
             received_at=item.received_at,
             elapsed_ms=item.elapsed_ms,
-            verdict=Verdict(item.verdict),
+            verdict=Verdict(item.result.verdict),
         )
-        for item in submissions
-        if item.status == Submission.Status.FINISHED and item.verdict is not None
+        for item in attempts
+        if hasattr(item, "result")
     ]
     try:
         score = calculate_match_score(
@@ -144,11 +148,9 @@ def match_view_payload(match: Match, *, actor, now: datetime) -> dict:
     except ScoreInputError as error:
         raise MatchProjectionError("Снимок результатов матча повреждён.") from error
     score_by_user = {item.user_id: item for item in score.participants}
-    submissions_by_pair: dict[tuple[str, str], list[Submission]] = {}
-    for item in submissions:
-        submissions_by_pair.setdefault(
-            (str(item.actor_id), str(item.problem_id)), []
-        ).append(item)
+    attempts_by_pair: dict[tuple[str, str], list[AcceptedAttempt]] = {}
+    for item in attempts:
+        attempts_by_pair.setdefault((str(item.user_id), str(item.problem_id)), []).append(item)
 
     players = []
     for slot in slots:
@@ -161,19 +163,19 @@ def match_view_payload(match: Match, *, actor, now: datetime) -> dict:
         task_states = []
         for problem in problems:
             problem_id = str(problem["problemId"])
-            attempts = submissions_by_pair.get((user_id, problem_id), [])
+            task_attempts = attempts_by_pair.get((user_id, problem_id), [])
             problem_score = problems_by_id[problem_id]
             outcome = problem_score.outcome.value
-            if outcome == "NOT_STARTED" and attempts:
+            if outcome == "NOT_STARTED" and task_attempts:
                 outcome = "ATTEMPTED"
-            latest = attempts[-1] if attempts else None
+            latest = task_attempts[-1] if task_attempts else None
             task_states.append(
                 {
                     "problemId": problem_id,
                     "label": problem["label"],
                     "status": outcome,
-                    "attempts": len(attempts),
-                    "lastVerdict": latest.verdict if latest else None,
+                    "attempts": len(task_attempts),
+                    "lastVerdict": latest.result.verdict if latest and hasattr(latest, "result") else None,
                 }
             )
         players.append(
@@ -202,6 +204,20 @@ def match_view_payload(match: Match, *, actor, now: datetime) -> dict:
     )
     is_admin = getattr(actor, "role", None) == "admin"
     condition_available = is_admin or run.started_at is not None
+    score_snapshot = run.score_snapshot if isinstance(run.score_snapshot, dict) else {}
+    unresolved_failures = score_snapshot.get("infrastructureFailures", [])
+    if not isinstance(unresolved_failures, list) or any(
+        not isinstance(item, dict)
+        or set(item) != {"reasonCode", "retryable"}
+        or not isinstance(item.get("reasonCode"), str)
+        or item.get("reasonCode") not in INFRA_FAILURE_REASON_CODES
+        or type(item.get("retryable")) is not bool
+        for item in unresolved_failures
+    ):
+        raise MatchProjectionError("Снимок технических ошибок матча повреждён.")
+    resolution_required = score_snapshot.get("resolutionRequired", False)
+    if type(resolution_required) is not bool:
+        raise MatchProjectionError("Снимок технического статуса матча повреждён.")
     return {
         "matchId": str(match.pk),
         "runId": str(run.pk),
@@ -218,6 +234,8 @@ def match_view_payload(match: Match, *, actor, now: datetime) -> dict:
         "tournamentId": str(match.tournament_id),
         "startMode": run.start_mode,
         "readyUserIds": ready_user_ids,
+        "resolutionRequired": resolution_required,
+        "infrastructureFailures": unresolved_failures,
         "problemVersions": [
             {
                 "problemId": str(item["problemId"]),

@@ -106,6 +106,8 @@
     "00000000-0000-0000-0000-000000000001",
     "00000000-0000-0000-0000-000000000004"
   ],
+  "resolutionRequired": false,
+  "infrastructureFailures": [],
   "problemVersions": [
     {
       "problemId": "00000000-0000-0000-0000-000000000040",
