@@ -503,6 +503,11 @@ export const api = {
     return mutate<{ tournamentId: string; userId: string; joined: true }>(`/invites/${segment(token)}/accept`)
   },
 
+  /** Anonymous, allowlisted snapshot; the caller validates the shape before use. */
+  publicMatchSnapshot(matchId: string): Promise<unknown> {
+    return request<unknown>(`/public/matches/${segment(matchId)}`)
+  },
+
   readyProblems(): Promise<Page<ProblemCatalogEntry>> {
     return request<Page<ProblemCatalogEntry>>('/problems?limit=100&offset=0').then((page) => ({
       ...page,

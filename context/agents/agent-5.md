@@ -1,8 +1,16 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: P5-03e — публичная карта на реальном снимке матча (ROADMAP v6, волна 1)
+
+- Статус: `IN_REVIEW` (PR #81, CI 5/5, sync с develop после merge #80 и PR A3/A4).
+- Ветка: `feature/agent-5-public-map-connect`, база `origin/develop` `4bb521b4980c3262d49f8b91387499f4d2a4acc1` (merge #79). PR #80 (P5-03d) ещё не слит.
+- Пути: `frontend/src/spectator/transport.ts`, `frontend/src/spectator/SpectatorMapPage.tsx`, `frontend/src/spectator/transport.test.ts`, `frontend/src/api/client.ts`, эта карточка, собственный аудит. Backend не меняется.
+- Цель: реальный `GET /public/matches/{id}` вместо отказа «endpoint не подключён»; интерим-опрос снимка вместо SSE; режим одного матча по `/watch/:tournamentId/matches/:matchId`, собранный только из публичных полей снимка. Приватных данных, подмены вердиктов и fixtures в production нет.
+- `WAITING_CONNECT` (A4, P2-06/P1-03): публичная сетка турнира, список публичных турниров, SSE, ссылка по токену. Страница `/watch/:tournamentId` без матча остаётся честным состоянием «недоступно».
+
 ## Срез: P5-03d — админский матч на реальные эндпоинты (ROADMAP v6, волна 1)
 
-- Статус: `IN_REVIEW`.
+- Статус: `DONE` — PR #80 MERGED в develop (implementation/integration); реальное сохранение и запуск ждут READY-задачи.
 - Ветка: `feature/agent-5-admin-match-connect`, база `origin/develop` `4bb521b4980c3262d49f8b91387499f4d2a4acc1` (merge #79).
 - Пути: `frontend/src/pages/AdminMatchPage.tsx`, `frontend/src/pages/AdminMatchPage.test.tsx`, при необходимости `frontend/src/api/client.ts`, эта карточка, собственный аудит. Backend не меняется.
 - Найдено в реальном стенде (develop `7819fc7`): матч с двумя игроками в сетке имеет статус `WAITING` до настройки, `GET /matches/{id}` отвечает 409 `match_run_not_configured`; страница исключала `WAITING` и не давала открыть матч для настройки.
