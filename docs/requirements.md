@@ -28,7 +28,7 @@
 | V03 | WebSocket/SSE, анимация сдачи/обгона/победы | Стр. 6, блок 4 | P2-06, P4-05 / T17 |
 | V04 | Режим большого экрана/проектора | Стр. 6, блок 4 | P4-05 / T16 |
 
-P1-01 интегрирован PR #12 и закрывает backend-подпроверки M02/T04 для invite API. Его participant/auth guard покрывает только вход через invite; полное S02 также включает private source, spectator read-only, object access и admin/browser paths и остаётся открытым.
+P1-01 интегрирован PR #12 и закрывает backend-подпроверки M02/T04 для invite API. SQLite concurrency follow-up P1-01.1 находится в PR #87. Participant/auth guard покрывает только вход через invite; полное S02 также включает private source, spectator read-only, object access и admin/browser paths и остаётся открытым.
 
 P1-02 добавляет PR checks для backend/domain/schema/common-import boundaries, а отдельный manual workflow — запуск реального Docker smoke с явным подтверждением. GitHub dispatch станет доступен после обычной интеграции workflow в default branch `main`; до того времени Docker smoke остаётся отдельной ручной проверкой. Это повторяемый CI и частичная поддержка D02/S01/T20; сам workflow не включает branch protection, а отсутствие private data в полной системе, runtime isolation и полные S02/T20 остаются отдельной приёмкой.
 
@@ -115,7 +115,7 @@ ROADMAP v4 сохраняет все37 требований и21 acceptance. Н�
 | M01–04/TEAM01 | auth/CRUD/roster/invites/bracket/manual pairings/reset | full browser/cap/history/permissions acceptance A4+A5 |
 | M05–08/P03 | persisted run/config/start/ready, gateway/workspace, ledger/result/failure/finalization and admin cores | A3 consumer CONNECT, P2-05 admin API/browser |
 | P01–02/E01–04/J01–04 | normalized catalog, LocalJudge/harness, durable queue/outboxes/draft CAS, editor UI | real import/compiler/worker/provider/workspace CONNECT A3+A4+A5; admission race A3; official adapter отдельно |
-| V01–04/TEAM02 | safe event store; P4-07 snapshot/public-only GET integrated PR #78 | hashed unlisted access in current P1-03 A4 feature; A3 legacy invite URI log-redaction follow-up; public bracket/SSE; real map CONNECT A5 |
+| V01–04/TEAM02 | safe event store; P4-07 snapshot/public-only GET integrated PR #78; hashed unlisted access integrated PR #84 | A3 legacy invite URI log-redaction follow-up; public bracket/SSE; real map CONNECT A5 |
 | S01–02/TEAM06 | basic roles/guards/private split/isolation cores | actual full-system IDOR/injections/privacy/hostile/restart evidence A3+A4+A5 |
 | D01–06 | README/env/архитектура/history/CI/case/design | actual one-command runtime A3, M0→full official/demo/video evidence всей команды |
 
