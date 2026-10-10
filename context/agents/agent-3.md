@@ -15,7 +15,8 @@
 
 - Code + implementation audit зафиксированы в `fdf75d89f8c2ee2417d3528e2eb0c36ac022482c`.
 - На clean SHA создан [`docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json`](../../docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json): 13/13 HTTP checks PASS, `worktreeClean=true` до записи manifest. Docker probe `NOT_RUN`; все G01–G06 и T01–T21 остаются `NOT_RUN`. См. [follow-up audit](../audits/2026-10-10T031507+0300-agent-3-P4-08-evidence.md).
-- Clean-SHA follow-up audit записан отдельно; текущий шаг — открыть PR в `develop`, не сливать. Полный P4-08 остаётся `IN_PROGRESS` до проверки реальных queue/recovery/compiler/runtime и acceptance CONNECT сценариев.
+- Publication: PR [#75](https://github.com/D0UP1G/FirsterChuv/pull/75) открыт в `develop`, head `6fed027648fc7b6070305cf194d13d58a47638ac`, merge state `CLEAN`, не слит. CI run `38008387145` на этом head: 5/5 SUCCESS; backend 279 tests, 9 skipped. См. [publication audit](../audits/2026-10-10T031939+0300-agent-3-P4-08-publication.md).
+- Следующий шаг: дождаться review/интеграции без merge со стороны A3; продолжать P4-08 с реальными queue/recovery/compiler/runtime и acceptance CONNECT только на доступном свежем integration SHA.
 
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
