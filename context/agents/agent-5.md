@@ -1,5 +1,12 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: фикс O_BINARY в импортёре демо-задачи (по прямому поручению команды)
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-import-o-binary`, база `origin/develop` `feef318e8ea9ceecb92570925f03c8f2db19874a`.
+- Пути: `backend/apps/problems/management/commands/import_demo_problem.py` (одна строка, зона A3 — правка по прямому поручению пользователя, логика импорта не меняется), эта карточка, собственный аудит.
+- Причина: на Windows `os.open` без `O_BINARY` читает ZIP в текстовом режиме и портит архив; тест `test_imports_an_explicit_normalized_archive_with_bounded_regular_file_read` падал с «archive is not a valid ZIP file». На Linux поведение не меняется.
+
 ## Срез: P5-03e — публичная карта на реальном снимке матча (ROADMAP v6, волна 1)
 
 - Статус: `IN_REVIEW` (PR #81, CI 5/5, sync с develop после merge #80 и PR A3/A4).
