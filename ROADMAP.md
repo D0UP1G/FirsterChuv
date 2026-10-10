@@ -12,7 +12,7 @@
 
 | Владелец | Задачи |
 |---|---|
-| A4 | P2-03.4/P1-03 #82/#84 и P1-01.1 #87 интегрированы. Wave 3: `feature/a4-wave3-domain-fixes`, T09–T11 lifecycle/domain seams в работе |
+| A4 | P2-03.4/P1-03 #82/#84 и P1-01.1 #87 интегрированы. Wave 3 lifecycle slice PR #93 открыт, exact-head CI 5/5; accepted-submission producer остаётся A3/A4 CONNECT |
 | A3 | P3-04.2: реальный исполнитель LocalJudge, фабрика воркера и `SUBMISSION_WORKER_FACTORY`, очистка контейнеров после убитого процесса. P3-02.2: программный импорт демо-задачи и проверка компилятора (сейчас `verified=False`). P1-04.2: запуск одной командой, API, воркер и таймер в Compose |
 | A5 | P5-03d: админский матч на реальные `GET/PATCH /matches/{id}`, start, pause, resume, extend, technical-result, rematches, replacements. P5-03e: публичная карта на слитом `GET /public/matches/{id}` с опросом. Кнопка «Готов» и состояния по контракту A4 |
 
