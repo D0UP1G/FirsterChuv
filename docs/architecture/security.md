@@ -38,7 +38,7 @@ Anonymous scoped throttles для login/register/invite preview/public snapshot 
 
 Tests PR #12 покрывают create/list/revoke, ограничения и неизвестные поля, preview/accept 404/410, регистрацию+login+accept, повтор без расхода, CSRF/roles, cap/freeze rollback и parallel accept при use/cap limits. Это backend evidence для M02/T04 и invite role gate S02, но не full T04/T20. Токен находится в URL по контракту; application-код его не журналирует, а redaction reverse-proxy access logs остаётся A3 deployment follow-up.
 
-P1-01.1 в ветке `feature/a4-p1-01-1-invite-concurrency` устраняет SQLite read→write upgrade race: acceptance резервирует write до чтения счётчика/ledger, конкурентные lock retry имеют bounded exponential backoff, а same-participant retry остаётся no-op по use count. File-backed regression гоняет use-limit, roster-cap и same-user retry; это implementation evidence до PR/merge, не закрытие browser T04.
+P1-01.1 опубликована в PR #87: она устраняет SQLite read→write upgrade race через write reservation до чтения счётчика/ledger, bounded exponential backoff для lock retry и сохранение same-participant no-op по use count. File-backed regression проверяет use-limit, roster-cap и same-user retry. Это implementation evidence; merge не закрывает browser T04.
 
 ## Границы доверия
 

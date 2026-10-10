@@ -12,7 +12,7 @@
 
 | Владелец | Задачи |
 |---|---|
-| A4 | P2-03.4 и P1-03 integrated PR #82/#84. P1-01.1: `IN_PROGRESS` в `feature/a4-p1-01-1-invite-concurrency`; остановиться после задачи Wave 1 |
+| A4 | P2-03.4 и P1-03 integrated PR #82/#84. P1-01.1: PR #87 `IN_REVIEW` в `feature/a4-p1-01-1-invite-concurrency`; остановиться после задачи Wave 1 |
 | A3 | P3-04.2: реальный исполнитель LocalJudge, фабрика воркера и `SUBMISSION_WORKER_FACTORY`, очистка контейнеров после убитого процесса. P3-02.2: программный импорт демо-задачи и проверка компилятора (сейчас `verified=False`). P1-04.2: запуск одной командой, API, воркер и таймер в Compose |
 | A5 | P5-03d: админский матч на реальные `GET/PATCH /matches/{id}`, start, pause, resume, extend, technical-result, rematches, replacements. P5-03e: публичная карта на слитом `GET /public/matches/{id}` с опросом. Кнопка «Готов» и состояния по контракту A4 |
 
@@ -49,7 +49,7 @@ M1: ручные пары и BYE в браузере, все админские 
 
 | Владелец | Вся зона | Первое READY задание | Независимый резерв |
 |---|---|---|---|
-| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | Wave 1: P2-03.4/P1-03 integrated; P1-01.1 in progress | P2-05 admin HTTP and later Wave 2 producer tasks |
+| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | Wave 1: P2-03.4/P1-03 integrated; P1-01.1 PR #87 in review | P2-05 admin HTTP and later Wave 2 producer tasks |
 | A3 | problems/submissions/drafts/judge/sandbox, config/factories/Compose/start scripts/CI, system acceptance | P3-04.1 admission contention; P3-04.2 реальный LocalJudge executor/factory + programmatic smoke import | P3-02 import/assets/compiler probes; P1-04 one-command build; P3-05 private draft access; P4-08 acceptance harness |
 | A5 | весь frontend: React/design/styles/typed clients/editor/map/UI/browser checks | P5-03 подключить готовые auth/invite/admin/bracket API; минимальный бренд из #64 | typed match/workspace clients, loading/error/empty states, draft isolation, keyboard/minimal responsive |
 
@@ -79,7 +79,7 @@ A4 владеет backend/apps/common/contracts.py и contract fixtures. A3 вл
 
 ### P1-01 · invites · backend DONE, browser/concurrency acceptance PARTIAL
 
-#12 integrated: hashed token/expiry/revoke/cap/repeat. Не повторять. P1-01.1 IN_PROGRESS в `feature/a4-p1-01-1-invite-concurrency`: стабилизировать file/shared-cache SQLite acceptance без ослабления cap/assertions; не тратить use повторно. A5 проверяет real invite browser path. M02/T04.
+#12 integrated: hashed token/expiry/revoke/cap/repeat. Не повторять. P1-01.1 опубликована PR #87 с file/shared-cache SQLite acceptance fix, exact cap/use assertions и concurrent idempotent retry; CI/review идут. A5 проверяет real invite browser path. M02/T04.
 
 ### P1-02 · common contracts / CI · PARTIAL
 
