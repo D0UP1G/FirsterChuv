@@ -1,10 +1,10 @@
 # ROADMAP v6: три агента, волны и первый рабочий матч
 
-Прямое уточнение команды 2026-10-10: остались Agent 3, Agent 4 (прежний Agent 1, включая текущего координатора) и Agent 5. A2 больше не является активным исполнителем; его готовые ветки, P-ID и аудиты сохраняются, работу принимает A4. Весь frontend принадлежит A5. [Предыдущий план v4](docs/history/ROADMAP-2026-10-10-before-three-agent-plan.md), [STATE](context/STATE.md), [кейс](docs/source/Кейс_Платформа_соревнований.pdf), [приёмка первого матча](docs/quality/m0-demo.md).
+Прямое уточнение команды 2026-10-10: остались Agent 3, Agent 4 (прежний Agent 1, включая текущего координатора) и Agent 5. A2 больше не является активным исполнителем; его готовые ветки, P-ID и аудиты сохраняются, работу принимает A4. Весь frontend принадлежит A5. Предыдущий план v4, [STATE](context/STATE.md), [кейс](docs/source/Кейс_Платформа_соревнований.pdf), [приёмка первого матча](docs/quality/m0-demo.md).
 
 ## Распределение v6: волны и контракты между зонами
 
-Прямое поручение команды 2026-10-10: A5 — весь frontend, A3 и A4 — всё остальное; работа идёт параллельно. P-ID v5 сохранены, готовое не переписывается. [Копия v5](docs/history/ROADMAP-2026-10-10-before-v6-waves.md). Текущий `origin/develop` `48cb06a4`: PR #82 добавил ready HTTP/body-bound match receipts поверх интегрированных #68/#70/#71/#72/#73/#75/#78; сквозного матча всё ещё нет. Backend 320 тестов OK (14 пропущены: реальный Docker), frontend 91 тест OK — это результаты снимка предыдущей интеграционной проверки, не exact-head suite #82.
+Прямое поручение команды 2026-10-10: A5 — весь frontend, A3 и A4 — всё остальное; работа идёт параллельно. P-ID v5 сохранены, готовое не переписывается. Копия v5. Текущий `origin/develop` `48cb06a4`: PR #82 добавил ready HTTP/body-bound match receipts поверх интегрированных #68/#70/#71/#72/#73/#75/#78; сквозного матча всё ещё нет. Backend 320 тестов OK (14 пропущены: реальный Docker), frontend 91 тест OK — это результаты снимка предыдущей интеграционной проверки, не exact-head suite #82.
 
 Правило независимости: производитель эндпоинта первым коротким PR публикует маршрут и форму ответа в `docs/architecture/api.md`; потребитель в тот же день пишет клиент и контрактные тесты по фикстурам и не ждёт реализации. Общие файлы (`api_urls.py`, `settings.py`, карточки) каждый меняет минимально и только в своём PR.
 
@@ -39,7 +39,7 @@ M1: ручные пары и BYE в браузере, все админские 
 
 В develop `48cb06a4` интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, persisted-run configure/readiness, match GET/config/manual start/ready, frozen-run gateway/WorkspaceAccess/RunProblemSnapshot provider, durable clock/score/ledger/failure/finalization/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 и Agent 4 PR #67/#69/#74/#76/#77/#78/#82 MERGED. #82 завершил P2-03.4; A3 worker/draft consumer CONNECT и full M0 ещё не закрыты. Это готовые cores, их не нужно переписывать.
 
-#63 уточняет static reference по кейсу, #64 переносит токены бренда в React, #65 добавляет минимальные mobile/focus правила и own audit. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — [ревизия](docs/reviews/2026-10-10-mvp-readiness.md).
+#63 уточняет static reference по кейсу, #64 переносит токены бренда в React, #65 добавляет минимальные mobile/focus правила и own audit. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — ревизия.
 
 Реального сквозного MVP пока нет. P2-03 routes/gateway provider, P2-04 ledger/failure/finalization и frozen participant snapshots доступны в develop; A3 worker/draft CONNECT, actual isolated executor, production startup/browser path и full realtime public transport ещё не собраны. A4 P4-07 snapshot correctness/public match snapshot интегрирован PR #78; исходный source PR #53 сохранён нетронутым и merged via ordinary commit.
 
@@ -87,7 +87,7 @@ A4 владеет backend/apps/common/contracts.py и contract fixtures. A3 вл
 
 ### P1-03 · access/security · A4 backend integrated, system acceptance PARTIAL
 
-PR #84 merged ordinary commit `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, exact-head CI 5/5. PublicAccessV1 supports hashed unlisted share grant expiry/revoke; token travels fragment/header, with per-tournament read scope, remote-peer throttles and public DTO allowlist. P1-03 tests: full events/tournaments/accounts 71 found (5 skipped), focused 21/21. A4 evidence: [implementation audit](context/audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md), [merge audit](context/audits/2026-10-10T060220+0300-agent-4-P1-03-merge.md). S01/S02/TEAM01/02/06; T02/T20 not fully accepted. A3 legacy invite path access-log redaction is a [separate request](context/contracts/agent-3-token-access-log-redaction.md); A5 fragment/header browser CONNECT remains open.
+PR #84 merged ordinary commit `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, exact-head CI 5/5. PublicAccessV1 supports hashed unlisted share grant expiry/revoke; token travels fragment/header, with per-tournament read scope, remote-peer throttles and public DTO allowlist. P1-03 tests: full events/tournaments/accounts 71 found (5 skipped), focused 21/21. A4 evidence: implementation audit, merge audit. S01/S02/TEAM01/02/06; T02/T20 not fully accepted. A3 legacy invite path access-log redaction is a separate request; A5 fragment/header browser CONNECT remains open.
 
 ### P2-01 · bracket ORM · implementation/integration DONE, acceptance PARTIAL
 
@@ -102,7 +102,7 @@ PR #84 merged ordinary commit `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, exact-
 1. DONE: source #57 сохранён обычным merge в feature; configure read→write SQLite race исправлен и прошёл file-backed regression/rollback suite. PR #69 MERGED в `f9da1dd`, CI 5/5; Agent 4 card/audit содержат evidence.
 2. DONE: match `GET/config/manual-start` routes в PR #74, merge `475cdf7`, exact-head CI 5/5 SUCCESS. Первая backend попытка поймала A3-owned QueueCounter lock regression; same-head повторный backend job прошёл. Retry не исправляет/не закрывает admission race; владелец A3 и P3-04.1 остаются ответственными. Implementation/publication/merge evidence — Agent 4 card и аудиты.
 3. DONE по implementation/integration: PR #77 MERGED ordinary commit `5f8e7d5`, final head `97ca670`; exact-head CI 5/5 SUCCESS. Frozen-run gateway проверяет active membership/actor/run/problem/deadline/actions; conditions доступны участнику после старта, snapshot version/checksum идёт из нужного immutable run даже после rematch. A3 worker/queue/draft factory CONNECT и browser M0 остаются открытыми. M05/M06/P03; T07–09 implementation integrated, full acceptance PARTIAL.
-4. DONE: PR #82 ordinary-merge в `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`, exact-head CI 5/5 SUCCESS. `POST /matches/{id}/ready`, manual/both_ready и durable body-bound receipts для config/start/ready. Implementation [audit](context/audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md), [merge audit](context/audits/2026-10-10T054825+0300-agent-4-P2-03-4-merge.md).
+4. DONE: PR #82 ordinary-merge в `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`, exact-head CI 5/5 SUCCESS. `POST /matches/{id}/ready`, manual/both_ready и durable body-bound receipts для config/start/ready. Implementation audit, merge audit.
 
 ### P2-04 · ledger / result / failure / promotion · implementation integrated, M0 critical
 

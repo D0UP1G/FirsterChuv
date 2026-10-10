@@ -14,14 +14,14 @@
 - Ветка feature/mvp-readiness-closeout от fresh origin/develop723985f. Scope docs-only: own closing audit/card/STATE/report/roadmap checkpoints, latest58 review. Production/tests/config/CI/contracts/чужие cards не меняются.
 - #57–59 base retarget develop выполнен без изменения code refs. Latest58 source733acc6 tests13 PASS, реальные races/history FAIL; latest59 participant fix сохранить, rematch downstream исправить.
 - A5 follow-up отправлен в созданную по поручению команды задачу; active progress подтверждает продолжение. У остальных назначения в Git, чужие сессии/checkout не переключались.
-- [Closing audit](../audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md). Оставшийся шаг этой docs сессии: publish closeout→develop, exact-head CI, remote verification. Отдельный STATE sync не prerequisite ни одного владельца.
+- Closing audit. Оставшийся шаг этой docs сессии: publish closeout→develop, exact-head CI, remote verification. Отдельный STATE sync не prerequisite ни одного владельца.
 
 ## Публикация и final gate, 2026-10-10T01:29:46+03:00
 
 - [PR #60](https://github.com/D0UP1G/FirsterChuv/pull/60) опубликован/attached; первый head014c98f remote verified и5/5 CI SUCCESS. Последние source54/doc checkpoints требуют повторного exact-head CI до merge.
 - #54 latest94d42a0 retained ordinary merge. #59 latest9eb394c проверен отдельно: historical participant fix PASS,19 source tests PASS;4 real races и rematch/downstream probe FAIL, source не включён. A2 первым исправляет эти persistence slices, A4 snapshot#53.
 - A5 завершил локальный auth slice, ждёт handoff доступности в develop; после code merge эта зависимость снимается, доступны P5-01/02/03 и собственный PR. Невлитые84 tests автора не приписываются coordinator suite.
-- [Publication audit](../audits/2026-10-10T012946+0300-coordinator-readiness-publication.md). Следующее: final push/CI/merge/fresh remote verification и frontend continuation, без source force push/deletion/main изменений.
+- Publication audit. Следующее: final push/CI/merge/fresh remote verification и frontend continuation, без source force push/deletion/main изменений.
 
 ## Проверенные результаты перед публикацией, 2026-10-10T01:24:06+03:00
 
@@ -29,7 +29,7 @@
 - Backend255/4skips, drafts18 и bracket24 file-backed, frontend82/typecheck/lint/build, schema/common/domain/sandbox/check/drift PASS. Runtime source #57–59 tests16 PASS, реальные race/history probes FAIL; ни один failed head не merged.
 - ROADMAP v4: A1 contracts/access/build, A2 reviewed persistence fixes→run/gateway/ledger, A3 actual judge/worker, A4 public events/SSE/system acceptance, A5 весь frontend. Новая задача A5 active в изолированном clone.
 - Все148 audits текущей base сохранены byte-for-byte; source-only audits сохранены. Более старый blob одного audit в #51 отличается от current develop уже до этой ревизии; выбран current base, старый source blob сохранён в ancestry.
-- [Полная ревизия](../../docs/reviews/2026-10-10-mvp-readiness.md), [late audit](../audits/2026-10-10T012406+0300-coordinator-late-pr-review.md). Следующее: feature push/PR→develop, combined exact-head CI, merge commit и remote/source verification. main bootstrap.
+- Полная ревизия, late audit. Следующее: feature push/PR→develop, combined exact-head CI, merge commit и remote/source verification. main bootstrap.
 
 ## Новая ревизия и передача frontend, 2026-10-10T01:01:49+03:00
 
@@ -47,7 +47,7 @@
 - Автор обновил #7 до f3001505fb70e9e810cd5da774a9a6dda996240f до merge #44; старый код уже в develop, новый audit/card ещё в source PR.
 - Scope: ordinary merge f300150, сохранить все текущие registrations byte-for-byte и актуальную A2 card с отдельным snapshot позднего sync. После разрешения требуется нулевой diff production/tests относительно develop.
 - Пути: own coordinator/card/STATE/ROADMAP/new closing audit, incoming A2 audit/card. Чужой active checkout/ref не менять.
-- Результат: source f300150 объединён ordinary merge 52afd9f; конфликты shared registrations разрешены точными байтами develop, актуальная A2 card сохранена с отдельным поздним snapshot. Production/tests/config/CI diff zero, 145 source audits byte-for-byte. [Closing audit](../audits/2026-10-10T001011+0300-coordinator-merge-closeout.md); после remote CI merge closeout, затем final remote/source PR verification.
+- Результат: source f300150 объединён ordinary merge 52afd9f; конфликты shared registrations разрешены точными байтами develop, актуальная A2 card сохранена с отдельным поздним snapshot. Production/tests/config/CI diff zero, 145 source audits byte-for-byte. Closing audit; после remote CI merge closeout, затем final remote/source PR verification.
 
 ## Новая ревизия активных PR, 2026-10-09T23:48+03:00
 
@@ -56,9 +56,9 @@
 - Scope: #7/#16 исправления, #34 readiness, #37 worker/outboxes, #38 ledger, #41 command receipts; #21 повторно проверить актуальный SHA известного CAS blocker.
 - Пути: собственная карточка/новые аудиты/актуальный STATE; исходные code heads объединяются обычными merge commits, общие регистрации и docs-конфликты разрешаются в этой feature.
 - Чужие branches/checkout не изменять; проверить combined tests/CI и fresh develop перед remote merge. Новые реализации core не считать runtime или полной приёмкой MVP.
-- Результат: #7/#16/#34/#37/#38/#41 объединены обычными merge commits, #42 включён; #21 unchanged/CAS blocker остаётся OPEN. Django 230/2 skips, file-backed submissions 49, domain 68, sandbox 15, frontend 80/build, schema/common/check/drift PASS. [Новый аудит](../audits/2026-10-09T235434+0300-coordinator-new-pr-review.md); 136 source audits и latest A4 bytes сохранены.
+- Результат: #7/#16/#34/#37/#38/#41 объединены обычными merge commits, #42 включён; #21 unchanged/CAS blocker остаётся OPEN. Django 230/2 skips, file-backed submissions 49, domain 68, sandbox 15, frontend 80/build, schema/common/check/drift PASS. Новый аудит; 136 source audits и latest A4 bytes сохранены.
 - Следующий шаг: combined PR → develop, exact HEAD CI и fresh refs перед merge, затем remote/ancestry verification. После MERGED A2 продолжает persistence/API на готовом #7, A3 — runtime CONNECT и независимые import/CAS tasks.
-- Публикация: [PR #44](https://github.com/D0UP1G/FirsterChuv/pull/44), initial remote `98188c1`; включён fresh A4 #43 `fb9edb3`. Frontend 81 PASS с одним worker после двух записанных timeout FAIL; first CI прежний P1 concurrency FAIL, file-backed P1 2/2 PASS. Source backend не менялся. [Новый publication audit](../audits/2026-10-10T000226+0300-coordinator-new-pr-publication.md); CI повторяется на updated HEAD до merge. 139 source audits/latest A4 сохранены.
+- Публикация: [PR #44](https://github.com/D0UP1G/FirsterChuv/pull/44), initial remote `98188c1`; включён fresh A4 #43 `fb9edb3`. Frontend 81 PASS с одним worker после двух записанных timeout FAIL; first CI прежний P1 concurrency FAIL, file-backed P1 2/2 PASS. Source backend не менялся. Новый publication audit; CI повторяется на updated HEAD до merge. 139 source audits/latest A4 сохранены.
 
 ## Разблокирование агента 3, 2026-10-09
 
@@ -67,10 +67,10 @@
 - Проверяемые PR: #25 parser hardening, #26 admin catalog; дополнительно #15 queue, #21 private drafts, #23 LocalJudge по фактическому коду и проверкам.
 - Пути: собственная карточка/новый аудит/актуальный STATE; изменения исходных PR только обычными merge commits. Рабочие ветки и checkout других исполнителей не меняются.
 - Конкретный блокер из аудита A3 P3-02.2: импорт management ждёт parser fix #25. Workspace version/checksum и production providers — отдельные CONNECT зависимости; слияние core не доказывает готовность MVP.
-- #25 MERGED отдельно, remote develop `ed14416`; #26/#15/#23 source heads объединены в текущей feature. #21 оставлен с воспроизведённым CAS race и новой независимой P3-05.1. 70 исходных аудитов сохранены byte-for-byte; frontend/A4 карточка идентичны свежему develop. [Аудит](../audits/2026-10-09T224851+0300-coordinator-agent-3-unblock.md).
+- #25 MERGED отдельно, remote develop `ed14416`; #26/#15/#23 source heads объединены в текущей feature. #21 оставлен с воспроизведённым CAS race и новой независимой P3-05.1. 70 исходных аудитов сохранены byte-for-byte; frontend/A4 карточка идентичны свежему develop. Аудит.
 - Проверки: 29 file-backed queue, 36 domain, 15 sandbox unit, 63 frontend tests/build после sync #30, 5 actual Docker smoke + task limit + 1 real LocalJudge smoke PASS. Первая полная backend suite: P1 invite-concurrency FAIL; повтор PASS 150 tests/2 ожидаемых skips. Fresh develop `8c6836b` с новым A4 #30 включён перед публикацией. Registry и production image не переключались.
 - Следующий шаг: завершить full backend/CI, опубликовать integration PR → develop, merge только проверенный HEAD и проверить remote/ancestry. После MERGED A3 продолжает READY import/worker/CAS fix; отдельный STATE PR не нужен.
-- Публикация: [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32); первый remote head `19b925a` получил 4/4 CI PASS. Перед merge сохранён новый A4 #31 из fresh develop `b9c25cb`: frontend 64 tests/build PASS, 73 source audits неизменны. [Publication checkpoint](../audits/2026-10-09T230104+0300-coordinator-agent-3-publication.md); после sync финальный CI повторяется на новом head.
+- Публикация: [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32); первый remote head `19b925a` получил 4/4 CI PASS. Перед merge сохранён новый A4 #31 из fresh develop `b9c25cb`: frontend 64 tests/build PASS, 73 source audits неизменны. Publication checkpoint; после sync финальный CI повторяется на новом head.
 
 ## Повторная ревизия 2026-10-09
 
@@ -80,7 +80,7 @@
 - Пути: ROADMAP/context/docs/контракты при необходимости согласования. Код PR проверяется в изолированных копиях, чужие незакоммиченные checkout не изменяются.
 - Параллельные review: competition #7/#11/#13/#16, sandbox #3, catalog/queue #14/#15. Координатор проверяет integrated platform/CI/invites/кейс и принимает решение о merge каждого PR по фактическому HEAD и scope.
 - Результат: #3/#11/#13/#14 + admin guards 8f5b762 сохранены в ancestry integration feature, 105 Django/36 domain/12 sandbox/5 actual smoke pass. #7/#15/#16 оставлены с fix tasks; 24 P-ID/37 requirements/21 acceptance сохранены.
-- Публикация: [PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20), первый remote HEAD 5194baca подтверждён gh/git ls-remote, CI IN_PROGRESS. [Новый audit](../audits/2026-10-09T195003+0300-coordinator-integration-review.md); после MERGED итог определяется GitHub и remote refs, IN_REVIEW выше — snapshot до операции.
+- Публикация: [PR #20](https://github.com/D0UP1G/FirsterChuv/pull/20), первый remote HEAD 5194baca подтверждён gh/git ls-remote, CI IN_PROGRESS. Новый audit; после MERGED итог определяется GitHub и remote refs, IN_REVIEW выше — snapshot до операции.
 - Следующий шаг: опубликовать общий integration PR с проверенными срезами и актуальным планом, дождаться CI, merge commit и проверить remote/ancestry. Отдельный повторный docs PR не нужен.
 
 ## Предыдущая ревизия
@@ -93,6 +93,6 @@
 - Проверки: чтение всех PR и аудитов, существующие тесты в изолированном checkout, проверка sandbox внутри Docker, проверка документации.
 - Чужие рабочие ветки сохраняются. Изменения карточек 1–4 разрешены текущим запросом команды на общее перепланирование.
 - Результат: 24 задания для четырёх агентов, контракт v1 и 9 согласованных JSON-примеров; отчёт по PR #1–9 и 30 аудитам. Учтён новый HEAD A2 a89b8fc; независимый review завершён, исправлен readyUserIds fixture.
-- Аудит: [ревизия и результаты проверок](../audits/2026-10-09T163805+0300-coordinator-parallel-roadmap.md).
+- Аудит: ревизия и результаты проверок.
 - Публикация: [PR #10](https://github.com/D0UP1G/FirsterChuv/pull/10), первый remote HEAD 80d286a подтверждён 2026-10-09T16:44:37+03:00. Итоговая интеграция проверяется по состоянию MERGED этого PR; IN_REVIEW выше — датированный checkpoint, не запрет продолжать после merge.
 - Следующий шаг: проверить итоговый HEAD PR #10 и интегрировать merge commit. Затем исполнители обновляют собственные ветки и берут первые READY P-задачи; чужие PR #3/#7 продолжают их владельцы.

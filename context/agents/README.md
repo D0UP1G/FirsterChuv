@@ -12,4 +12,4 @@
 
 READY/IN_PROGRESS/WAITING_CONNECT/WAITING_EXTERNAL/IN_REVIEW/DONE фиксируются отдельно для implementation/integration/acceptance. При конкретной зависимости записать route/port/producer/consumer/SHA и в той же сессии брать другой READY подпункт. Нельзя останавливать всю назначенную дорожку, пока есть независимая работа; явный стоп человека имеет приоритет. Назначение в Git не запускает чужую сессию и не делает чужие незакоммиченные файлы свободными.
 
-Own isolated checkout, feature/* от fresh develop, PR→develop, ordinary merge, собственный append-only audit. Координатор добавляет датированную передачу владения с сохранением истории; текущие author IN_PROGRESS/final evidence выставляет сам владелец. [Границы](../contracts/2026-10-10-mvp-boundaries.md), [M0](../../docs/quality/m0-demo.md).
+Own isolated checkout, feature/* от fresh develop, PR→develop, ordinary merge, собственный append-only audit. Координатор добавляет датированную передачу владения с сохранением истории; текущие author IN_PROGRESS/final evidence выставляет сам владелец. Границы, [M0](../../docs/quality/m0-demo.md).

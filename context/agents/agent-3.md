@@ -26,7 +26,7 @@
 - Старые worktrees `normalized-problem-import-management` и `problem-catalog-management` не открывать на запись; работа ведётся только в этой свежей ветке.
 - Реализован `import_demo_problem`: bounded regular-file input для internal normalized ZIP или встроенный synthetic M0 archive, общий hardened parser/storage, идемпотентный checksum, `NOT_READY` при unverified compiler. Fixture содержит valid PNG, markdown/TeX/table/examples/limits и private tests/reference. Официальный package/Yandex mapping не заявляются.
 - Проверки: problems+judge 42 PASS/1 skip; полный backend 347 PASS/20 skip; sandbox runner 15 PASS; Django check, migration drift, 9 v1 fixtures, common import boundary, compileall и diff check PASS. Docker Engine недоступен; gated compiler smoke NOT_RUN, registry остается `verified=False`.
-- Implementation audit: [`2026-10-10T055921+0300-agent-3-P3-02.2-demo-import.md`](../audits/2026-10-10T055921+0300-agent-3-P3-02.2-demo-import.md).
+- Implementation audit: `2026-10-10T055921+0300-agent-3-P3-02.2-demo-import.md`.
 - Следующий шаг: commit implementation + card + audits и открыть PR в `develop`, не сливать; пока compiler probe ждёт Docker Engine, продолжить P1-04.2 в отдельном свежем worktree.
 
 ## Волна 1 · текущая задача P3-04.2 · 2026-10-10
@@ -44,7 +44,7 @@
 - Реализация: factory строит executor вокруг `DjangoProblemCatalog`, `LocalJudge`, `DjangoCompetitionGateway`, реального `RunProblemSnapshotProvider` и result/failure adapters. Контейнеры получают owner/submission/fencing-token labels; периодический reaper удаляет только container, чей точный DB claim больше не активен. `cpp20.verified` не менялся; Compose и Docker Engine недоступны, поэтому полного runtime claim здесь нет.
 - Проверки: targeted submissions+judge suites — 68 PASS, 2 SKIP; sandbox runner — 16 PASS; Django `check`, migration drift, contract fixtures/import boundaries, `compileall` и `git diff --check` — PASS. Полный backend suite: 343 tests, 19 SKIP и один intermittent failure в чужом `tournaments` concurrency test `test_simultaneous_accept_never_exceeds_roster_capacity` (`database_busy`); изолированный повтор прошёл. Docker daemon недоступен, real smoke NOT_RUN.
 - Implementation commit: `226130fcbd0b422894e8f4236c57208e09536a9c`; PR [#83](https://github.com/D0UP1G/FirsterChuv/pull/83) в `develop`, открыт, mergeable и не слит.
-- CI для head `226130f`: backend, frontend, domain, sandbox-unit и contracts/common-imports — 5/5 PASS. Публикационный audit: [`2026-10-10T054933+0300-agent-3-P3-04.2-publication.md`](../audits/2026-10-10T054933+0300-agent-3-P3-04.2-publication.md).
+- CI для head `226130f`: backend, frontend, domain, sandbox-unit и contracts/common-imports — 5/5 PASS. Публикационный audit: `2026-10-10T054933+0300-agent-3-P3-04.2-publication.md`.
 - Следующий шаг: ждать review/решения команды; PR не сливать. После подключения P3-02.2 compiler proof и P1-04 Docker runtime продолжить реальное acceptance.
 
 
@@ -62,8 +62,8 @@
 ### Checkpoint P4-08 evidence · 2026-10-10T03:15:07+03:00
 
 - Code + implementation audit зафиксированы в `fdf75d89f8c2ee2417d3528e2eb0c36ac022482c`.
-- На clean SHA создан [`docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json`](../../docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json): 13/13 HTTP checks PASS, `worktreeClean=true` до записи manifest. Docker probe `NOT_RUN`; все G01–G06 и T01–T21 остаются `NOT_RUN`. См. [follow-up audit](../audits/2026-10-10T031507+0300-agent-3-P4-08-evidence.md).
-- Publication: PR [#75](https://github.com/D0UP1G/FirsterChuv/pull/75) открыт в `develop`, head `6fed027648fc7b6070305cf194d13d58a47638ac`, merge state `CLEAN`, не слит. CI run `38008387145` на этом head: 5/5 SUCCESS; backend 279 tests, 9 skipped. См. [publication audit](../audits/2026-10-10T031939+0300-agent-3-P4-08-publication.md).
+- На clean SHA создан [`docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json`](../../docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json): 13/13 HTTP checks PASS, `worktreeClean=true` до записи manifest. Docker probe `NOT_RUN`; все G01–G06 и T01–T21 остаются `NOT_RUN`. См. follow-up audit.
+- Publication: PR [#75](https://github.com/D0UP1G/FirsterChuv/pull/75) открыт в `develop`, head `6fed027648fc7b6070305cf194d13d58a47638ac`, merge state `CLEAN`, не слит. CI run `38008387145` на этом head: 5/5 SUCCESS; backend 279 tests, 9 skipped. См. publication audit.
 - Следующий шаг: дождаться review/интеграции без merge со стороны A3; продолжать P4-08 с реальными queue/recovery/compiler/runtime и acceptance CONNECT только на доступном свежем integration SHA.
 
 ### Сверка после CI PR #75 · 2026-10-10T03:25:00+03:00
@@ -71,7 +71,7 @@
 - PR #75 остаётся OPEN/CLEAN на head 2d008692aee71ba1443456aecb2a46ac2a33ebce; CI run 38008613938 прошёл 5/5 jobs. PR не слит.
 - Свежий fetch оставил origin/develop на 475cdf71fa88de6aa5aad2142fc9fdbdf90625f6. В develop уже есть отдельный ручной workflow sandbox-real-smoke.yml; дублирующий запуск не добавлялся. Этот Docker smoke в follow-up не запускался.
 - A3 LocalJudge/executor, import, worker и draft ветки ведутся в отдельных worktrees; PR #76 с A4 persistence ещё открыт. Чужая работа не менялась. Свободного READY среза без пересечения на этой сверке не найдено.
-- Следующий шаг: оставить #75 открытым и после командной интеграции свежих producer/provider SHA продолжить фактические P4-08 queue/runtime проверки. Подробности: [follow-up audit](../audits/2026-10-10T032500+0300-agent-3-P4-08-followup.md).
+- Следующий шаг: оставить #75 открытым и после командной интеграции свежих producer/provider SHA продолжить фактические P4-08 queue/runtime проверки. Подробности: follow-up audit.
 
 
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
@@ -90,12 +90,12 @@
 - Статус: `IN_REVIEW`; [PR #68](https://github.com/D0UP1G/FirsterChuv/pull/68) открыт; пять CI checks прошли на head `127d27d`.
 - Ветка: `feature/p3-04-1-admission-contention`; начальная база `a6083263b54538275317d86f23d1034125813848`, затем обычный merge свежего `origin/develop=1f95b72385c9bbaea0d6271a98dccffc8f4caa2b` в `ac93676670a23aec00863e992d918b35b29e7795`.
 - Основание: ROADMAP v5 и coordinator audit фиксируют uncaught SQLite lock в конкурентном same-key admission в первой CI-попытке #63; зелёный повтор не считается исправлением.
-- Изменены: `backend/apps/submissions/services.py`, `backend/apps/submissions/tests/test_admission_concurrency.py`, карточка и [`аудит реализации`](../audits/2026-10-10T022731+0300-agent-3-P3-04.1-admission-contention.md).
+- Изменены: `backend/apps/submissions/services.py`, `backend/apps/submissions/tests/test_admission_concurrency.py`, карточка и `аудит реализации`.
 - Причина: CI зафиксировал `database table is locked: submissions_queuecounter` на `get_or_create` при одновременной попытке перевести shared-cache read-lock в write-lock; одинаковые retry-паузы могли повторно сталкивать запросы.
 - Исправление: первой операцией в admission transaction выполняется `bulk_create(ignore_conflicts=True)` глобального QueueCounter — write-first точка сериализации; затем заново проверяется idempotency. Добавлен барьерный same-key тест, который сводит оба потока к этой операции и проверяет один submission/receipt/event и исходный `received_at`.
 - Проверки: shared-cache concurrency 4 passed/1 ожидаемый skip; file-backed submissions 49/49; полный backend 259 passed/4 ожидаемых skip; Django check, migration drift, 9 contract fixtures, common imports, domain suites, compileall и diff check прошли.
 - Требования: J04 и частично E03; полный T14/T19/T20 и end-to-end приёмка этой работой не закрываются. Миграций и изменений контрактов нет.
-- Публикация: код отправлен только в свою feature-ветку; PR #68 направлен в `develop`. Создание PR и CI зафиксированы в [аудите публикации](../audits/2026-10-10T022937+0300-agent-3-P3-04.1-publication.md) и [аудите CI](../audits/2026-10-10T023211+0300-agent-3-P3-04.1-ci.md).
+- Публикация: код отправлен только в свою feature-ветку; PR #68 направлен в `develop`. Создание PR и CI зафиксированы в аудите публикации и аудите CI.
 - Следующий шаг: дождаться review, PR не сливать; затем перепроверить принадлежность и статус следующего P3-04.2 перед любыми изменениями.
 
 ## Исторические записи до ROADMAP v5
@@ -108,7 +108,7 @@
 - Независимый резерв: P3-02 import management; P3-05 WorkspaceAccess CONNECT; accepted snapshot fields и own fenced container recovery.
 - Владение: problems/submissions/drafts/judge/sandbox; shared config только A1.
 - Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
-- [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
+- [ROADMAP v4](../../ROADMAP.md), принятые границы. При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
 
 
 ## Актуальный checkpoint координатора: разблокирование 2026-10-09
@@ -119,8 +119,8 @@
 - [#21](https://github.com/D0UP1G/FirsterChuv/pull/21) `1706ecf` остаётся на исправлении: одновременный первый PUT из двух вкладок на файловой SQLite воспроизводит `OperationalError: database is locked`; API не переводит его в контролируемый ответ. **P3-05.1 READY:** bounded retry всей CAS transaction только для BUSY/LOCKED, повторно проверить revision, после исчерпания вернуть retryable 503; другой победивший source должен дать 409, не перезаписываться. File-backed tests: first creation/update, один namespace, оба разных source, ровно одна победившая revision/history, CSRF/IDOR не ослаблять.
 - Следующие независимые READY: P3-02.2 normalized upload/import status management (parser #25 уже доступен), P3-04.2 actual worker/lease/recovery/result outbox, P3-05.1 CAS race #21. Не писать заново уже проверенные queue/catalog/LocalJudge cores.
 - WAITING_CONNECT ограничен конкретными подпунктами: production A2 gateway/ledger/result/failure sink, version/checksum workspace contract. До подключения использовать DI/test-only ports; runtime fail-closed. Если один подпункт ждёт — в той же сессии продолжать следующую READY задачу. P3-06 отдельно WAITING_EXTERNAL на official package.
-- Полная приёмка MVP/browser/hostile/restart не закрыта. Подробности проверки и передачи: [новый аудит](../audits/2026-10-09T224851+0300-coordinator-agent-3-unblock.md).
-- Integration PR [#32](https://github.com/D0UP1G/FirsterChuv/pull/32): первый объединённый head прошёл 4/4 CI; fresh A4 #31 сохранён до merge, повтор CI на обновлённом head. [Publication checkpoint](../audits/2026-10-09T230104+0300-coordinator-agent-3-publication.md). После `MERGED` не ждать дополнительный STATE/ответ соседнего автора для уже READY import/worker/CAS fix.
+- Полная приёмка MVP/browser/hostile/restart не закрыта. Подробности проверки и передачи: новый аудит.
+- Integration PR [#32](https://github.com/D0UP1G/FirsterChuv/pull/32): первый объединённый head прошёл 4/4 CI; fresh A4 #31 сохранён до merge, повтор CI на обновлённом head. Publication checkpoint. После `MERGED` не ждать дополнительный STATE/ответ соседнего автора для уже READY import/worker/CAS fix.
 
 ## Исторические checkpoint публикаций
 
@@ -130,7 +130,7 @@
 - До завершения сверены `AGENTS.md`, PROJECT/STATE/карточка, ROADMAP v3, требования P01/P02/E02/S01, кейс (стр. 5–7), parallel contracts, архитектурные решения и аудиты P3-02.
 - Реализован P3-02.3: typed rejection для private artifact language IDs и invalid-manifest tests. Локально пройдены backend 106/106, app tests 8/8, Django/migration checks, contracts/import boundary/domain/sandbox suites, compileall и diff check.
 - PR [#25](https://github.com/D0UP1G/FirsterChuv/pull/25) открыт в `develop`; проверенный head `ee036ad31ad109407076b7cbdf7fac8410caf750`, все четыре CI job прошли (`37970626824`), `OPEN / CLEAN`, не слит.
-- Аудиты: [implementation](../audits/2026-10-09T210104+0300-agent-3-P3-02.3-artifact-language-types.md), [publication](../audits/2026-10-09T210259+0300-agent-3-P3-02.3-publication.md), [последний head CI](../audits/2026-10-09T210424+0300-agent-3-P3-02.3-final-head-check.md). Следующий шаг: дождаться review/merge по GitFlow; не сливать самостоятельно.
+- Аудиты: implementation, publication, последний head CI. Следующий шаг: дождаться review/merge по GitFlow; не сливать самостоятельно.
 
 ### Снимок P3-02.2 до интеграции #26
 
@@ -138,9 +138,9 @@
 - Реализован admin-only `GET /problems` для paginated version/readiness list без checksum/private artifacts; DTO описан в `docs/architecture/api.md`. Contract request о run-pinned version/checksum добавлен со статусом `WAITING_CONNECT`. Проверки: problems 25/25, backend 109/109, Django/migration, compileall, contracts 9, common import, domain 36, sandbox 12, diff check — PASS.
 - Пути: `backend/apps/problems/{serializers.py,views.py,urls.py,tests/test_catalog_api.py}`, `backend/apps/common/api_urls.py`, `docs/architecture/api.md`, `context/contracts/agent-3-workspace-problem-version.md`, эта карточка и audit.
 - P3-02.3 реализован отдельно в PR [#25](https://github.com/D0UP1G/FirsterChuv/pull/25) и остаётся открытым, неинтегрированным до merge в `develop`; чужие/общие ветки и checkout не редактировать.
-- Audit: [2026-10-09T211119+0300-agent-3-P3-02.2-admin-catalog.md](../audits/2026-10-09T211119+0300-agent-3-P3-02.2-admin-catalog.md).
+- Audit: 2026-10-09T211119+0300-agent-3-P3-02.2-admin-catalog.md.
 - PR [#26](https://github.com/D0UP1G/FirsterChuv/pull/26) открыт в `develop`; implementation SHA `57134337c1ccc1feb84da0f4886c56591dcb0a40`, все четыре CI jobs прошли, `OPEN / CLEAN`, не слит.
-- Publication audit: [2026-10-09T211328+0300-agent-3-P3-02.2-publication.md](../audits/2026-10-09T211328+0300-agent-3-P3-02.2-publication.md). Не объединять этот PR с PR #25 и не выдавать P3-02.2 за завершённый.
+- Publication audit: 2026-10-09T211328+0300-agent-3-P3-02.2-publication.md. Не объединять этот PR с PR #25 и не выдавать P3-02.2 за завершённый.
 - P3-02.2 residual: normalized importer/status management требует P3-02.3 parser fix; task selection зависит от A2 persistence; participant workspace access ждёт version/checksum contract. Не выдавать весь P3-02.2 за завершённый.
 
 Перепланировано координатором 2026-10-09 по поручению команды; исторические NOT_RUN/PASS владельца не переписаны.
@@ -174,9 +174,9 @@
 - Реализованы durable loop с приоритетом due outbox, worker/executor/result sink fail-closed factory, heartbeat ограниченного claim lease, stale-result guard, infra retry без verdict, command `run_judge_worker` с bounded CLI options, recovery очереди/outbox при повторных циклах.
 - Основание: J04/E03 и частичные серверные сценарии T09/T14/T19/T20; runtime snapshot/adapters/failure sink P3-04.3–4 и реальный LocalJudge остаются отдельной работой. В этой задаче нет sandbox process registry, поэтому cleanup ограничен durable DB lease recovery.
 - Проверки этой ревизии: submissions suite 41/41 PASS на файловой SQLite; system checks PASS; migration drift отсутствует; compileall и `git diff --check` PASS; command обнаруживается и без factory отказывает закрыто.
-- Аудит старта: [`2026-10-09T213942+0300-agent-3-P3-04.2-start.md`](../audits/2026-10-09T213942+0300-agent-3-P3-04.2-start.md). Аудит реализации: [`2026-10-09T214617+0300-agent-3-P3-04.2-worker.md`](../audits/2026-10-09T214617+0300-agent-3-P3-04.2-worker.md).
+- Аудит старта: `2026-10-09T213942+0300-agent-3-P3-04.2-start.md`. Аудит реализации: `2026-10-09T214617+0300-agent-3-P3-04.2-worker.md`.
 - Следующий шаг: дождаться merge PR #15 в `develop`; затем обновить эту ветку обычным `git merge origin/develop`, проверить собственный diff и опубликовать PR строго в `develop`. После публикации главный READY execution приоритет — P3-03 LocalJudge; P3-04.3–4 продолжить после него/по доступности A2 adapter и snapshot. До публикации PR #15 не создавать дублирующий stacked PR.
-- Handoff-сверка: [`2026-10-09T214821+0300-agent-3-P3-04.2-handoff-correction.md`](../audits/2026-10-09T214821+0300-agent-3-P3-04.2-handoff-correction.md) уточняет порядок из аудита реализации по ROADMAP v3.
+- Handoff-сверка: `2026-10-09T214821+0300-agent-3-P3-04.2-handoff-correction.md` уточняет порядок из аудита реализации по ROADMAP v3.
 
 ## Текущая сессия: P3-04.3 · queue adapters к common v1
 
@@ -186,10 +186,10 @@
 - Планируемые пути: `backend/apps/submissions/adapters.py`, adapter tests, submissions README, эта карточка и отдельные start/implementation audits. Shared contracts/settings/Compose и миграции не менять.
 - Срез: адаптировать local queue receipts/ports к common `CompetitionGatewayV1`, `EventWriter`, `LanguageRegistry`, `ResultSink`; `match_id` остаётся local-only, common DTO exact shape сохраняется, `ResultApplication.applied=False` считается успешно доставленным receipt.
 - Настоящих A2 production providers ещё нет; адаптеры не создают fallback/fake runtime и не включаются в factory. Не менять открытые PR #15/#16/#21/#23/#25/#26.
-- Стартовый аудит: [`2026-10-09T220323+0300-agent-3-P3-04.3-start.md`](../audits/2026-10-09T220323+0300-agent-3-P3-04.3-start.md).
+- Стартовый аудит: `2026-10-09T220323+0300-agent-3-P3-04.3-start.md`.
 - Реализация: exact common `AttemptReceipt`/`ResultReceipt` mapping (local-only `match_id` не утекает), permit conversion, EventWriter/LanguageRegistry forwarding, `ResultApplication.applied` mapping; `applied=False` проверено end-to-end как успешная outbox delivery. Изменены `submissions/adapters.py`, tests и README; shared contract files/config не менялись.
 - Проверки: submissions suite 46/46 PASS на файловой SQLite; Django checks, compileall, migration drift check и `git diff --check` PASS. Runtime A2 providers не запускались.
-- Implementation audit: [`2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md`](../audits/2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md). Статус остаётся `IN_PROGRESS` до разрешённой интеграции/PR; user instructed not to merge branches.
+- Implementation audit: `2026-10-09T220539+0300-agent-3-P3-04.3-adapters.md`. Статус остаётся `IN_PROGRESS` до разрешённой интеграции/PR; user instructed not to merge branches.
 
 ## Текущая сессия: P3-04.4 · failure outbox и run snapshot handoff
 
@@ -199,13 +199,13 @@
 - READY срез: typed-compatible local `InfrastructureFailureReceipt/Sink`, durable terminal failure outbox и redelivery; собственная app migration допустима. Test doubles только в tests, runtime требует реальный sink.
 - Run snapshot version/checksum отсутствуют в common `SubmissionPermit`/production A2 provider. Оформить отдельный contract request без изменения common contract/изобретения A2 API; snapshot resolver не реализовывать до согласования.
 - Планируемые пути: submissions ports/models/services/worker/factory/own migration/tests/README, `context/contracts/` request, эта карточка и отдельные audits.
-- Стартовый аудит: [`2026-10-09T220642+0300-agent-3-P3-04.4-start.md`](../audits/2026-10-09T220642+0300-agent-3-P3-04.4-start.md).
+- Стартовый аудит: `2026-10-09T220642+0300-agent-3-P3-04.4-start.md`.
 - Реализация текущего среза: добавлены локальные совместимые `InfrastructureFailureReceipt/Sink`, terminal `InfrastructureFailureOutbox` и app-local migration; exhausted retry и recovery просроченного последнего worker lease создают durable outbox только при успешном status transition. Worker доставляет отдельный технический receipt с allowlisted reason через lease/retry; receipt не содержит source/diagnostics и не создаёт verdict. Test-only sinks остаются только в тестах; factory/runtime по-прежнему требует production ports.
-- Run snapshot version/checksum не реализован без A2 provider и решения по boundary. Запрос оформлен в [`agent-3-run-problem-snapshot.md`](../contracts/agent-3-run-problem-snapshot.md), статус `WAITING_CONNECT`; production submit/judge должен оставаться закрыт без источника trusted immutable snapshot.
-- Реализация audit: [`2026-10-09T221206+0300-agent-3-P3-04.4-failure-outbox.md`](../audits/2026-10-09T221206+0300-agent-3-P3-04.4-failure-outbox.md). Проверки: submissions suite 49/49, Django system checks, compileall, migration drift check и `git diff --check` PASS.
+- Run snapshot version/checksum не реализован без A2 provider и решения по boundary. Запрос оформлен в `agent-3-run-problem-snapshot.md`, статус `WAITING_CONNECT`; production submit/judge должен оставаться закрыт без источника trusted immutable snapshot.
+- Реализация audit: `2026-10-09T221206+0300-agent-3-P3-04.4-failure-outbox.md`. Проверки: submissions suite 49/49, Django system checks, compileall, migration drift check и `git diff --check` PASS.
 - Срез остаётся `IN_PROGRESS`: common A1 DTO/Protocol, A2 idempotent technical ledger sink, A2 run snapshot provider и runtime wiring не интегрированы. Код только в этой feature-ветке; другие A3 worktree/PR не редактировались, merge/push/PR в этой сессии не выполнялись по указанию пользователя.
 
-[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
+[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), ревизия, [handoffs](../../docs/architecture/runtime-handoffs.md).
 
 ## Срез P3-05, начатый до перепланирования v3
 
@@ -235,30 +235,30 @@
 - Разрешённый scope: собственная `backend/apps/submissions/` и её tests/migrations/README, собственная карточка/audits и собственные contract requests. `context/STATE.md`, чужие apps/config/Compose, чужие ветки/worktrees и уже активные P3-02.2/P3-05.1 задачи не менять.
 - Разрешённая команда merge: обычный `--no-ff` merge `origin/develop` в `feature/submission-worker`; PR merge и merge в `develop`/`main` не выполнять.
 - Конфликт при sync возник только в этой карточке: сохранены новый checkpoint координатора и исторический LocalJudge checkpoint из develop, вместе с собственными аудитируемыми P3-04.2–4 записями.
-- Стартовый аудит sync: [`2026-10-09T232137+0300-agent-3-P3-04-sync.md`](../audits/2026-10-09T232137+0300-agent-3-P3-04-sync.md).
+- Стартовый аудит sync: `2026-10-09T232137+0300-agent-3-P3-04-sync.md`.
 - Обязательные документы и кейс повторно сверены; submissions suite после sync прошёл 49/49, migration drift отсутствует. Проверка нашла P3-04.2 gap: sandbox удаляет контейнер в `finally`, но аварийная остановка worker может оставить контейнер. Глобальный sweep по ownership label не выполнялся: ADR07 пока `PROPOSED`, и контракт не связывает контейнер с живым/просроченным queue lease; без этого sweep может удалить параллельную активную работу.
-- Ограниченный запрос о безопасном worker/container recovery записан в [`agent-3-worker-container-recovery.md`](../contracts/agent-3-worker-container-recovery.md) со статусом `WAITING_CONNECT`. Это не блокирует revalidation и публикацию уже проверенных loop/lease/outbox частей P3-04.2.
-- Аудит старта revalidation: [`2026-10-09T232240+0300-agent-3-P3-04.2-revalidation-start.md`](../audits/2026-10-09T232240+0300-agent-3-P3-04.2-revalidation-start.md).
-- Revalidation audit: [`2026-10-09T232846+0300-agent-3-P3-04.2-postsync.md`](../audits/2026-10-09T232846+0300-agent-3-P3-04.2-postsync.md). Проверки после sync: submissions 49/49, backend 170 PASS/1 skip, sandbox unit 15/15, Django check, migration drift, compileall и diff check PASS. Docker Engine недоступен; real smoke не выполнен.
+- Ограниченный запрос о безопасном worker/container recovery записан в `agent-3-worker-container-recovery.md` со статусом `WAITING_CONNECT`. Это не блокирует revalidation и публикацию уже проверенных loop/lease/outbox частей P3-04.2.
+- Аудит старта revalidation: `2026-10-09T232240+0300-agent-3-P3-04.2-revalidation-start.md`.
+- Revalidation audit: `2026-10-09T232846+0300-agent-3-P3-04.2-postsync.md`. Проверки после sync: submissions 49/49, backend 170 PASS/1 skip, sandbox unit 15/15, Django check, migration drift, compileall и diff check PASS. Docker Engine недоступен; real smoke не выполнен.
 - Повторный fetch перед публикацией выявил новый `origin/develop=56c20eb3323c892d7f2fa9aadc6beb905548f677` (PR #35, только A4 transport/tests/audits). Собственная ветка чиста на `584d0fc`; начат follow-up sync в этой же feature.
-- Стартовый аудит follow-up sync: [`2026-10-09T232929+0300-agent-3-P3-04-sync-followup-start.md`](../audits/2026-10-09T232929+0300-agent-3-P3-04-sync-followup-start.md).
-- Follow-up sync завершён обычным merge `origin/develop` `56c20eb` в свою feature-ветку без конфликтов. Входящие изменения: A4 match transport/client tests и audits; A3 production files не затронуты. Проверен `git diff --check` для merge commit. Завершающий аудит: [`2026-10-09T232958+0300-agent-3-P3-04-sync-followup.md`](../audits/2026-10-09T232958+0300-agent-3-P3-04-sync-followup.md).
+- Стартовый аудит follow-up sync: `2026-10-09T232929+0300-agent-3-P3-04-sync-followup-start.md`.
+- Follow-up sync завершён обычным merge `origin/develop` `56c20eb` в свою feature-ветку без конфликтов. Входящие изменения: A4 match transport/client tests и audits; A3 production files не затронуты. Проверен `git diff --check` для merge commit. Завершающий аудит: `2026-10-09T232958+0300-agent-3-P3-04-sync-followup.md`.
 - Feature PR [#37](https://github.com/D0UP1G/FirsterChuv/pull/37) в `develop`: implementation-срезы P3-04.2 worker/leases, P3-04.3 adapters и P3-04.4 failure outbox находятся `IN_REVIEW`; PR не слит.
 - Сразу после публикации GitHub base продвинулся `56c20eb → 7e2cb46` через PR #36 (A4 editor tests/audits only). Собственная ветка чистая; начинается ещё один ordinary sync перед обновлением PR.
-- Стартовый аудит sync PR head: [`2026-10-09T233104+0300-agent-3-P3-04-sync-pr-head-start.md`](../audits/2026-10-09T233104+0300-agent-3-P3-04-sync-pr-head-start.md).
-- Follow-up merge #36 завершён в своей ветке без конфликтов. Получены только `frontend/src/workspace/CodeEditor.test.tsx`, карточка/A4 audits; A3 source не затронут. Проверен `git diff --check`; обновление remote PR head ожидает обычного push. Audit: [`2026-10-09T233119+0300-agent-3-P3-04-sync-pr-head.md`](../audits/2026-10-09T233119+0300-agent-3-P3-04-sync-pr-head.md).
+- Стартовый аудит sync PR head: `2026-10-09T233104+0300-agent-3-P3-04-sync-pr-head-start.md`.
+- Follow-up merge #36 завершён в своей ветке без конфликтов. Получены только `frontend/src/workspace/CodeEditor.test.tsx`, карточка/A4 audits; A3 source не затронут. Проверен `git diff --check`; обновление remote PR head ожидает обычного push. Audit: `2026-10-09T233119+0300-agent-3-P3-04-sync-pr-head.md`.
 - После audit/card push PR #37 достиг head `8e9542829eb4cd83536bc991ef4dd1e0efece271`; CI run `37987957323` на нём прошёл 4/4. PR остаётся `OPEN/MERGEABLE`.
 - Новый fetch: `origin/develop=25a82c092236d98275f897d624452b24bd501883` (PR #39, A4 compiler/language tests and docs only). Собственная ветка чиста; A3 source не затронут, начат очередной ordinary sync перед review.
-- Стартовый аудит follow-up: [`2026-10-09T233629+0300-agent-3-P3-04-sync-pr-head-followup-start.md`](../audits/2026-10-09T233629+0300-agent-3-P3-04-sync-pr-head-followup-start.md).
-- Merge PR #39 в свою feature завершён без конфликтов; изменились только `frontend/src/pages/ParticipantWorkspacePage.test.tsx`, `frontend/src/workspace/devTransport.ts`, A4 card/audits. Проверен `git diff --check`; A3 source/test files не изменились. Завершающий sync audit: [`2026-10-09T233646+0300-agent-3-P3-04-sync-pr-head-followup.md`](../audits/2026-10-09T233646+0300-agent-3-P3-04-sync-pr-head-followup.md).
-- PR #37 обновлён fast-forward push до head `d532df06123057dcf395dffce7f8b3b264028b43`; base `25a82c092236d98275f897d624452b24bd501883`; `OPEN/MERGEABLE`. В CI run `37988178652` первый `backend` запуск упал на unrelated P1 invite concurrency (`database_busy`), rerun упал только этот job и прошёл; итоговый CI 4/4 PASS. A3 source не менялся. Audit: [`2026-10-09T234001+0300-agent-3-P3-04-ci-rerun.md`](../audits/2026-10-09T234001+0300-agent-3-P3-04-ci-rerun.md).
+- Стартовый аудит follow-up: `2026-10-09T233629+0300-agent-3-P3-04-sync-pr-head-followup-start.md`.
+- Merge PR #39 в свою feature завершён без конфликтов; изменились только `frontend/src/pages/ParticipantWorkspacePage.test.tsx`, `frontend/src/workspace/devTransport.ts`, A4 card/audits. Проверен `git diff --check`; A3 source/test files не изменились. Завершающий sync audit: `2026-10-09T233646+0300-agent-3-P3-04-sync-pr-head-followup.md`.
+- PR #37 обновлён fast-forward push до head `d532df06123057dcf395dffce7f8b3b264028b43`; base `25a82c092236d98275f897d624452b24bd501883`; `OPEN/MERGEABLE`. В CI run `37988178652` первый `backend` запуск упал на unrelated P1 invite concurrency (`database_busy`), rerun упал только этот job и прошёл; итоговый CI 4/4 PASS. A3 source не менялся. Audit: `2026-10-09T234001+0300-agent-3-P3-04-ci-rerun.md`.
 - Следующий шаг: дождаться review PR #37 и оставить его открытым до решения о слиянии. Container cleanup, immutable run snapshot и production A2 sinks остаются конкретными CONNECT подпунктами; P3-02.2/P3-05.1 выполняются в отдельных worktree.
 
 ### Финальная сверка PR #37 — 2026-10-09
 
 - Повторный `git fetch origin` не выявил новых коммитов: `origin/develop=25a82c092236d98275f897d624452b24bd501883`; ветка `feature/submission-worker` чиста на `26b5cf1916a531868c41cc4728fd38009a400bf8`.
 - Последний CI run `37988555234` на этом head завершился `success`, 4/4 job; PR #37 остаётся `OPEN/CLEAN` с базой `develop`.
-- Код P3-04 не менялся в ходе сверки. Результат проверки и остающиеся CONNECT ограничения записаны в [аудите](../audits/2026-10-09T234207+0300-agent-3-P3-04-final-sync-ci.md).
+- Код P3-04 не менялся в ходе сверки. Результат проверки и остающиеся CONNECT ограничения записаны в аудите.
 - PR не слит. Следующий шаг: дождаться review; не интегрировать в `develop` без решения команды. Конкретные ожидания по container recovery, run snapshot и production A2 sinks остаются в contract requests.
 
 ## Текущая задача P3-05.1 · CAS race в приватных черновиках · 2026-10-10
@@ -269,7 +269,7 @@
 - Пути: `backend/apps/drafts/{services.py,errors.py,views.py,README.md,test_settings.py,tests/test_services.py,tests/test_api.py,tests/test_concurrency.py}`, эта карточка и audits.
 - Проверки: file-backed drafts 18/18; отдельная first-create/update race 2/2; полный backend 248/248 PASS при повторном запуске (4 skips); queue admission file-backed 5/5; domain suites, 9 strict fixtures/common imports, Django check, migration drift, compileall и diff check PASS. В первом общем backend запуске один queue admission тест на in-memory SQLite закончил retryable `AdmissionBusy`; отдельный повтор 5/5 и полный suite повторно прошли. Эта отдельная flakiness записана в audit, не изменяла draft code.
 - Требования `docs/requirements.md`: E04/S02; T15/T20 покрыты частично. Browser autosave/reconnect, hostile и полная T15/T20 приёмка не заявляются; настоящий A2 WorkspaceAccess provider отсутствует, поэтому production drafts API остаётся fail-closed.
-- Стартовый аудит sync: [`2026-10-10T002545+0300-agent-3-P3-05.1-sync.md`](../audits/2026-10-10T002545+0300-agent-3-P3-05.1-sync.md); итоговый аудит: [`2026-10-10T003648+0300-agent-3-P3-05.1-cas-fix.md`](../audits/2026-10-10T003648+0300-agent-3-P3-05.1-cas-fix.md). Следующий шаг: опубликовать fast-forward push в PR #21 и проверить CI на новом head; PR не сливать.
+- Стартовый аудит sync: `2026-10-10T002545+0300-agent-3-P3-05.1-sync.md`; итоговый аудит: `2026-10-10T003648+0300-agent-3-P3-05.1-cas-fix.md`. Следующий шаг: опубликовать fast-forward push в PR #21 и проверить CI на новом head; PR не сливать.
 
 ## Текущая сессия P1-04.1 · runtime image/build slice · 2026-10-10
 
@@ -278,12 +278,12 @@
 - Основание: ROADMAP v5, P1-04.1 owner A3; порядок A3 ставит P3-04.2 раньше, но он уже помечен `IN_PROGRESS` в другом worktree, поэтому этот резерв выполняется без его изменения.
 - До исходников проведён runtime inventory: Compose содержит API и профили web/runtime, но web монтирует host `frontend/dist`; frontend Dockerfile отсутствует. SQLite и package artifacts находятся в volume/БД. API entrypoint применяет WAL и migrations.
 - Планируемые пути: новый `.dockerignore`, новый `frontend/Dockerfile`, `compose.yaml`, `docs/operations/runbook.md`, карточка и отдельный audit; не документировать full startup без реального runtime proof.
-- Изменены: `.dockerignore`, `frontend/Dockerfile`, `compose.yaml`, `docs/operations/runbook.md`, карточка и [`audit реализации`](../audits/2026-10-10T024338+0300-agent-3-P1-04.1-runtime-build.md).
+- Изменены: `.dockerignore`, `frontend/Dockerfile`, `compose.yaml`, `docs/operations/runbook.md`, карточка и `audit реализации`.
 - Реализовано: multi-stage image собирает frontend из package lock и отдаёт static build через Nginx; Compose web больше не монтирует локальный `frontend/dist`, сохраняет профиль, localhost binding и API proxy. Build context исключает env/secrets, `.data`, official package/submission uploads и локальные dependencies. API/worker/sandbox не получили Docker socket.
 - Проверки: `npm ci` 253 packages; production frontend build PASS; frontend 84/84; Ruby YAML parse/structural checks и `git diff --check` PASS. Docker image/Compose service smoke не выполнялись: engine/socket и `docker compose` plugin недоступны.
 - Граница: это reviewable build/config slice, не вся P1-04.1 и не M0. Full startup зависит от нормализованного import command, A4 `run_match_clock` и real submission worker factory/providers, отсутствующих в `develop`; их active branches не менялись.
-- Publication: [PR #72](https://github.com/D0UP1G/FirsterChuv/pull/72) открыт в `develop`; срез и текущий CI state зафиксированы в [publication audit](../audits/2026-10-10T024548+0300-agent-3-P1-04.1-publication.md).
-- CI run `38006040901`: первый backend attempt упал на неизменённом queue admission SQLite lock-тесте; после `gh run rerun ... --failed` повтор прошёл (`270` tests, `9` skips), итоговые пять CI jobs зелёные. См. [CI retry audit](../audits/2026-10-10T025305+0300-agent-3-P1-04.1-ci-rerun.md).
+- Publication: [PR #72](https://github.com/D0UP1G/FirsterChuv/pull/72) открыт в `develop`; срез и текущий CI state зафиксированы в publication audit.
+- CI run `38006040901`: первый backend attempt упал на неизменённом queue admission SQLite lock-тесте; после `gh run rerun ... --failed` повтор прошёл (`270` tests, `9` skips), итоговые пять CI jobs зелёные. См. CI retry audit.
 - Следующий шаг: дождаться review, PR не сливать; вернуться к оставшейся P1-04.1 после интеграции зависимостей или выбрать следующий независимый A3 пункт.
 - Найденные зависимости/ограничения: на актуальном develop отсутствуют management-команда `run_match_clock`, normalized bundle import command и настроенный production `SUBMISSION_WORKER_FACTORY`; P3-02.2/P3-04.2 и A4 runtime provider/clock связаны с активными чужими ветками, их не менять. Docker CLI есть, Docker Engine недоступен, `docker compose` plugin отсутствует; реальный image/stack smoke пока невозможен.
 - Требования: D01/D03/S01, частично D06; полный T01/T18/T20/D04/D05 не заявлять. До независимого image и runtime smoke не считать P1-04.1 или M0 завершёнными.

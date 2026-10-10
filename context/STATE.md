@@ -1,13 +1,13 @@
 # Состояние проекта: три агента и первый рабочий матч
 
-Текущий интеграционный снимок 2026-10-10T06:02:48+03:00, Europe/Moscow. `origin/develop=ee755af6ed93e7c3996cb5e70edd8d21e527c56a`; обычный merge PR #82 интегрировал A4 P2-03.4 (ready HTTP/body-bound match receipts), exact-head CI 5/5 SUCCESS. PR #84 обычным merge интегрировал A4 P1-03 share access; exact-head CI 5/5 SUCCESS. [P1-03 implementation audit](audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md), [P1-03 merge audit](audits/2026-10-10T060220+0300-agent-4-P1-03-merge.md).
+Текущий интеграционный снимок 2026-10-10T06:02:48+03:00, Europe/Moscow. `origin/develop=ee755af6ed93e7c3996cb5e70edd8d21e527c56a`; обычный merge PR #82 интегрировал A4 P2-03.4 (ready HTTP/body-bound match receipts), exact-head CI 5/5 SUCCESS. PR #84 обычным merge интегрировал A4 P1-03 share access; exact-head CI 5/5 SUCCESS. P1-03 implementation audit, P1-03 merge audit.
 
-A4 выполняет последнюю независимую задачу Wave 1 P1-01.1 в `feature/a4-p1-01-1-invite-concurrency` от `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`. A3 legacy invite URI access-log redaction передано в [contract request](contracts/agent-3-token-access-log-redaction.md); A4 не меняет A3-owned Nginx/settings/Compose. Wave 2 не начата. Полный M0 остаётся NOT_ACCEPTED.
+A4 выполняет последнюю независимую задачу Wave 1 P1-01.1 в `feature/a4-p1-01-1-invite-concurrency` от `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`. A3 legacy invite URI access-log redaction передано в contract request; A4 не меняет A3-owned Nginx/settings/Compose. Wave 2 не начата. Полный M0 остаётся NOT_ACCEPTED.
 
-Снимок 2026-10-10T03:55:27+03:00, Europe/Moscow. Активные роли: A3, A4 (прежний A1/координатор), A5. [ROADMAP v5](../ROADMAP.md), [M0 demo](../docs/quality/m0-demo.md), [review](../docs/reviews/2026-10-10-mvp-readiness.md).
+Снимок 2026-10-10T03:55:27+03:00, Europe/Moscow. Активные роли: A3, A4 (прежний A1/координатор), A5. [ROADMAP v5](../ROADMAP.md), [M0 demo](../docs/quality/m0-demo.md), review.
 
-- Fresh `origin/develop`: `5f8e7d5a76e296e3cdc3bafe88782540c4168179` (merge #77). PR #77 final head `97ca67091a4ad54f3ac0f0db2e70323d4a03dd2d`, ordinary merge; exact-head CI 5/5 SUCCESS: backend, contracts-and-common-imports, domain, frontend, sandbox-unit. [P2-03.3 merge audit](audits/2026-10-10T035527+0300-agent-4-P2-03.3-merge.md).
-- P2-03.3 provider интегрирован: frozen-run CompetitionGateway/WorkspaceAccess, server-time submit permit и RunProblemSnapshot producer доступны на develop. A3 production queue/worker/draft factory CONNECT всё ещё отсутствует; ready HTTP, body-bound key receipts и end-to-end/browser acceptance открыты. P2-04 ledger/result/failure/finalization также интегрированы в develop с ancestry #58/#59. [P2-04 merge audit](audits/2026-10-10T034413+0300-agent-4-P2-04-merge.md).
+- Fresh `origin/develop`: `5f8e7d5a76e296e3cdc3bafe88782540c4168179` (merge #77). PR #77 final head `97ca67091a4ad54f3ac0f0db2e70323d4a03dd2d`, ordinary merge; exact-head CI 5/5 SUCCESS: backend, contracts-and-common-imports, domain, frontend, sandbox-unit. P2-03.3 merge audit.
+- P2-03.3 provider интегрирован: frozen-run CompetitionGateway/WorkspaceAccess, server-time submit permit и RunProblemSnapshot producer доступны на develop. A3 production queue/worker/draft factory CONNECT всё ещё отсутствует; ready HTTP, body-bound key receipts и end-to-end/browser acceptance открыты. P2-04 ledger/result/failure/finalization также интегрированы в develop с ancestry #58/#59. P2-04 merge audit.
 - A4 начал `feature/a4-p4-07-snapshot-correctness` от свежего `5f8e7d5`. PR #53 остаётся OPEN на source head `fd79038847a23b38bb8a444c028b87ce75ed9571`; его ancestry нужно сохранить ordinary merge только в своей feature и исправить snapshot races, source ref не менять. A3 owns runtime/config/submission/draft consumers; A5 owns browser/map clients.
 - M0 остаётся NOT_ACCEPTED: real queue/worker/isolated verdict, ledger/failure/promotion, UI/browser multi-session и one-command runtime не подтверждены на одном SHA. A3 owns import/judge/worker/CI; A4 API/domain/events; A5 frontend.
 
@@ -18,7 +18,7 @@ R0: integrated отдельные cores/UI/auth/tournament/invite/bracket/draft.
 
 ## История предыдущих ревизий
 
-Снимок 2026-10-10T01:15:16+03:00, Europe/Moscow. База develop cc204e6 включает code integrations#20/#32/#44/#46 и A4 docs#48/#49. Main e9fc0ef bootstrap. Проверенные новые#21/#50/#51/#52/#54/#55/#56 объединены ordinary merge commits в coordinator feature/mvp-readiness-handoff; до MERGED integration PR статусIN_REVIEW, после фактического MERGED доступны из fresh develop. Отдельный STATE PR не prerequisite. [Report](../docs/reviews/2026-10-10-mvp-readiness.md), [outcome audit](audits/2026-10-10T011516+0300-coordinator-mvp-readiness-review.md), [ROADMAP v4](../ROADMAP.md).
+Снимок 2026-10-10T01:15:16+03:00, Europe/Moscow. База develop cc204e6 включает code integrations#20/#32/#44/#46 и A4 docs#48/#49. Main e9fc0ef bootstrap. Проверенные новые#21/#50/#51/#52/#54/#55/#56 объединены ordinary merge commits в coordinator feature/mvp-readiness-handoff; до MERGED integration PR статусIN_REVIEW, после фактического MERGED доступны из fresh develop. Отдельный STATE PR не prerequisite. Report, outcome audit, [ROADMAP v4](../ROADMAP.md).
 
 ## Подтверждённый результат 2026-10-10T01:36:20+03:00
 
@@ -26,7 +26,7 @@ R0: integrated отдельные cores/UI/auth/tournament/invite/bracket/draft.
 
 #53/#57/#58/#59 OPEN. Координатор перевёл base #57–59 в develop, source refs не менялись; #58/#59 сейчас требуют merge fresh develop/conflict resolution, кроме correctness fixes. Latest #58 733acc6 добавил FINALIZING drain/winner promotion/events:13 source tests PASS, file-backed accepted/result/config races FAIL, historical participants fix есть только в leaf #59. Синхронизировать обе ветки ordinary merge, сохранять оба среза; готовые cores не повторять. Latest #59 9eb394c19 tests PASS, historical result теперь сохраняется; race/rematch downstream blockers остаются. Полный R1 ещёNOT_ACCEPTED.
 
-A5 получил follow-up о реальном MERGED и active snapshot подтвердил fetch/merge/продолжение auth slice и новой READY очереди. Его84 tests/local code не часть coordinator255/82 evidence. Назначения A1–A4 записаны в Git; наблюдение не означает, что внешние сессии сейчас запущены. Explicit stop конкретной сессии учитывается. [Новый closing audit](audits/2026-10-10T013620+0300-coordinator-readiness-merge-verification.md).
+A5 получил follow-up о реальном MERGED и active snapshot подтвердил fetch/merge/продолжение auth slice и новой READY очереди. Его84 tests/local code не часть coordinator255/82 evidence. Назначения A1–A4 записаны в Git; наблюдение не означает, что внешние сессии сейчас запущены. Explicit stop конкретной сессии учитывается. Новый closing audit.
 
 ## Что изменилось
 
@@ -57,7 +57,7 @@ A1 — P1-02.5 common failure/snapshot typing, затем PublicAccess/build. A2
 
 Предыдущий integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) MERGED: queue #15, LocalJudge #23 и admin catalog #26 доступны в develop. Frontend #33/#35/#36/#39/#40/#42/#43/#45 также MERGED; исходники и карточка активного A4 сохранены.
 
-В develop доступны #7 `1a2b54a`, #16 `a0b1dcc`, #34 `730edd8`, #37 `d331927`, #38 `92af1d6`, #41 `c8b8043` через MERGED [PR #44](https://github.com/D0UP1G/FirsterChuv/pull/44). #16/#34/#37/#38/#41 имеют GitHub MERGED; source #7 успел обновиться до `f300150` и его поздний sync/audit сохраняется отдельным closeout. Его код уже интегрирован: P2-02.2/P2-03 можно продолжать сейчас. [Review audit](audits/2026-10-09T235434+0300-coordinator-new-pr-review.md), [все попытки CI](audits/2026-10-10T000226+0300-coordinator-new-pr-publication.md), [merge/closeout audit](audits/2026-10-10T001011+0300-coordinator-merge-closeout.md). Source refs сохранены; отдельный STATE prerequisite отсутствует.
+В develop доступны #7 `1a2b54a`, #16 `a0b1dcc`, #34 `730edd8`, #37 `d331927`, #38 `92af1d6`, #41 `c8b8043` через MERGED [PR #44](https://github.com/D0UP1G/FirsterChuv/pull/44). #16/#34/#37/#38/#41 имеют GitHub MERGED; source #7 успел обновиться до `f300150` и его поздний sync/audit сохраняется отдельным closeout. Его код уже интегрирован: P2-02.2/P2-03 можно продолжать сейчас. Review audit, все попытки CI, merge/closeout audit. Source refs сохранены; отдельный STATE prerequisite отсутствует.
 
 ## Проверенная реализация и оставшаяся работа
 
@@ -90,9 +90,9 @@ WAITING относится к подпункту: в той же сессии б
 
 Снимок 2026-10-09, Europe/Moscow. На старте проверки develop `13cd2d4` (#29); #25 отдельно MERGED `ed14416`; перед публикацией включён A4 #30 `8c6836b`, перед итоговым merge — A4 #31 `b9c25cb`. Main `e9fc0ef` остаётся bootstrap. PR #20 MERGED: sandbox/clock/score/catalog/admin guards в develop. Также MERGED frontend #22/#24/#27/#28/#29/#30/#31.
 
-В `feature/agent-3-merge-unblock` обычными merge commits объединены проверенные #26 `435cef7` admin catalog, #15 `555ca0e` queue race fix и #23 `942b4f5` LocalJudge. До MERGED её integration PR эти три среза находятся в проверенной feature; после MERGED доступны в develop. Исходные feature refs, аудиты и frontend/карточка активного A4 сохранены. Не ждать ещё одного STATE PR после подтверждённого code merge. [Аудит и конкретные следующие задачи](audits/2026-10-09T224851+0300-coordinator-agent-3-unblock.md).
+В `feature/agent-3-merge-unblock` обычными merge commits объединены проверенные #26 `435cef7` admin catalog, #15 `555ca0e` queue race fix и #23 `942b4f5` LocalJudge. До MERGED её integration PR эти три среза находятся в проверенной feature; после MERGED доступны в develop. Исходные feature refs, аудиты и frontend/карточка активного A4 сохранены. Не ждать ещё одного STATE PR после подтверждённого code merge. Аудит и конкретные следующие задачи.
 
-Integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) опубликован; первый head получил 4/4 CI PASS, после fresh #31 финальные checks повторяются. [Publication checkpoint](audits/2026-10-09T230104+0300-coordinator-agent-3-publication.md). Этот текст — checkpoint перед операцией; фактический MERGED/remote refs определяют доступность кода.
+Integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) опубликован; первый head получил 4/4 CI PASS, после fresh #31 финальные checks повторяются. Publication checkpoint. Этот текст — checkpoint перед операцией; фактический MERGED/remote refs определяют доступность кода.
 
 ## Что есть и чего нет
 
@@ -124,7 +124,7 @@ Integration [PR #32](https://github.com/D0UP1G/FirsterChuv/pull/32) опубли
 3. A3: P3-02.2 normalized import management (merge-блокер #25 снят), P3-04.2 actual worker; резерв P3-05.1 исправление CAS race #21. Только production ports/version binding подпункт WAITING_CONNECT и P3-06 package WAITING_EXTERNAL.
 4. A4: продолжать активный browser/API CONNECT; UI срезы уже опубликованы и интегрированы. Catalog #26 совместим с текущим frontend paginated request; подключение проверить по одному endpoint после merge. Карточка и исходники A4 этой проверкой не менялись.
 
-При зависимости WAITING получает подпункт, исполнитель продолжает следующий READY шаг в той же сессии. [ROADMAP v3](../ROADMAP.md), [ревизия всех PR](../docs/reviews/2026-10-09-integration-review.md), [runtime handoffs](../docs/architecture/runtime-handoffs.md). Fetch актуального develop перед стартом; авторские feature refs/старые аудиты сохранены, shared app/CI registrations не заменять старыми полными копиями.
+При зависимости WAITING получает подпункт, исполнитель продолжает следующий READY шаг в той же сессии. [ROADMAP v3](../ROADMAP.md), ревизия всех PR, [runtime handoffs](../docs/architecture/runtime-handoffs.md). Fetch актуального develop перед стартом; авторские feature refs/старые аудиты сохранены, shared app/CI registrations не заменять старыми полными копиями.
 
 
 Combined #63/#64/#65 frontend final rerun:18 files/84 tests PASS(28.53s), typecheck/lint/build PASS;5 прежних lint warnings и612.88kB chunk warning. Final integrity:170 base context/audits files +5 incoming source audits exact, all3 source heads ancestors; unsafe53/57–59 latest heads excluded; backend/config/CI/scripts/contracts diff zero. Полный browser/hostile/official M0 NOT_RUN.

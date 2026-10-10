@@ -49,7 +49,7 @@ ADR18, CONFIRMED 2026-10-10 по поручению команды: интерф
 
 ADR19 — SUPERSEDED by ADR22: прежний план пяти владельцев; новый A5 frontend/design, A4 public events/SSE/system acceptance, A2 competition/run/ledger. P4-01–06 сохраняют UI meaning и передаются A5. Причина: убрать последовательное ожидание всех runtime/frontend частей и дать публичному backend отдельного владельца.
 
-ADR20 — ADOPTED target boundaries: [MVP handoff](../../context/contracts/2026-10-10-mvp-boundaries.md): separate frozen RunProblemSnapshot/Provider, сохраняемый в accepted submission; additive failure sink; GET draft run selector/404; per-claim container fencing. Причина: закрыть обсуждение формы точными совместимыми contracts и продолжить независимую реализацию. Existing v1 receipt/verdict fields не меняются; implementations/readiness требуют отдельных tests/CI/runtime acceptance.
+ADR20 — ADOPTED target boundaries: MVP handoff: separate frozen RunProblemSnapshot/Provider, сохраняемый в accepted submission; additive failure sink; GET draft run selector/404; per-claim container fencing. Причина: закрыть обсуждение формы точными совместимыми contracts и продолжить независимую реализацию. Existing v1 receipt/verdict fields не меняются; implementations/readiness требуют отдельных tests/CI/runtime acceptance.
 
 ADR21 — IMPLEMENTED 2026-10-10, наблюдение координатора: текущий frontend/package-lock и workspace используют CodeMirror 6, TypeScript, безопасный Markdown/TeX renderer. Первоначальная Monaco proposal ADR09 устарела. Проверенные UI tests/build не означают full workspace API/browser acceptance; A5 сохраняет текущий редактор и подключает реальные providers.
 

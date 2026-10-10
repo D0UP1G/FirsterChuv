@@ -1,42 +1,59 @@
 # FirsterChuv
 
-Веб-платформа для блиц-турниров по спортивному программированию: управление турниром на выбывание, рабочее место участника с проверкой кода и живая карта матча для зрителей.
+Веб-платформа для блиц-турниров 1×1 по спортивному программированию (кейс «Платформа соревнований»): организатор ведёт турнир на выбывание, участник решает задачи в редакторе прямо на странице матча, код проверяется собственной песочницей, зритель наблюдает за ходом борьбы на живой карте.
 
-## Текущее состояние
+## Что умеет
 
-Полного рабочего MVP пока нет: требуется соединить API run/results, worker providers, проверку настоящим компилятором и реальный browser сценарий. P1-04.2 добавляет Compose wiring и команду запуска, но сама команда и весь стек ещё не прошли проверку на Docker Engine; worker factory и demo import/compiler probe выполняются отдельными интеграционными срезами. Не выдавать этот срез за принятую demo или M0.
+| Блок кейса | Возможности |
+|---|---|
+| Управление турниром | Турнир с датами и лимитом, приглашения (срок и лимит активаций, отзыв), состав, автосетка на выбывание с BYE, ручные пары, настройка матча, ручной и автоматический старт, пауза, продление, переигровка, техническая победа, замена |
+| Условия и редактор | Markdown и TeX, картинки, примеры, лимиты, редактор с подсветкой, языки только из реально проверенных компиляторов, серверные и локальные черновики с версиями |
+| Проверка кода | Собственная песочница в Docker: изолированная компиляция и запуск, лимиты, без сети и секретов; надёжная очередь посылок, воркер судьи, учёт результатов |
+| Зрители | Публичная сетка и карта матча без регистрации, обновление через SSE, режим проектора |
+| Защита | Роли `participant` и `admin`, CSRF, лимиты запросов, чужой код недоступен, публичные ответы без личных данных |
 
-[ROADMAP](ROADMAP.md): владельцы — A4 API/domain/events/common contracts, A3 judge/tasks/queue + config/Compose/startup/CI/acceptance, A5 frontend. Первым делаем [M0: реальный матч двух участников](docs/quality/m0-demo.md); полные обязательные блоки кейса остаются отдельной приёмкой. [STATE](context/STATE.md), [review/проверки](docs/reviews/2026-10-10-mvp-readiness.md), [contracts](docs/architecture/parallel-contracts.md), [handoffs](docs/architecture/runtime-handoffs.md), [дизайн](frontend/design/README.md).
+## Архитектура
 
-## Начать работу
+- **Backend:** Django REST Framework, SQLite (WAL), приложения `accounts`, `tournaments`, `competition`, `problems`, `submissions`, `drafts`, `judge`, `events`.
+- **Frontend:** React + TypeScript, Vite, редактор CodeMirror, безопасный Markdown/TeX.
+- **Проверка (вариант Б кейса):** отдельный воркер с собственной песочницей; Яндекс Контест используется только для планируемого импорта задач.
+- Подробнее: [архитектура](docs/architecture/README.md), [API](docs/architecture/api.md), [безопасность](docs/architecture/security.md).
 
-1. Прочитать [инструкции для агентов](AGENTS.md).
-2. Проверить [контекст проекта](context/PROJECT.md), [актуальное состояние](context/STATE.md) и собственную карточку в [context/agents](context/agents/README.md).
-3. Выбрать задачу из [роадмапа трёх владельцев](ROADMAP.md), прочитать контракт v1 и занять READY задание в своей карточке.
-4. Создать `feature/<краткое-название>` от актуальной `develop`. Работа идёт строго по [GitFlow](docs/operations/gitflow.md).
-5. После работы записать отдельный [аудит](context/audits/README.md), обновить свою карточку и создать PR в `develop`.
+## Быстрый старт (разработка)
+
+Нужны Python 3.14 с [uv](https://docs.astral.sh/uv/) и Node.js 20.19+.
+
+```sh
+cp .env.example .env            # задайте приватный DJANGO_SECRET_KEY
+uv sync
+uv run --env-file .env python manage.py migrate
+uv run --env-file .env python manage.py create_admin --email admin@example.com --display-name Admin
+uv run --env-file .env python manage.py runserver 127.0.0.1:8000
+cd frontend && npm ci && npm run dev   # http://localhost:8080
+```
+
+Демо-задачу можно загрузить командой `uv run --env-file .env python manage.py import_demo_problem`. Запуск всего стенда (API, веб, воркер судьи, таймер матча) описан в [runbook](docs/operations/runbook.md): `scripts/start-demo.sh` требует Linux с Docker Engine и Docker Compose.
+
+## Проверки
+
+```sh
+uv run --env-file .env python manage.py test      # backend
+cd frontend && npm run typecheck && npm test && npm run build
+```
+
+## Статус
+
+Сквозной путь «приглашение → матч → посылка → публичная карта» работает; получение вердикта требует Docker Engine и проверенного компилятора, а официальный пакет задач организаторов пока не получен. Результаты приёмки: [приёмка](docs/quality/mvp-acceptance.md), [M0](docs/quality/m0-demo.md), [состояние](context/STATE.md).
 
 ## Документация
 
-- [Навигация по документации](docs/README.md).
-- [Требования кейса и их покрытие](docs/requirements.md).
-- [Исходный PDF кейса](docs/source/Кейс_Платформа_соревнований.pdf) в репозитории.
-- [Архитектура и решения](docs/architecture/README.md).
-- [API и права доступа](docs/architecture/api.md).
-- [Пользовательские сценарии](docs/architecture/user-flows.md).
-- [Приёмка MVP](docs/quality/mvp-acceptance.md).
-- [Развёртывание и защита](docs/operations/runbook.md).
+- [Требования кейса и покрытие](docs/requirements.md), [исходный PDF](docs/source/Кейс_Платформа_соревнований.pdf).
+- [Архитектура и решения](docs/architecture/README.md), [сценарии](docs/architecture/user-flows.md).
+- [Запуск и защита](docs/operations/runbook.md), [GitFlow](docs/operations/gitflow.md).
+- [Дизайн BLITZ_ARENA](frontend/design/README.md), [брендбук](docs/source/brandbook.md).
 
-## MVP
+## Разработка и агенты
 
-Администратор создаёт турнир и приглашение, участники входят по ссылке, запускается матч, реальная посылка получает вердикт, зритель видит событие на карте, победитель автоматически проходит дальше по сетке. Обязательные требования кейса, включая ручные вмешательства и автоматический запуск, перечислены в матрице требований. Дополнительные форматы и другие улучшения вынесены за пределы MVP.
-
-Команда выбрала Django REST Framework + React, SQLite3 и собственную песочницу для проверки решений (вариант Б кейса). Яндекс Контест используется только для планируемого импорта задач. Текущий frontend использует TypeScript, CodeMirror 6 и безопасный Markdown/TeX renderer; SSE transport ещё подключается. Подробные [решения и ограничения](docs/architecture/decisions.md) нужны агентам перед реализацией.
+Работа ведётся по GitFlow (`feature/*` → PR в `develop`). Правила для ИИ-агентов — [AGENTS.md](AGENTS.md), план — [ROADMAP](ROADMAP.md), контекст — [context/](context/README.md).
 
 Репозиторий: [D0UP1G/FirsterChuv](https://github.com/D0UP1G/FirsterChuv).
-
-## Локальный запуск
-
-Требуются Linux, Docker Engine с доступным пользователю `/var/run/docker.sock` и Docker Compose plugin. Скопируйте `.env.example` в `.env`, задайте приватный `DJANGO_SECRET_KEY`, затем выполните `./scripts/start-demo.sh`. Скрипт собирает sandbox image и запускает сервисы Compose; он не удаляет volume с данными. Web доступен на `http://localhost:8080`, API — на `http://localhost:8000`.
-
-На этом SHA реальный запуск ещё не подтверждён. Production worker закрыто отказывает, пока не подключены и не слиты его factory/providers; synthetic import и compiler probe также не являются официальным пакетом задач. Полные условия и ограничения см. в [runbook](docs/operations/runbook.md) и [M0 checklist](docs/quality/m0-demo.md).

@@ -1,6 +1,6 @@
 # Документация FirsterChuv
 
-Документы задают контракты и приёмку. В develop имеются готовые auth/tournament/invite/bracket/draft/queue/judge/UI части, но полная production цепочка ещё не принята. [ROADMAP v5](../ROADMAP.md) распределяет три роли A3/A4(прежний A1)/A5; [M0](quality/m0-demo.md) — первый реальный матч, не полное выполнение кейса. [STATE](../context/STATE.md), [актуальная ревизия](reviews/2026-10-10-mvp-readiness.md).
+Документы задают контракты и приёмку. В develop имеются готовые auth/tournament/invite/bracket/draft/queue/judge/UI части, но полная production цепочка ещё не принята. [ROADMAP v5](../ROADMAP.md) распределяет три роли A3/A4(прежний A1)/A5; [M0](quality/m0-demo.md) — первый реальный матч, не полное выполнение кейса. [STATE](../context/STATE.md), актуальная ревизия.
 
 | Документ | Что в нём |
 |---|---|
@@ -22,7 +22,7 @@
 | [Запуск и защита](operations/runbook.md) | Целевой запуск, восстановление, демонстрация |
 | [Приёмка](quality/mvp-acceptance.md) | Проверки MVP и доказательства выполнения |
 
-Назначения трёх активных агентов: [ROADMAP.md](../ROADMAP.md). Текущая работа и аудиты: [context](../context/README.md).
+План работ: [ROADMAP.md](../ROADMAP.md). Текущее состояние: [context](../context/README.md).
 
 - [Передача production adapters и infra failure](architecture/runtime-handoffs.md).
 
