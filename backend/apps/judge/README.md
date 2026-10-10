@@ -15,9 +15,13 @@ wall watchdog и cleanup имеют ограничения sandbox. ML выда�
 Docker подтверждает OOM; необъяснённый SIGKILL
 является инфраструктурной ошибкой.
 
-Вызов выполняет только trusted worker вне DB write transaction. Текущий Compose
-ещё не предоставляет worker Docker CLI/Engine access; это остаётся P3-04.2 и
-P1-04 integration work. При отсутствии CLI/Engine `DockerRunner` возвращает
+Вызов выполняет только trusted worker вне DB write transaction. Каждый контейнер
+несёт owner label и точные submission/lease token labels; lease-aware recovery
+оставляет контейнеры с действующим claim и удаляет только устаревшие контейнеры
+этого worker. Worker периодически повторяет recovery, чтобы убрать контейнер,
+оставшийся после process kill, когда lease уже истёк. API не получает Docker
+authority. Доступ CLI/Engine в Compose и реальный restart smoke остаются частью
+P1-04/runtime acceptance. При отсутствии CLI/Engine `DockerRunner` возвращает
 typed infrastructure failure.
 
 Без checker LocalJudge сравнивает stdout с внутренним synthetic expected output

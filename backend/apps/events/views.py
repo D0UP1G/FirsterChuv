@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from backend.apps.competition.match_api import MatchProjectionError, match_view_payload
 from backend.apps.competition.models import Match
+from backend.apps.common.throttles import RemoteAddressScopedRateThrottle
 from backend.apps.events.access import DjangoPublicAccess, PublicAccessDenied
 from backend.apps.events.public_payloads import PublicEventInputError
 from backend.apps.events.services import read_snapshot
@@ -63,6 +64,14 @@ class PublicMatchSnapshotView(APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [RemoteAddressScopedRateThrottle]
+    throttle_scope = "public_snapshot"
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Cache-Control"] = "no-store"
+        response["Referrer-Policy"] = "no-referrer"
+        return response
 
     def get(self, request, match_id):
         with transaction.atomic():
@@ -75,7 +84,10 @@ class PublicMatchSnapshotView(APIView):
                 raise NotFound("Публичный матч не найден.")
 
             try:
-                DjangoPublicAccess().assert_can_view(tournament_id)
+                share_token = request.headers.get("X-Tournament-Share-Token")
+                DjangoPublicAccess().assert_can_view(
+                    tournament_id, share_token=share_token
+                )
             except PublicAccessDenied as error:
                 raise NotFound("Публичный матч не найден.") from error
 
@@ -118,10 +130,7 @@ class PublicMatchSnapshotView(APIView):
                 for player in internal["players"]
             ]
 
-        response = Response(payload)
-        response["Cache-Control"] = "no-store"
-        response["Referrer-Policy"] = "no-referrer"
-        return response
+        return Response(payload)
 
     @staticmethod
     def _scoring_rule(value):

@@ -191,6 +191,29 @@ class Invite(models.Model):
         return f"Invite {self.id} — {self.tournament_id}"
 
 
+class TournamentShareLink(models.Model):
+    """Read-only unlisted tournament access; only the token hash is durable."""
+
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tournament = models.ForeignKey(
+        Tournament,
+        on_delete=models.CASCADE,
+        related_name="share_links",
+    )
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_tournament_share_links",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at", "id")
+
+
 class InviteAcceptance(models.Model):
     """One durable acceptance per account, used to make retry safe."""
 

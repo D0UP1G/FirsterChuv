@@ -1,13 +1,14 @@
 # Агент 4 (прежний 1): API и логика соревнования
 
-## Текущая работа · Волна 1 · P2-03.4 · 2026-10-10
+## Текущая работа · Волна 1 · P1-01.1 · 2026-10-10
 
-- Статус: IN_REVIEW в `feature/a4-p2-03-4-ready`, база `origin/develop` `4bb521b4980c3262d49f8b91387499f4d2a4acc1`; implementation audit готов, PR/CI/merge ожидаются.
-- Scope: `POST /matches/{id}/ready`, серверный `both_ready` auto-start, idempotency receipts с actor/action/body binding для match config/start/ready.
-- Планируемые пути: `backend/apps/competition/{models.py,runtime.py,views.py,urls.py,serializers.py,match_commands.py}`, своя migration и competition API/concurrency tests, `docs/architecture/{api.md,parallel-contracts.md}`, этот файл, ROADMAP/audit при необходимости.
-- Остальные пункты первой волны A4 — P1-03 и P1-01.1; до их выполнения не переходить ко второй волне. После завершения всех трёх пунктов остановиться по прямому поручению пользователя и ждать остальные агенты.
-- Ранее завершённый P4-07 интегрирован PR [#78](https://github.com/D0UP1G/FirsterChuv/pull/78), merge `fbcbca6aec775b1bec3678910e21ac8c5ab5d522`, CI 5/5 SUCCESS; локальный `develop` синхронизирован до v6 `4bb521b`.
-- P2-03.4: [implementation audit](../audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md). Focused API/runtime 21/21; full competition 163 found, 11 skipped; file-backed ready concurrency 1/1; contracts/import/domain/check/migration/compile PASS.
+- Статус: IN_REVIEW, PR [#87](https://github.com/D0UP1G/FirsterChuv/pull/87) в `develop`; feature `feature/a4-p1-01-1-invite-concurrency`, base `origin/develop` `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, head `29ee920e667d6a265cfae3befe271180b76876fb`.
+- Подзадачи: (1) перепроверить P1-01 acceptance и последний invite audit, воспроизвести file/shared-cache race; (2) стабилизировать accepted count/use ledger без ослабления capacity/use assertions; (3) regression на независимых соединениях/повторах и полный A4 invite suite; (4) audit/PR/merge.
+- Планируемые пути: только invite-owned `backend/apps/tournaments/{services.py,tests.py}` при необходимости, плюс собственные audit/card/ROADMAP; не редактировать A3/A5 work.
+- Реализация P1-01.1 опубликована: write reservation до чтения acceptance state, bounded exponential lock retry, exact capacity/use assertions и same-user concurrent retry. Regression воспроизводился до fix; после fix concurrency suite 10/10 запусков, весь tournaments suite 34/34, Django check/migration drift/compile/diff PASS. [Implementation audit](../audits/2026-10-10T060811+0300-agent-4-P1-01-1-invite-concurrency.md); GitHub CI на точном head проверяется.
+- P2-03.4 DONE: PR [#82](https://github.com/D0UP1G/FirsterChuv/pull/82), merge `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`, exact-head CI 5/5. [Implementation audit](../audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md), [merge audit](../audits/2026-10-10T054825+0300-agent-4-P2-03-4-merge.md).
+- P1-03 A4 implementation DONE по PR [#84](https://github.com/D0UP1G/FirsterChuv/pull/84), merge `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, exact-head CI 5/5; [implementation audit](../audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md), [merge audit](../audits/2026-10-10T060220+0300-agent-4-P1-03-merge.md). T20/A5 browser remain partial; A3 legacy invite log redaction request [WAITING_CONNECT](../contracts/agent-3-token-access-log-redaction.md).
+- После этой задачи остановиться по прямому поручению после Wave 1 A4; Wave 2 не начинать.
 
 ## Результат предыдущей задачи · P4-07 · public snapshot · 2026-10-10
 

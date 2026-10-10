@@ -8,7 +8,7 @@ import time
 from typing import ClassVar
 from uuid import UUID
 
-from django.db import IntegrityError, OperationalError, transaction
+from django.db import IntegrityError, OperationalError, connection, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
@@ -105,17 +105,21 @@ def retry_sqlite_locked_write(function):
 
     @wraps(function)
     def wrapped(*args, **kwargs):
-        for attempt in range(3):
+        max_attempts = 8
+        for attempt in range(max_attempts):
             try:
                 return function(*args, **kwargs)
             except OperationalError as exc:
                 if "locked" not in str(exc).lower():
                     raise
-                if attempt == 2:
+                if attempt == max_attempts - 1:
                     raise RosterDatabaseBusy(
                         "База занята; повторите изменение состава позже."
                     ) from exc
-                time.sleep(0.01 * (attempt + 1))
+                # Shared-cache SQLite can report SQLITE_LOCKED immediately,
+                # without honoring the connection busy timeout. Back off long
+                # enough for the short winning transaction to commit.
+                time.sleep(min(0.01 * (2**attempt), 0.2))
 
     return wrapped
 
@@ -202,6 +206,19 @@ def accept_invite(token: str, user: User) -> tuple[Invite, bool]:
     token_digest = hash_invite_token(token)
     try:
         with transaction.atomic():
+            if connection.features.has_select_for_update:
+                Invite.objects.select_for_update().filter(
+                    token_hash=token_digest
+                ).exists()
+            else:
+                # SQLite starts a deferred transaction on the first read. Two
+                # acceptors can then both hold read locks and fail while upgrading
+                # to writes. Reserve the write before reading the acceptance/use
+                # state so contenders serialize and re-check current limits.
+                Invite.objects.filter(token_hash=token_digest).update(
+                    used_count=F("used_count")
+                )
+
             invite = (
                 Invite.objects.select_related("tournament")
                 .filter(token_hash=token_digest)

@@ -9,6 +9,8 @@ from backend.apps.tournaments.views import (
     InvitePreviewView,
     TournamentInviteRevokeView,
     TournamentInvitesView,
+    TournamentShareLinkRevokeView,
+    TournamentShareLinksView,
     TournamentViewSet,
 )
 
@@ -27,6 +29,16 @@ urlpatterns += [
         "tournaments/<uuid:tournament_id>/invites/<uuid:invite_id>",
         TournamentInviteRevokeView.as_view(),
         name="tournament-invite-revoke",
+    ),
+    path(
+        "tournaments/<uuid:tournament_id>/share-links",
+        TournamentShareLinksView.as_view(),
+        name="tournament-share-links",
+    ),
+    path(
+        "tournaments/<uuid:tournament_id>/share-links/<uuid:share_link_id>",
+        TournamentShareLinkRevokeView.as_view(),
+        name="tournament-share-link-revoke",
     ),
     path("invites/<str:token>", InvitePreviewView.as_view(), name="invite-preview"),
     path(

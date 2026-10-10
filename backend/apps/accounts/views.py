@@ -7,9 +7,9 @@ from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
+from backend.apps.common.throttles import RemoteAddressScopedRateThrottle
 from backend.apps.accounts.serializers import (
     LoginSerializer,
     RegisterSerializer,
@@ -34,7 +34,7 @@ class CsrfTokenView(APIView):
 @method_decorator(csrf_protect, name="dispatch")
 class RegisterView(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]
+    throttle_classes = [RemoteAddressScopedRateThrottle]
     throttle_scope = "auth_register"
 
     def post(self, request):
@@ -49,7 +49,7 @@ class RegisterView(APIView):
 @method_decorator(csrf_protect, name="dispatch")
 class LoginView(APIView):
     permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]
+    throttle_classes = [RemoteAddressScopedRateThrottle]
     throttle_scope = "auth_login"
 
     def post(self, request):

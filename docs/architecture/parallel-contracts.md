@@ -45,7 +45,7 @@
 | ProblemCatalogV1 / A3 | `describe_ready(problemIds)` → immutable public versions/limits/languages, отказ для NOT_READY/unknown | A2 config/start |
 | ProblemCatalogV1 / A3 | `load_bundle(problemId, version)` → private ProblemBundleV1 | A3 JudgeProvider |
 | LanguageRegistry / A3 | `is_supported(languageId)` → `bool` из server-owned allowlist | A3 admission |
-| PublicAccessV1 / A1 | `assert_can_view(tournamentId, shareToken?)` → public-safe access context | A4 snapshot/SSE |
+| PublicAccessV1 / A4 | `assert_can_view(tournamentId, shareToken?)` → public-safe, read-only access context | A4 snapshot/SSE; token arrives in `X-Tournament-Share-Token` |
 | EventWriter / A4 | `append(scope, eventType, publicPayload)` → monotonic event ID | Domain changes в той же transaction |
 | JudgeProvider / A3 | `execute(TrustedJudgeJob)` → JudgeResult; infrastructure failure отдельным typed error | Один trusted worker |
 
@@ -86,6 +86,8 @@ SQLite не даёт обычных row locks PostgreSQL. Использоват
 - [score-event.json](../../contracts/mvp-v1/score-event.json): normalized browser event после разбора SSE, authoritative score.changed. SSE id/type берутся из envelope; data — JSON, пользовательский текст не вставляется в строки протокола.
 
 Submission POST: Idempotency-Key + `{runId, problemId, languageId, source}`; тот же key/body возвращает ту же запись, другой body даёт 409. Draft PUT: `{runId, source, expectedRevision}` с languageId в query. Ошибка `{error:{code,message,fields?},requestId}`, message отображается как text. SSE: snapshot cursor, afterEventId первый connect, Last-Event-ID reconnect, dedupe; старый cursor → resync. При новом run старые events не двигают current map.
+
+P1-03 share access: admin выписывает tournament-scoped grant через `POST /tournaments/{id}/share-links` c `{expiresAt}`; raw URL-safe token возвращается ровно один раз, в БД хранится только SHA-256. `shareUrl` помещает его во fragment `/watch/{tournamentId}#shareToken=...`; frontend после чтения fragment отправляет `X-Tournament-Share-Token` только к anonymous public read. Query/path token не принимаются. Grant может только смотреть tournament public DTO, не создаёт account/membership и не даёт mutation. `DELETE /tournaments/{id}/share-links/{shareLinkId}` отзывает grant; expired/revoked/wrong-tournament/unknown скрываются одинаковым 404. Public snapshot ограничен 120/minute по socket peer; client-controlled `X-Forwarded-For` игнорируется для scoped anonymous throttles.
 
 Команды configure/start/ready сохраняют квитанции со scope `(match, actor, SHA-256(Idempotency-Key))`. Action и каноническое проверенное тело хешируются вместе; точный повтор возвращает исходный ответ, а повтор ключа с другим телом или action даёт `409 idempotency_conflict`. Изменение состояния матча и квитанция фиксируются одной транзакцией. Тела ready и start не принимают полей.
 
