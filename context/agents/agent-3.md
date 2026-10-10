@@ -1,5 +1,19 @@
 # Агент 3: задачи, очередь, песочница и запуск
 
+## Волна 3 · M0 acceptance harness · 2026-10-10
+
+- Статус среза: `IN_REVIEW`; полная волна 3/M0 остаётся `IN_PROGRESS`, G01/G03/G05 и T01/T18/T19 acceptance не закрыты.
+- Ветка: `feature/a3-wave3-m0-acceptance`; базовый SHA: `origin/develop=7b23470535c15c1baa9cc0018796a3519a10aa7b`.
+- Перед стартом проверено: PR #83/#85/#86/#89 интегрированы; runtime, worker factory и normalized demo importer находятся в свежем develop. Исторические worktrees не изменяются.
+- Scope: минимально расширить собственный `scripts/acceptance/` runner/evidence для wave 3, запускать только подтверждаемые реальные шаги, недоступные Docker/Compose/compiler/integration gates оставлять `NOT_RUN`. Не подменять production provider, verdict или полный M0 тестовыми фикстурами.
+- Затрагиваемые пути: `scripts/acceptance/run_api_smoke.py`, `docs/quality/evidence/README.md`, эта карточка и отдельный wave-3 audit. Production apps/API, чужие карточки и STATE не изменять.
+- Требования: D01/D03, J01/J03/J04, S01; T01/T18/T19 и G01/G03/G05 только по фактическим доказательствам. Полный M0 не принимать без реального Docker Engine и интегрированного multi-session/browser CONNECT.
+- Ограничение среды на старте: Docker Engine socket и Compose plugin отсутствуют; настоящие compile/run/isolation и one-command startup acceptance ожидаются `NOT_RUN`.
+- Результат среза: `run_api_smoke.py --demo-import` явно проверяет встроенный normalized importer на disposable DB и публикует только `READY`/`NOT_READY`; документация запрещает считать это live import/compiler/M0.
+- Проверки: `python -m py_compile scripts/acceptance/run_api_smoke.py` и `uv run python scripts/acceptance/run_api_smoke.py --demo-import --sandbox` прошли; 14 smoke checks, включая importer, PASS; importer readiness=`NOT_READY`, Docker sandbox=`NOT_RUN` (Engine отсутствует). Полный M0 остаётся NOT_ACCEPTED.
+- Аудит среза: [`2026-10-10T074540+0300-agent-3-wave3-m0-smoke.md`](../audits/2026-10-10T074540+0300-agent-3-wave3-m0-smoke.md).
+- Следующий шаг: на доступном Docker хосте проверить one-command startup → live import/compiler → accepted queue → настоящий isolated verdict → durable score; до этого не заявлять T01/T18/T19 PASS и не менять `cpp20.verified`.
+
 ## Волна 1 · текущая задача P1-04.2 · 2026-10-10
 
 - Статус: implementation slice готов к review; полная задача `IN_PROGRESS`, acceptance `NOT_RUN` для Docker/runtime. ROADMAP v6.
