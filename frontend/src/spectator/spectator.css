@@ -143,3 +143,32 @@
   .spectator-runner, .spectator-track-line::before { transition: none !important; }
   .spectator-announcements span { animation: none; }
 }
+
+.public-tournament-list {
+  display: grid;
+  gap: var(--ba-space-3, 12px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-tournament-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ba-space-3, 12px);
+  min-height: 56px;
+  padding: var(--ba-space-3, 12px) var(--ba-space-4, 16px);
+  border: 1px solid var(--ba-border, rgba(255, 255, 255, 0.16));
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.public-tournament-link:hover {
+  border-color: var(--ba-acid, #ccff00);
+}
+
+.public-tournament-link strong {
+  flex: 1 1 14rem;
+}

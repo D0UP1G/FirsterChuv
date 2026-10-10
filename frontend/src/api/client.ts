@@ -132,6 +132,14 @@ export interface Bracket {
   matches: BracketMatch[]
 }
 
+export interface PublicTournamentSummary {
+  id: string
+  title: string
+  status: Tournament['status']
+  startsAt: string
+  endsAt: string
+}
+
 export interface ProblemVersion {
   problemId: string
   label: string
@@ -503,6 +511,16 @@ export const api = {
     return mutate<{ tournamentId: string; userId: string; joined: true }>(`/invites/${segment(token)}/accept`)
   },
 
+  /** Anonymous public tournaments; the page treats the payload as untrusted input. */
+  publicTournaments(): Promise<Page<PublicTournamentSummary>> {
+    return request<Page<PublicTournamentSummary>>('/public/tournaments?limit=50&offset=0')
+  },
+
+  /** Anonymous bracket without account identifiers; the caller validates the shape before use. */
+  publicBracket(tournamentId: string): Promise<unknown> {
+    return request<unknown>(`/public/tournaments/${segment(tournamentId)}/bracket`)
+  },
+
   /** Anonymous, allowlisted snapshot; the caller validates the shape before use. */
   publicMatchSnapshot(matchId: string): Promise<unknown> {
     return request<unknown>(`/public/matches/${segment(matchId)}`)
@@ -612,4 +630,9 @@ export const api = {
 export function resetCsrfToken(): void {
   csrfToken = null
   csrfPromise = null
+}
+
+/** URL of the public SSE stream for one match; the browser resends Last-Event-ID on reconnect. */
+export function publicMatchEventsUrl(matchId: string, afterEventId: number): string {
+  return `${apiBase}/public/matches/${segment(matchId)}/events?lastEventId=${Math.max(0, Math.trunc(afterEventId))}`
 }

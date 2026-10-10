@@ -17,9 +17,10 @@ function text(value: unknown, label: string, maxLength = 160): string {
   return value
 }
 
+// Problem ids come from the imported package and may be any canonical UUID, not only RFC 4122 v1-v8.
 function uuid(value: unknown, label: string): string {
   const candidate = text(value, label, 64)
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(candidate)) {
     throw new PublicProtocolError(`${label}: invalid identifier.`)
   }
   return candidate

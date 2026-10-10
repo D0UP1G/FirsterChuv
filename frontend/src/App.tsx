@@ -11,6 +11,7 @@ import { AdminMatchPage } from './pages/AdminMatchPage'
 import { InvitePage } from './pages/InvitePage'
 import './App.css'
 import './responsive.css'
+import { PublicTournamentsPage } from './spectator/PublicTournamentsPage'
 
 const ParticipantWorkspacePage = lazy(() => import('./pages/ParticipantWorkspacePage').then((module) => ({ default: module.ParticipantWorkspacePage })))
 const SpectatorMapPage = lazy(() => import('./spectator/SpectatorMapPage').then((module) => ({ default: module.SpectatorMapPage })))
@@ -32,7 +33,7 @@ function AppFrame() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/watch" element={<PublicViewerPage />} />
+          <Route path="/watch" element={<PublicTournamentsPage />} />
           <Route path="/watch/:tournamentId" element={<Suspense fallback={<LoadingState label="Загружаем зрительскую карту…" />}><SpectatorMapPage /></Suspense>} />
           <Route path="/watch/:tournamentId/matches/:matchId" element={<Suspense fallback={<LoadingState label="Загружаем зрительскую карту…" />}><SpectatorMapPage /></Suspense>} />
           <Route path="/invites/:token" element={<InvitePage />} />
@@ -144,24 +145,6 @@ function HomePage() {
         <div><span className="strip-number">03</span><b>Борьба на экране</b><small>Зритель видит счёт и прогресс</small></div>
       </section>
     </>
-  )
-}
-
-function PublicViewerPage() {
-  return (
-    <section className="page-section public-page">
-      <div className="page-heading">
-        <p className="eyebrow"><span className="live-dot" /> Открытый просмотр</p>
-        <h1>Публичные турниры</h1>
-        <p>Зрительский просмотр доступен без аккаунта. Код участников здесь не показывается.</p>
-      </div>
-      <div className="empty-state">
-        <div className="empty-orbit" aria-hidden="true"><span>Б</span></div>
-        <h2>Открытых турниров пока нет</h2>
-        <p>Открытые трансляции появятся здесь после подключения списка публичных турниров.</p>
-        <Link className="text-link" to="/">На главную <span aria-hidden="true">↗</span></Link>
-      </div>
-    </section>
   )
 }
 
