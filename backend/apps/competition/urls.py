@@ -4,6 +4,7 @@ from backend.apps.competition.views import (
     ExtendMatchView,
     GenerateBracketView,
     MatchDetailView,
+    MatchReadyView,
     PauseMatchView,
     RematchView,
     ReplaceParticipantView,
@@ -35,6 +36,11 @@ urlpatterns = [
         "matches/<uuid:match_id>",
         MatchDetailView.as_view(),
         name="match-detail",
+    ),
+    path(
+        "matches/<uuid:match_id>/ready",
+        MatchReadyView.as_view(),
+        name="match-ready",
     ),
     path(
         "matches/<uuid:match_id>/start",
