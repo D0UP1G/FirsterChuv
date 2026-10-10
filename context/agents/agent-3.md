@@ -11,6 +11,19 @@
 - Fresh develop base этой ревизии 85e0cd0d2b82fce9996106af3922171dcee17c76; #60/#61/#62 MERGED. #63/#64 доступны после MERGED coordinator PR; #53/#57–59 пока не integrated. Не ждать отдельный STATE sync.
 - M0 → [ROADMAP v5](../../ROADMAP.md), [приёмка](../../docs/quality/m0-demo.md). При WAITING записать конкретный port/producer/consumer/SHA и в той же сессии взять следующий READY пункт. Explicit user stop имеет приоритет. Ни одна готовая часть/чужой audit не удаляется.
 
+## Текущая сессия P3-04.1 · contention при приёме посылок · 2026-10-10
+
+- Статус: `IN_REVIEW`; [PR #68](https://github.com/D0UP1G/FirsterChuv/pull/68) открыт; пять CI checks прошли на head `127d27d`.
+- Ветка: `feature/p3-04-1-admission-contention`; начальная база `a6083263b54538275317d86f23d1034125813848`, затем обычный merge свежего `origin/develop=1f95b72385c9bbaea0d6271a98dccffc8f4caa2b` в `ac93676670a23aec00863e992d918b35b29e7795`.
+- Основание: ROADMAP v5 и coordinator audit фиксируют uncaught SQLite lock в конкурентном same-key admission в первой CI-попытке #63; зелёный повтор не считается исправлением.
+- Изменены: `backend/apps/submissions/services.py`, `backend/apps/submissions/tests/test_admission_concurrency.py`, карточка и [`аудит реализации`](../audits/2026-10-10T022731+0300-agent-3-P3-04.1-admission-contention.md).
+- Причина: CI зафиксировал `database table is locked: submissions_queuecounter` на `get_or_create` при одновременной попытке перевести shared-cache read-lock в write-lock; одинаковые retry-паузы могли повторно сталкивать запросы.
+- Исправление: первой операцией в admission transaction выполняется `bulk_create(ignore_conflicts=True)` глобального QueueCounter — write-first точка сериализации; затем заново проверяется idempotency. Добавлен барьерный same-key тест, который сводит оба потока к этой операции и проверяет один submission/receipt/event и исходный `received_at`.
+- Проверки: shared-cache concurrency 4 passed/1 ожидаемый skip; file-backed submissions 49/49; полный backend 259 passed/4 ожидаемых skip; Django check, migration drift, 9 contract fixtures, common imports, domain suites, compileall и diff check прошли.
+- Требования: J04 и частично E03; полный T14/T19/T20 и end-to-end приёмка этой работой не закрываются. Миграций и изменений контрактов нет.
+- Публикация: код отправлен только в свою feature-ветку; PR #68 направлен в `develop`. Создание PR и CI зафиксированы в [аудите публикации](../audits/2026-10-10T022937+0300-agent-3-P3-04.1-publication.md) и [аудите CI](../audits/2026-10-10T023211+0300-agent-3-P3-04.1-ci.md).
+- Следующий шаг: дождаться review, PR не сливать; затем перепроверить принадлежность и статус следующего P3-04.2 перед любыми изменениями.
+
 ## Исторические записи до ROADMAP v5
 
 ## Назначение координатора 2026-10-10T01:11:53+03:00: Реальная проверка и workspace
