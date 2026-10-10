@@ -1,5 +1,13 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: P5-03d — админский матч на реальные эндпоинты (ROADMAP v6, волна 1)
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-admin-match-connect`, база `origin/develop` `4bb521b4980c3262d49f8b91387499f4d2a4acc1` (merge #79).
+- Пути: `frontend/src/pages/AdminMatchPage.tsx`, `frontend/src/pages/AdminMatchPage.test.tsx`, при необходимости `frontend/src/api/client.ts`, эта карточка, собственный аудит. Backend не меняется.
+- Найдено в реальном стенде (develop `7819fc7`): матч с двумя игроками в сетке имеет статус `WAITING` до настройки, `GET /matches/{id}` отвечает 409 `match_run_not_configured`; страница исключала `WAITING` и не давала открыть матч для настройки.
+- `WAITING_CONNECT`: настройка и запуск реальным каталогом ждут READY-задачи (все компиляторы `verified=False`, программный импорт и проба компиляторов — A3, P3-02.2); `POST /matches/{id}/ready` — A4, P2-03.4.
+
 ## Срез: ROADMAP v6 — распределение по волнам
 
 - Статус: `IN_REVIEW`.
