@@ -12,6 +12,7 @@ from django.db.models import F, Max
 from backend.apps.events.models import MatchEvent, MatchSnapshot
 from backend.apps.events.public_payloads import (
     PublicEventInputError,
+    validate_admin_action_payload,
     validate_score_changed_payload,
 )
 
@@ -44,14 +45,18 @@ def _scope_uuid(value: object, *, name: str) -> UUID:
 
 
 def _serialize_event(event: MatchEvent) -> dict:
-    if event.event_type != MatchEvent.Types.SCORE_CHANGED:
+    if event.event_type == MatchEvent.Types.SCORE_CHANGED:
+        payload = validate_score_changed_payload(event.payload)
+    elif event.event_type == MatchEvent.Types.ADMIN_ACTION:
+        payload = validate_admin_action_payload(event.payload)
+    else:
         raise PublicEventInputError("stored event type has no public serializer")
     return {
         "eventId": event.pk,
         "type": event.event_type,
         "matchId": str(event.match_id),
         "runId": str(event.run_id),
-        "payload": validate_score_changed_payload(event.payload),
+        "payload": payload,
     }
 
 
@@ -68,17 +73,20 @@ def append_event(
 
     Call from the domain transition's transaction when state and event must
     commit together. The nested atomic block remains part of that transaction.
-    This slice supports only the concrete ``score.changed`` v1 payload; other
-    documented event types need their own typed payload contract before writes.
+    Each supported event type has its own strict public payload validator.
     """
-    if event_type != MatchEvent.Types.SCORE_CHANGED:
+    if event_type == MatchEvent.Types.SCORE_CHANGED:
+        payload = validate_score_changed_payload(public_payload)
+    elif event_type == MatchEvent.Types.ADMIN_ACTION:
+        payload = validate_admin_action_payload(public_payload)
+    else:
         raise PublicEventInputError("event type is not supported by this store slice")
     event = MatchEvent.objects.create(
         tournament_id=_scope_uuid(tournament_id, name="tournament_id"),
         match_id=_scope_uuid(match_id, name="match_id"),
         run_id=_scope_uuid(run_id, name="run_id"),
-        event_type=MatchEvent.Types.SCORE_CHANGED,
-        payload=validate_score_changed_payload(public_payload),
+        event_type=event_type,
+        payload=payload,
     )
     return event.pk
 

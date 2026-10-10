@@ -11,6 +11,8 @@ from backend.apps.competition.admin_runtime import (
 from backend.apps.competition.models import Match, MatchAdminCommandReceipt, MatchRun, MatchSlot
 from backend.apps.competition.runtime import configure_match_run, start_match_run
 from backend.apps.competition.services import generate_bracket
+from backend.apps.events.models import MatchEvent
+from backend.apps.events.services import read_match_events_after
 from backend.apps.tournaments.models import Tournament, TournamentParticipant
 from backend.apps.tournaments.services import assign_participant
 from backend.apps.competition.tests.test_runtime import TestCatalog
@@ -89,6 +91,13 @@ class PersistedAdminClockCommandsTests(TestCase):
         self.assertEqual(run.accumulated_pause_ms, 3000)
         self.assertEqual(run.revision, 3)
         self.assertEqual(MatchAdminCommandReceipt.objects.filter(match=self.match).count(), 2)
+        events = read_match_events_after(match_id=self.match.pk)
+        self.assertEqual([event["type"] for event in events], [MatchEvent.Types.ADMIN_ACTION] * 2)
+        self.assertEqual(events[0]["payload"], {
+            "action": "pause", "status": MatchRun.Status.PAUSED, "revision": 2,
+        })
+        self.assertNotIn("reason", events[0]["payload"])
+        self.assertNotIn("actorUserId", events[0]["payload"])
 
     def test_extension_has_server_policy_bound_and_requires_reason(self):
         result = self.command(
