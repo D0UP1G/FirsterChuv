@@ -12,6 +12,7 @@
 - Результат среза: `run_api_smoke.py --demo-import` явно проверяет встроенный normalized importer на disposable DB и публикует только `READY`/`NOT_READY`; документация запрещает считать это live import/compiler/M0.
 - Проверки: `python -m py_compile scripts/acceptance/run_api_smoke.py` и `uv run python scripts/acceptance/run_api_smoke.py --demo-import --sandbox` прошли; 14 smoke checks, включая importer, PASS; importer readiness=`NOT_READY`, Docker sandbox=`NOT_RUN` (Engine отсутствует). Полный M0 остаётся NOT_ACCEPTED.
 - Аудит среза: [`2026-10-10T074540+0300-agent-3-wave3-m0-smoke.md`](../audits/2026-10-10T074540+0300-agent-3-wave3-m0-smoke.md).
+- Публикация: PR [#94](https://github.com/D0UP1G/FirsterChuv/pull/94) в `develop`, открыт. CI run `38025252224` на момент публикации ещё выполнялся; см. [аудит публикации](../audits/2026-10-10T074900+0300-agent-3-wave3-m0-publication.md).
 - Следующий шаг: на доступном Docker хосте проверить one-command startup → live import/compiler → accepted queue → настоящий isolated verdict → durable score; до этого не заявлять T01/T18/T19 PASS и не менять `cpp20.verified`.
 
 ## Волна 1 · текущая задача P1-04.2 · 2026-10-10
