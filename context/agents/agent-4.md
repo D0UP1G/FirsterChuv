@@ -1,5 +1,13 @@
 # Агент 4 (прежний 1): API и логика соревнования
 
+## Текущая работа · Wave 3 · T09–T11 public lifecycle/domain seams · 2026-10-10
+
+- Статус: IN_PROGRESS; feature `feature/a4-wave3-domain-fixes`, база `origin/develop` `7b23470535c15c1baa9cc0018796a3519a10aa7b`.
+- Подзадачи: (1) подтвердить acceptance T09–T11 и merged Wave 2 интеграционные seams; (2) добавить строгий privacy-safe event contract для admin lifecycle; (3) атомарно публиковать admin transition при pause/resume/extend/technical result/rematch/replacement; (4) синхронизировать фактические public UUID/bracket/SSE маршруты в API docs; (5) запустить только focused регрессии, оформить audit и PR.
+- Планируемые пути: `backend/apps/events/{models.py,public_payloads.py,services.py,migrations,tests.py}`, `backend/apps/competition/admin_runtime.py` и его tests, `docs/architecture/api.md`, своя карточка/audit/ROADMAP. Не менять frontend/A3 submissions.
+- Зависимости: T09–T10 durable ledger и score projection уже merged; events store до этой ветки поддерживал только `score.changed`. Public admin event содержит лишь action/status/revision; свободный reason и actor ID остаются в закрытом admin receipt.
+- Статус: PR [#93](https://github.com/D0UP1G/FirsterChuv/pull/93) открыт в `develop`, mergeable; commit/head `7c5d48bce1e6d80e2d1ad5d0f62694f7345be930`. CI exact-head 5/5 SUCCESS. Implementation audit: [Wave 3 lifecycle](../audits/2026-10-10T074610+0300-agent-4-wave3-lifecycle-events.md); publication audit: [Wave 3 PR/CI](../audits/2026-10-10T075115+0300-agent-4-wave3-publication.md). Accepted-submission producer остаётся отдельным A3/A4 CONNECT; T09/M0 полностью не закрыты.
+
 ## Текущая работа · Волна 1 · P1-01.1 · 2026-10-10
 
 - Статус: IN_REVIEW, PR [#87](https://github.com/D0UP1G/FirsterChuv/pull/87) в `develop`; feature `feature/a4-p1-01-1-invite-concurrency`, base `origin/develop` `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, head `29ee920e667d6a265cfae3befe271180b76876fb`.

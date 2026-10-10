@@ -1,5 +1,12 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: волна 3 — браузерная приёмка M0 (A5)
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-m0-browser-acceptance`, база `origin/develop` `7b23470`.
+- Пути: `docs/quality/evidence/2026-10-10T074529+0300-A5-browser-m0.md`, эта карточка. Код не менялся.
+- Итог: G02 PASS (браузерная часть), G06 PASS (чтение), G04 PARTIAL, G03/G01/G05 NOT_RUN (нет Docker). Подробности — в файле evidence.
+
 ## Срез: волна 2 (4/4) — карта зрителя на публичной сетке и SSE
 
 - Статус: `IN_REVIEW`.

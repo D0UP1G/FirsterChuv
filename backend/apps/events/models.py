@@ -7,6 +7,7 @@ from django.db.models import Q
 class MatchEvent(models.Model):
     class Types(models.TextChoices):
         SCORE_CHANGED = "score.changed", "Изменение счёта"
+        ADMIN_ACTION = "match.admin_action", "Действие администратора"
 
     # BigAutoField is the global durable cursor used by snapshot and SSE readers.
     id = models.BigAutoField(primary_key=True)
@@ -21,7 +22,7 @@ class MatchEvent(models.Model):
         ordering = ("id",)
         constraints = [
             models.CheckConstraint(
-                condition=Q(event_type="score.changed"),
+                condition=Q(event_type__in=("score.changed", "match.admin_action")),
                 name="events_supported_public_type",
             )
         ]

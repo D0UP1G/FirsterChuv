@@ -11,6 +11,8 @@ class PublicEventInputError(ValueError):
 
 VERDICTS = frozenset(("OK", "WA", "TL", "ML", "RE", "CE"))
 TASK_STATUSES = frozenset(("NOT_STARTED", "ATTEMPTED", "SOLVED"))
+ADMIN_ACTIONS = frozenset(("pause", "resume", "extend", "technical_result", "rematch", "replace_participant"))
+MATCH_STATUSES = frozenset(("WAITING", "READY", "RUNNING", "PAUSED", "FINALIZING", "FINISHED", "TIED", "SUPERSEDED"))
 
 
 def _object(value: object, *, keys: frozenset[str], name: str) -> dict:
@@ -178,3 +180,20 @@ def validate_score_changed_payload(payload: object) -> dict:
             raise PublicEventInputError("leaderUserId must be one of the match players")
 
     return {"leaderUserId": leader_user_id, "players": players}
+
+
+def validate_admin_action_payload(payload: object) -> dict:
+    """Validate a privacy-safe summary of a committed admin transition."""
+    value = _object(
+        payload,
+        keys=frozenset(("action", "status", "revision")),
+        name="match.admin_action payload",
+    )
+    if not isinstance(value["action"], str) or value["action"] not in ADMIN_ACTIONS:
+        raise PublicEventInputError("match.admin_action action is not public")
+    if not isinstance(value["status"], str) or value["status"] not in MATCH_STATUSES:
+        raise PublicEventInputError("match.admin_action status is not public")
+    revision = value["revision"]
+    if type(revision) is not int or revision < 0:
+        raise PublicEventInputError("match.admin_action revision must be non-negative")
+    return {"action": value["action"], "status": value["status"], "revision": revision}

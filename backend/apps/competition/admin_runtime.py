@@ -42,6 +42,8 @@ from backend.apps.competition.models import (
     MatchSlot,
 )
 from backend.apps.tournaments.models import TournamentParticipant
+from backend.apps.events.models import MatchEvent
+from backend.apps.events.services import append_event
 
 
 MAX_EXTENSION_SECONDS = 600
@@ -429,6 +431,18 @@ def execute_match_admin_command(
         "replacedUserId": str(old_user_id) if old_user_id is not None else None,
         "replacementUserId": str(replacement_user_id) if replacement_user_id is not None else None,
     }
+    if run is not None:
+        append_event(
+            tournament_id=match.tournament_id,
+            match_id=match.pk,
+            run_id=run.pk,
+            event_type=MatchEvent.Types.ADMIN_ACTION,
+            public_payload={
+                "action": normalized_action.value,
+                "status": run.status,
+                "revision": run.revision,
+            },
+        )
     try:
         with transaction.atomic():
             MatchAdminCommandReceipt.objects.create(
