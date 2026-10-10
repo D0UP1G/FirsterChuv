@@ -1,5 +1,19 @@
 # Агент 3: задачи, очередь, песочница и запуск
 
+## Волна 1 · текущая задача P1-04.2 · 2026-10-10
+
+- Статус: implementation slice готов к review; полная задача `IN_PROGRESS`, acceptance `NOT_RUN` для Docker/runtime. ROADMAP v6.
+- Ветка: `feature/p1-04-2-compose-runtime`; база `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`.
+- `origin/develop` обновился до `ee755af6ed93e7c3996cb5e70edd8d21e527c56a` и был включён в feature fast-forward до начала новых изменений.
+- Scope: одна host-команда запускает web/API/worker/match-clock, собирает pinned sandbox image, Compose health-gates зависимые сервисы и сохраняет DB volume; production API остаётся без Docker socket, socket доступен только trusted judge-worker.
+- Требования: D01/D03, S01, частично T01/T19; запуск полного M0 не объявлять без merged P3 factories/compiler/import и реального Docker evidence.
+- Пути: `compose.yaml`, `backend/Dockerfile` только для Docker CLI client, `scripts/start-demo.sh`, `README.md`, `docs/operations/runbook.md`, эта карточка и отдельные audits. Чужие apps/worktrees, `.env`, secrets, compiler policy и global Docker state не трогать.
+- Fresh `origin/develop` содержит A4 `run_match_clock`; открытые P3-04.2/P3-02.2 PR 83/85 не включать в эту ветку и не сливать.
+- Проверка host Docker/Compose в этом окружении: Docker Engine socket и Compose plugin отсутствуют; build/Compose runtime acceptance будет NOT_RUN.
+- Проверки implementation: `sh -n scripts/start-demo.sh`, Ruby YAML parse, `git diff --check`, Django `check`, `makemigrations --check --dry-run` прошли. Docker Engine/socket/Compose недоступны, поэтому image build, Compose startup и T01/M0 runtime acceptance — NOT_RUN.
+- Независимости: P3-04.2 worker factory и P3-02.2 demo import/compiler остаются отдельными PR. Включать их код сюда нельзя; не объявлять M0 завершённым.
+- Следующий шаг: опубликовать PR в `develop`, дождаться всех обязательных CI checks/review; реальный Docker smoke выполнить после появления Engine и включённых зависимостей. Merge не выполнять.
+
 ## Текущая сессия P4-08 · disposable system acceptance harness · 2026-10-10
 
 - ID задачи: `P4-08`; implementation slice: `IN_REVIEW`; полная задача: `IN_PROGRESS`.
