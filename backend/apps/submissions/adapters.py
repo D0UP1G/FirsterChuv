@@ -11,6 +11,8 @@ from backend.apps.common.contracts import (
     AttemptReceipt as CommonAttemptReceipt,
     CompetitionGatewayV1 as CommonCompetitionGatewayV1,
     EventWriter as CommonEventWriter,
+    InfrastructureFailureReceipt as CommonInfrastructureFailureReceipt,
+    InfrastructureFailureSink as CommonInfrastructureFailureSink,
     LanguageRegistry as CommonLanguageRegistry,
     ResultApplication,
     ResultReceipt as CommonResultReceipt,
@@ -21,6 +23,8 @@ from .errors import IntegrationUnavailable
 from .ports import (
     AttemptReceipt,
     EventWriter,
+    InfrastructureFailureReceipt,
+    InfrastructureFailureSink,
     LanguageRegistry,
     ResultReceipt,
     ResultSink,
@@ -127,3 +131,26 @@ class ResultSinkAdapter:
             raise TypeError("CompetitionGatewayV1 returned an invalid result application")
         # False means already applied or superseded; the delivery itself succeeded.
         return application.applied
+
+
+class InfrastructureFailureSinkAdapter:
+    """Forward allowlisted infrastructure receipts to the real competition gateway."""
+
+    def __init__(self, gateway: CommonInfrastructureFailureSink | None) -> None:
+        self.gateway = _require_methods(
+            gateway,
+            name="InfrastructureFailureSink",
+            methods=("record_infrastructure_failure",),
+        )
+
+    def record_infrastructure_failure(self, receipt: InfrastructureFailureReceipt) -> None:
+        if not isinstance(receipt, InfrastructureFailureReceipt):
+            raise TypeError("submissions failure receipt has an invalid type")
+        self.gateway.record_infrastructure_failure(
+            CommonInfrastructureFailureReceipt(
+                submission_id=receipt.submission_id,
+                run_id=receipt.run_id,
+                reason_code=receipt.reason_code,
+                retryable=receipt.retryable,
+            )
+        )
