@@ -12,7 +12,7 @@
 - Проверка host Docker/Compose в этом окружении: Docker Engine socket и Compose plugin отсутствуют; build/Compose runtime acceptance будет NOT_RUN.
 - Проверки implementation: `sh -n scripts/start-demo.sh`, Ruby YAML parse, `git diff --check`, Django `check`, `makemigrations --check --dry-run` прошли. Docker Engine/socket/Compose недоступны, поэтому image build, Compose startup и T01/M0 runtime acceptance — NOT_RUN.
 - Независимости: P3-04.2 worker factory и P3-02.2 demo import/compiler остаются отдельными PR. Включать их код сюда нельзя; не объявлять M0 завершённым.
-- PR [#86](https://github.com/D0UP1G/FirsterChuv/pull/86) открыт в `develop`, опубликованный head `420c434bf3863354e869e490854389f864939a44`, `OPEN / MERGEABLE`; пять CI jobs на этом head прошли (`38019333813`).
+- PR [#86](https://github.com/D0UP1G/FirsterChuv/pull/86) открыт в `develop`, head на последней проверке `6b297add3db5f0b393cd2f89af445f2a27ec3738`, `OPEN / MERGEABLE`; пять CI jobs прошли (`38019555795`).
 - Следующий шаг: review/решение команды; реальный Docker smoke выполнить после появления Engine и включённых зависимостей. Merge не выполнять.
 
 ## Текущая сессия P4-08 · disposable system acceptance harness · 2026-10-10
