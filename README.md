@@ -19,20 +19,50 @@
 - **Проверка (вариант Б кейса):** отдельный воркер с собственной песочницей; Яндекс Контест используется только для планируемого импорта задач.
 - Подробнее: [архитектура](docs/architecture/README.md), [API](docs/architecture/api.md), [безопасность](docs/architecture/security.md).
 
-## Быстрый старт (разработка)
+## Быстрый старт (Docker, всё включено)
 
-Нужны Python 3.14 с [uv](https://docs.astral.sh/uv/) и Node.js 20.19+.
+Нужны Git и Docker (Docker Desktop или Docker Engine с Compose). Запускаются сайт, API, воркер судьи и часы матча; код участников проверяется в изолированной песочнице.
+
+1. Скопируйте настройки и задайте секрет: `cp .env.example .env` (в PowerShell: `copy .env.example .env`), затем в `.env` замените значение `DJANGO_SECRET_KEY` на любую случайную строку. Сохраняйте файл в UTF-8 без BOM.
+2. Запустите:
+
+   - Linux, macOS, WSL: `./scripts/start-demo.sh`
+   - Windows (PowerShell, Docker Desktop должен быть запущен):
+
+     ```powershell
+     docker build --platform=linux/amd64 --tag firsterchuv/sandbox-cpp:0.1.0 sandbox
+     $env:DOCKER_SOCKET_GID = "0"
+     docker compose up --build
+     ```
+
+3. В другом терминале создайте демо-данные: `docker compose exec api python manage.py seed_demo`.
+4. Откройте http://localhost:8080.
+
+**Демо-аккаунты** (только для локального показа, команда `seed_demo` отказывается работать при `DJANGO_DEBUG=false`):
+
+| Роль | Логин | Пароль |
+|---|---|---|
+| Организатор | `admin@demo.local` | `admin12345` |
+| Участники | `player1@demo.local` … `player4@demo.local` | `player12345` |
+
+**Пройти матч за пять минут:** войдите организатором → «Создать турнир» (лимит 2) → создайте приглашение и скопируйте ссылку → в двух разных браузерах (или окнах инкогнито) войдите игроками 1 и 2 и откройте ссылку → организатор: «Сетка и матчи» → «Сформировать сетку» → выберите задачу → «Сохранить настройки» → «Запустить матч» → игроки открывают матч из личного кабинета, пишут решение (демо-задача: сумма двух чисел) и жмут «Отправить решение» → вердикт приходит без перезагрузки; зритель без входа смотрит ход матча на странице «Зрителям».
+
+Остановить: `docker compose down` (данные сохраняются); удалить вместе с данными: `docker compose down -v`. Если репозиторий клонировался до появления `.gitattributes`, выполните `git add --renormalize . && git checkout -- scripts`, чтобы у скриптов были окончания строк LF.
+
+## Быстрый старт (разработка без Docker)
+
+Нужны Python 3.14 с [uv](https://docs.astral.sh/uv/) и Node.js 20.19+. Песочница в этом режиме недоступна (нужен Linux и Docker), поэтому вердикты не выдаются.
 
 ```sh
 cp .env.example .env            # задайте приватный DJANGO_SECRET_KEY
 uv sync
 uv run --env-file .env python manage.py migrate
-uv run --env-file .env python manage.py create_admin --email admin@example.com --display-name Admin
+uv run --env-file .env python manage.py seed_demo
 uv run --env-file .env python manage.py runserver 127.0.0.1:8000
 cd frontend && npm ci && npm run dev   # http://localhost:8080
 ```
 
-Демо-задачу можно загрузить командой `uv run --env-file .env python manage.py import_demo_problem`. Запуск всего стенда (API, веб, воркер судьи, таймер матча) описан в [runbook](docs/operations/runbook.md): `scripts/start-demo.sh` требует Linux с Docker Engine и Docker Compose.
+Детали запуска, восстановления и защиты — в [runbook](docs/operations/runbook.md).
 
 ## Проверки
 
@@ -43,7 +73,7 @@ cd frontend && npm run typecheck && npm test && npm run build
 
 ## Статус
 
-Сквозной путь «приглашение → матч → посылка → публичная карта» работает; получение вердикта требует Docker Engine и проверенного компилятора, а официальный пакет задач организаторов пока не получен. Результаты приёмки: [приёмка](docs/quality/mvp-acceptance.md), [M0](docs/quality/m0-demo.md), [состояние](context/STATE.md).
+Сквозной путь «приглашение → матч → посылка → вердикт OK/WA → счёт → публичная карта» работает в Docker-запуске (проверено на реальной песочнице). Не пройдено до конца: вердикты CE/TL/ML/RE, продвижение победителя на реальных данных, враждебные проверки и официальный пакет задач организаторов (не получен). Результаты приёмки: [приёмка](docs/quality/mvp-acceptance.md), [M0](docs/quality/m0-demo.md), [состояние](context/STATE.md).
 
 ## Документация
 

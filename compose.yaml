@@ -10,6 +10,7 @@ services:
     environment:
       SQLITE_PATH: /app/.data/db.sqlite3
       DJANGO_ALLOWED_HOSTS: api,localhost,127.0.0.1
+      SANDBOX_VERIFIED_LANGUAGES: cpp20
     command: ["/app/scripts/start-api.sh"]
     init: true
     volumes:
@@ -45,6 +46,7 @@ services:
       dockerfile: backend/Dockerfile
     command: ["uv", "run", "--no-sync", "python", "manage.py", "run_match_clock"]
     environment:
+      SANDBOX_VERIFIED_LANGUAGES: cpp20
       SQLITE_PATH: /app/.data/db.sqlite3
       DJANGO_ALLOWED_HOSTS: api
       DJANGO_DEBUG: "false"
@@ -62,6 +64,7 @@ services:
       dockerfile: backend/Dockerfile
     command: ["uv", "run", "--no-sync", "python", "manage.py", "run_judge_worker"]
     environment:
+      SANDBOX_VERIFIED_LANGUAGES: cpp20
       SQLITE_PATH: /app/.data/db.sqlite3
       DJANGO_ALLOWED_HOSTS: api
       DJANGO_DEBUG: "false"
