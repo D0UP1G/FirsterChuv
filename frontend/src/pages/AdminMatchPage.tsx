@@ -81,6 +81,17 @@ function formatClock(ms: number): string {
   return `${Math.floor(totalSeconds / 60).toString().padStart(2, '0')}:${(totalSeconds % 60).toString().padStart(2, '0')}`
 }
 
+// The match panel sits below the bracket; bring it into view so "Открыть матч" visibly does something.
+function revealMatchPanel() {
+  window.setTimeout(() => {
+    const heading = document.getElementById('config-heading')
+    if (!heading) return
+    heading.setAttribute('tabindex', '-1')
+    heading.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    heading.focus({ preventScroll: true })
+  }, 60)
+}
+
 export function AdminMatchPage() {
   const { tournamentId = '' } = useParams()
   const [transport, setTransport] = useState<MatchAdminTransport | null>(null)
@@ -326,6 +337,7 @@ export function AdminMatchPage() {
         setWinnerUserId(nextMatch.players[0].userId)
         setReplacementOldId(nextMatch.players[0].userId)
       }
+      revealMatchPanel()
     } catch (error) {
       const entry = bracket?.matches.find((candidate) => candidate.id === matchId)
       if (entry && isUnconfiguredMatchError(error)) {
@@ -337,6 +349,7 @@ export function AdminMatchPage() {
           setDuration(String(tournament.matchDurationSec))
           setStartMode(tournament.startMode)
         }
+        revealMatchPanel()
         return
       }
       setActionError(messageFor(error))
