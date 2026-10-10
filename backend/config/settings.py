@@ -106,6 +106,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # The API never receives Docker access or a code-execution adapter.
 SUBMISSION_WORKER_FACTORY = "backend.apps.submissions.runtime.build_submission_worker"
 
+# The API authorizes workspace, draft and statement access through the real competition gateway
+# and admits submissions through real ports; with these unset every participant endpoint answers 503.
+WORKSPACE_ACCESS_FACTORY = "backend.apps.competition.gateway.get_competition_gateway"
+SUBMISSION_SERVICE_FACTORY = "backend.apps.submissions.api_runtime.build_submission_service"
+
 sqlite_path = Path(os.getenv("SQLITE_PATH", ".data/db.sqlite3"))
 if not sqlite_path.is_absolute():
     sqlite_path = PROJECT_ROOT / sqlite_path
