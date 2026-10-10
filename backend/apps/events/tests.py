@@ -15,6 +15,7 @@ from backend.apps.events.models import MatchEvent
 from backend.apps.events.public_payloads import PublicEventInputError
 from backend.apps.events.projectors import project_score_changed_payload
 from backend.apps.events.services import (
+    PublicSnapshotConflict,
     append_event,
     current_event_cursor,
     read_events_after,
@@ -100,6 +101,22 @@ class PublicEventStoreTests(TestCase):
         self.assertFalse(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=3, public_payload=payload))
         snapshot = read_snapshot(match_id=self.match_id)
         self.assertEqual(snapshot["lastEventId"], 4)
+        self.assertEqual(snapshot["payload"], payload)
+
+    def test_equal_cursor_is_idempotent_only_for_same_run_and_payload(self):
+        payload = self.score_payload()
+        self.assertTrue(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=payload))
+        self.assertTrue(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=payload))
+
+        changed_payload = self.score_payload()
+        changed_payload["players"][0]["displayName"] = "Other public name"
+        with self.assertRaises(PublicSnapshotConflict):
+            save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=changed_payload)
+        with self.assertRaises(PublicSnapshotConflict):
+            save_snapshot(match_id=self.match_id, run_id=uuid4(), last_event_id=4, public_payload=payload)
+
+        snapshot = read_snapshot(match_id=self.match_id)
+        self.assertEqual(snapshot["runId"], str(self.run_id))
         self.assertEqual(snapshot["payload"], payload)
 
     def payload_from_scoring_result(self, attempts):
@@ -345,6 +362,23 @@ class PublicEventStoreTests(TestCase):
                 self.append_score()
                 raise RuntimeError("rollback")
         self.assertEqual(MatchEvent.objects.count(), 0)
+
+    def test_outer_rollback_removes_event_and_snapshot_together(self):
+        with self.assertRaisesRegex(RuntimeError, "rollback event and snapshot"):
+            with transaction.atomic():
+                event_id = self.append_score()
+                self.assertTrue(
+                    save_snapshot(
+                        match_id=self.match_id,
+                        run_id=self.run_id,
+                        last_event_id=event_id,
+                        public_payload=self.score_payload(),
+                    )
+                )
+                raise RuntimeError("rollback event and snapshot")
+
+        self.assertEqual(MatchEvent.objects.count(), 0)
+        self.assertIsNone(read_snapshot(match_id=self.match_id))
 
     def test_validation_copies_payload_before_storing(self):
         payload = self.score_payload()

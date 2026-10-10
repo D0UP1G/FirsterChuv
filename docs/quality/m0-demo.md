@@ -15,7 +15,7 @@
 | G03 accepted/job/result | A3 + A4 | server received_at один раз, queue/source после202, actual isolated compile/test→OK/WA/CE, durable result+failure delivery; duplicate не даёт новый effect |
 | G04 UI/clock/winner/drafts | A5 + A4/A3 | condition/language/editor/own history/author CE/score безreload, server deadline, reload draft, FINALIZING→winner; delayed accepted OK считается |
 | G05 safety/restart | A3 + A4/A5 | compiler/runner без сети/хоста/secrets/Docker socket; bounded limits; worker restart не теряет accepted source; no private leak/IDOR; controlled SQLite contention |
-| G06 первый spectator CONNECT | A4 + A5 | anonymous public snapshot→existing map, no login wall/private fields; polling явно interim, SSE separately NOT_RUN |
+| G06 первый spectator CONNECT | A4 + A5 | P4-07 feature реализует anonymous public-only snapshot/no-store/no-referrer с allowlist DTO; integration PR и browser CONNECT к existing map ещё нужны. Polling явно interim; SSE отдельно NOT_RUN |
 
 ## Независимые PR и CONNECT
 

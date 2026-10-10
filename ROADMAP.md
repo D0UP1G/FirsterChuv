@@ -4,11 +4,11 @@
 
 ## Что уже есть и что мешает запуску
 
-В develop `ab00822` интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, persisted-run configure/readiness, match GET/config/manual start, durable clock/score/ledger/failure/finalization/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 и Agent 4 PR #67/#69/#74/#76 MERGED. #76 завершил P2-04, сохранив source ancestry #58/#59. Это готовые части, их не нужно переписывать.
+В develop `5f8e7d5` интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, persisted-run configure/readiness, match GET/config/manual start, frozen-run gateway/WorkspaceAccess/RunProblemSnapshot provider, durable clock/score/ledger/failure/finalization/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 и Agent 4 PR #67/#69/#74/#76/#77 MERGED. #77 завершил P2-03.3; A3 worker/draft consumer CONNECT и full M0 ещё не закрыты. Это готовые cores, их не нужно переписывать.
 
 #63 уточняет static reference по кейсу, #64 переносит токены бренда в React, #65 добавляет минимальные mobile/focus правила и own audit. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — [ревизия](docs/reviews/2026-10-10-mvp-readiness.md).
 
-Реального сквозного MVP пока нет. P2-03.1/.2 routes, P2-04 ledger/failure/finalization и frozen participant snapshots доступны в develop; gateway/WorkspaceAccess provider, RunProblemSnapshot producer, ready HTTP, actual worker executor, production startup/browser path и public transport ещё не собраны. A4 начал собственную P2-03.3 feature от `ab00822`; #53 snapshot fix остаётся открытым резервом и исходную ветку менять нельзя.
+Реального сквозного MVP пока нет. P2-03 routes/gateway provider, P2-04 ledger/failure/finalization и frozen participant snapshots доступны в develop; A3 worker/draft CONNECT, ready HTTP, actual isolated executor, production startup/browser path и public transport ещё не собраны. A4 реализовал P4-07 snapshot correctness и public match snapshot в `feature/a4-p4-07-snapshot-correctness` от `5f8e7d5`; integration PR/CI pending. Source PR #53 открыт и его исходная ветка сохранена.
 
 Дополнительный первый приоритет A3: в attempt 1 CI #63 на неизменённом backend concurrent same-key admission дал uncaught SQLite lock в QueueCounter. Attempt 2 зелёный; ошибка записана, не считается исправленной повтором CI.
 
@@ -16,7 +16,7 @@
 
 | Владелец | Вся зона | Первое READY задание | Независимый резерв |
 |---|---|---|---|
-| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | P2-03.3 frozen-run gateway/WorkspaceAccess + RunProblemSnapshot (текущая feature) | P4-07 snapshot correctness/public transport; P1-03 access/security; P2-05 admin HTTP |
+| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | P4-07 snapshot correctness/public snapshot (текущая feature) | P1-03 PublicAccess/share security; P2-03 both_ready HTTP; P2-05 admin HTTP |
 | A3 | problems/submissions/drafts/judge/sandbox, config/factories/Compose/start scripts/CI, system acceptance | P3-04.1 admission contention; P3-04.2 реальный LocalJudge executor/factory + programmatic smoke import | P3-02 import/assets/compiler probes; P1-04 one-command build; P3-05 private draft access; P4-08 acceptance harness |
 | A5 | весь frontend: React/design/styles/typed clients/editor/map/UI/browser checks | P5-03 подключить готовые auth/invite/admin/bracket API; минимальный бренд из #64 | typed match/workspace clients, loading/error/empty states, draft isolation, keyboard/minimal responsive |
 
@@ -68,9 +68,9 @@ PublicAccessV1 для anonymous public и отдельного hashed unlisted s
 
 1. DONE: source #57 сохранён обычным merge в feature; configure read→write SQLite race исправлен и прошёл file-backed regression/rollback suite. PR #69 MERGED в `f9da1dd`, CI 5/5; Agent 4 card/audit содержат evidence.
 2. DONE: match `GET/config/manual-start` routes в PR #74, merge `475cdf7`, exact-head CI 5/5 SUCCESS. Первая backend попытка поймала A3-owned QueueCounter lock regression; same-head повторный backend job прошёл. Retry не исправляет/не закрывает admission race; владелец A3 и P3-04.1 остаются ответственными. Implementation/publication/merge evidence — Agent 4 card и аудиты.
-3. IN_PROGRESS в `feature/a4-p2-03-gateway-workspace` от `ab00822`: frozen participant snapshot уже integrated через #76; написать production `CompetitionGatewayV1`/`WorkspaceAccess` и `RunProblemSnapshotProvider`. Проверять active membership, actor/run/problem/deadline, actions и скрывать condition участнику до старта; historical access и submission identity идут по immutable run snapshot, а не mutable slots/catalog latest. A3 startup/queue/draft CONNECT отдельный. `both_ready` HTTP, key→body receipts и browser M0 остаются отдельными задачами. M05/M06/P03; T07–09.
+3. DONE по implementation/integration: PR #77 MERGED ordinary commit `5f8e7d5`, final head `97ca670`; exact-head CI 5/5 SUCCESS. Frozen-run gateway проверяет active membership/actor/run/problem/deadline/actions; conditions доступны участнику после старта, snapshot version/checksum идёт из нужного immutable run даже после rematch. A3 worker/queue/draft factory CONNECT, `both_ready` HTTP, key→body receipts и browser M0 остаются открытыми. M05/M06/P03; T07–09 implementation integrated, full acceptance PARTIAL.
 
-### P2-04 · ledger / result / failure / promotion · M0 critical, IN_PROGRESS
+### P2-04 · ledger / result / failure / promotion · implementation integrated, M0 critical
 
 DONE: PR #76 MERGED ordinary commit `ab00822`, final head `83df978`; exact-head CI 5/5 SUCCESS. Ledger accepted/result, bounded failure records, finalization, score/winner/downstream/event and same-key/rematch protections are integrated. Implementation and merge evidence в карточке A4 и `context/audits/2026-10-10T034413+0300-agent-4-P2-04-merge.md`. M05/M07/J04; T09/T10/T19 implementation integrated; full M0/J04 acceptance remains open.
 
@@ -80,11 +80,11 @@ P2-05 effect/core fixes are included through #76, including write-first exact sa
 
 ### P2-06 · public events/SSE · PARTIAL, owner A4
 
-Event store #16 integrated. P2-06.2 snapshot исправить через P4-07, lifecycle/result/accepted typed producers в той же transaction. P2-06.3 PublicAccess-protected bracket/match snapshots, затем SSE heartbeat/Last-Event-ID/resync/caps/backpressure. Closed public DTO: никаких source/email/private test/CE. A5 отдельно consumer. V01–03/T16/T17/T20.
+Event store #16 integrated. P4-07 feature fixes snapshot race and atomically writes the `score.changed` result event with its snapshot; integration pending. Other lifecycle/accepted producers still need typed contracts and same-transaction wiring. P1-03 adds hashed unlisted access. Then public bracket and SSE heartbeat/Last-Event-ID/resync/caps/backpressure. Публичный DTO не содержит source/email/private tests/CE diagnostics. A5 отдельно подключает карту. V01–03/T16/T17/T20.
 
-### P4-07 · snapshot correctness · READY резерв / следующий public CONNECT
+### P4-07 · snapshot correctness · IMPLEMENTED в A4 feature, интеграция ожидает PR/CI
 
-#53 fd79038 сохранить ancestry/audits ordinary merge, исправить concurrent first save/update: latest cursor не теряется, equal cursor только identical run+payload идемпотентен, equal conflicting snapshot отклонён. Write-first/bounded whole retry, controlled busy, event+snapshot outer rollback целиком. File-backed first create/update/out-of-order/equal-cursor tests; 13 happy tests недостаточны. После minimal run/sinks подключить anonymous snapshot M0; SSE отдельным PR.
+#53 source head `fd79038` сохранён нетронутым и объединён обычным merge `fbf0348` только в `feature/a4-p4-07-snapshot-correctness`. Snapshot реализует write-first/bounded whole-transaction retry; out-of-order игнорируется, equal cursor допускает только same run+identical payload, conflicting equal отклоняется. Event+snapshot участвуют в общей result transaction; file-backed race/BUSY и public GET schema/visibility checks добавлены. Anonymous public-only `GET /api/v1/public/matches/{id}` подключён по v1 allowlist/no-store/no-referrer. PR в develop, exact-head checks/merge ещё не выполнены; unlisted share token остаётся P1-03, SSE/heartbeat/reconnect — отдельным slice, browser map/connect всё ещё нужен для M0.
 
 ## A3: задачи, исполнение и запуск всей системы
 

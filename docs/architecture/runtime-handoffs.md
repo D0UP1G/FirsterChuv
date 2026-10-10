@@ -1,6 +1,6 @@
 # Runtime handoffs: ближайший рабочий сценарий
 
-Спецификация повторной ревизии 2026-10-09, ADOPTED планом команды. [Common v1](parallel-contracts.md) уже материализован в backend/apps/common/contracts.py, CompetitionGateway/PublicAccess и production worker factory ещё не подключены; LocalJudge core реализован, его наличие не означает готовый production worker. Этот документ фиксирует передачу между тремя активными владельцами A3/A4(прежний A1)/A5; наличие Protocol не означает runnable provider.
+Спецификация повторной ревизии 2026-10-09, ADOPTED планом команды. [Common v1](parallel-contracts.md) уже материализован в backend/apps/common/contracts.py; CompetitionGateway интегрирован PR #77, public-only PublicAccess provider/snapshot endpoint находятся в текущей P4-07 feature, unlisted share provider ещё не интегрирован; production worker factory не подключена. LocalJudge core реализован, его наличие не означает готовый production worker. Этот документ фиксирует передачу между тремя активными владельцами A3/A4(прежний A1)/A5; наличие Protocol не означает runnable provider.
 
 ## Владельцы и независимые выходы
 

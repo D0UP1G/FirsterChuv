@@ -46,7 +46,11 @@ from backend.apps.competition.models import (
     MatchSlot,
 )
 from backend.apps.events.models import MatchEvent
-from backend.apps.events.services import append_event
+from backend.apps.events.services import (
+    PublicSnapshotBusy,
+    append_event,
+    save_snapshot,
+)
 
 
 class LedgerPersistenceError(RuntimeError):
@@ -99,6 +103,15 @@ def _retry_sqlite_transaction(function):
             except OperationalError as error:
                 if not _is_sqlite_lock_error(error):
                     raise
+                if attempt == 2:
+                    raise LedgerPersistenceBusy(
+                        "База занята; повторите обработку результата позже."
+                    ) from error
+                time.sleep(0.01 * (attempt + 1))
+            except PublicSnapshotBusy as error:
+                # A nested snapshot write cannot safely retry only its
+                # savepoint: replay the accepted-result transaction so event
+                # and snapshot remain one atomic state transition.
                 if attempt == 2:
                     raise LedgerPersistenceBusy(
                         "База занята; повторите обработку результата позже."
@@ -500,12 +513,19 @@ def _public_score_payload(run: MatchRun, score) -> dict:
 
 
 def _append_score_event(run: MatchRun, score) -> None:
-    append_event(
+    payload = _public_score_payload(run, score)
+    event_id = append_event(
         tournament_id=run.match.tournament_id,
         match_id=run.match_id,
         run_id=run.pk,
         event_type=MatchEvent.Types.SCORE_CHANGED,
-        public_payload=_public_score_payload(run, score),
+        public_payload=payload,
+    )
+    save_snapshot(
+        match_id=run.match_id,
+        run_id=run.pk,
+        last_event_id=event_id,
+        public_payload=payload,
     )
 
 
