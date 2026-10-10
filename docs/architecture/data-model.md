@@ -30,10 +30,12 @@ erDiagram
 | Language | serverId, displayName, compilerImage digest/tag, fixed compile/run argv, sourceFilename, template, enabled. Browser не задаёт executable/image. |
 | Match | tournamentId, roundIndex, position, slot0/slot1, nextMatchId/nextSlot, currentRunId, winnerId nullable, status. Unique tournament/round/position. |
 | MatchSlot | matchId, index 0/1, participantId nullable, upstreamMatchId nullable, resolution PLAYER/BYE/WAITING. Unique match/index. |
-| MatchRun | matchId, sequence, status, startedAt, pausedAt, accumulatedPauseMs, allowedDurationMs, scoreRule snapshot, finishedAt, winnerId, technicalReason, revision. Unique match/sequence; один current run. |
+| MatchRun | matchId, sequence, status, startedAt, pausedAt, accumulatedPauseMs, allowedDurationMs, scoreRule/problem/participant snapshots, scoreSnapshot, finishedAt, winnerId, technicalReason, revision. Unique match/sequence; один current run. |
 | RunProblem | runId, problemVersionId, label A/B/…, ordinal. Unique run/problem и run/label. Один набор для обоих игроков. |
 | ParticipantRunState | runId, userId, ready, solvedCount, penaltyMs, lastAcceptedElapsedMs. Unique run/user. Производная проекция из eligible submissions. |
 | Submission | id, runId, userId, problemVersionId, languageId, source, sourceHash, idempotencyKey, receivedAt, elapsedMs, processStatus, verdict nullable, attempts, availableAt, leaseToken/leaseUntil, bounded diagnostics/metrics. |
+| AcceptedAttempt / AttemptResult | Immutable accepted submission identity/timing and one idempotent final verdict. Match score reads this ledger, not transient queue state. |
+| InfrastructureFailureRecord | One safe allowlisted technical outcome per accepted submission, retryable flag and resolution time. It never creates WA/RE or a contestant loss; terminal unresolved failure blocks automatic winner settlement. |
 | Draft | userId/runId/problemVersionId/languageId unique, source, revision, updatedAt. Отдельные языки не затирают код друг друга. |
 | DraftRevision | draftId/revision unique, private source snapshot, sourceHash, createdAt. Хранит принятые версии черновика для восстановления; доступ требует `WorkspaceContext` с purpose `history`. |
 | MatchEvent | integer eventId монотонный, tournamentId, matchId/runId nullable, type, occurredAt, publicPayload allowlist. Private исходники не хранятся в publicPayload. |

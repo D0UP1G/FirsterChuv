@@ -2,7 +2,8 @@
 
 import json
 from concurrent.futures import ThreadPoolExecutor
-from threading import Barrier
+from threading import Barrier, Lock
+from unittest.mock import patch
 from uuid import uuid4
 
 from django.db import close_old_connections, connection, connections
@@ -13,7 +14,7 @@ from backend.apps.accounts.models import User
 from backend.apps.submissions.errors import QueueFull
 from backend.apps.submissions.models import QueueCounter, Submission
 from backend.apps.submissions.ports import SubmissionPermit
-from backend.apps.submissions.services import SubmissionService
+from backend.apps.submissions.services import SubmissionService, _acquire_admission_write_intent
 
 
 class DatabaseCompetition:
@@ -159,15 +160,35 @@ class SubmissionAdmissionConcurrencyTests(TransactionTestCase):
         self.assertTrue(all(item.received_at == self.received_at for item in results))
 
     def test_concurrent_same_key_returns_one_submission_and_one_receipt_and_event(self):
-        results = self.submit_concurrently(
-            [
-                {"actor_id": self.users[0].pk, "key": "same-key"},
-                {"actor_id": self.users[0].pk, "key": "same-key"},
-            ],
-            service=self.make_service(),
-        )
+        first_write_barrier = Barrier(2)
+        calls_lock = Lock()
+        calls = 0
 
+        def synchronized_write_intent():
+            nonlocal calls
+            with calls_lock:
+                calls += 1
+                call_number = calls
+            if call_number <= 2:
+                first_write_barrier.wait(timeout=10)
+            return _acquire_admission_write_intent()
+
+        with patch(
+            "backend.apps.submissions.services._acquire_admission_write_intent",
+            side_effect=synchronized_write_intent,
+        ):
+            results = self.submit_concurrently(
+                [
+                    {"actor_id": self.users[0].pk, "key": "same-key"},
+                    {"actor_id": self.users[0].pk, "key": "same-key"},
+                ],
+                service=self.make_service(),
+            )
+
+        self.assertEqual(calls, 2)
         self.assertEqual(results[0].id, results[1].id)
+        self.assertEqual(results[0].received_at, self.received_at)
+        self.assertEqual(results[1].received_at, self.received_at)
         self.assertEqual(Submission.objects.count(), 1)
         self.assertEqual(self.count_test_rows("test_submission_accepted"), 1)
         self.assertEqual(self.count_test_rows("test_submission_events"), 1)

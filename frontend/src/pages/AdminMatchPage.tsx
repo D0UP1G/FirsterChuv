@@ -110,9 +110,11 @@ export function AdminMatchPage() {
     try {
       nextBracket = await source.bracket(tournamentId)
     } catch (error) {
+      // The tournament was just read successfully, so a 404 on its bracket means "not generated yet".
+      // Backend currently answers with the generic `not_found` code instead of the contract `bracket_not_found`.
       const isMissingBracket = error instanceof ApiError
         && error.status === 404
-        && ['bracket_not_found', 'bracket_not_generated'].includes(error.code ?? '')
+        && ['bracket_not_found', 'bracket_not_generated', 'not_found'].includes(error.code ?? '')
       if (!isMissingBracket) throw error
     }
     const sortedRoster = nextRoster.filter((entry) => entry.status === 'ACTIVE').sort((left, right) => {
@@ -340,7 +342,7 @@ export function AdminMatchPage() {
     <div className="breadcrumbs"><Link to="/admin">Турниры</Link><span>/</span><Link to={`/admin/tournaments/${tournamentId}`}>{tournament.title}</Link><span>/</span><span>Сетка и матчи</span></div>
     <div className="management-heading">
       <div>
-        <p className="eyebrow">Панель организатора · P4-03</p>
+        <p className="eyebrow">Панель организатора</p>
         <h1>Сетка и матчи</h1>
         <p>{tournament.title} · {roster.length} активных участников · {bracket ? `сетка ${bracket.bracketSize}` : 'сетка не создана'}</p>
       </div>

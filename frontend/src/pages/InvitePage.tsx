@@ -76,7 +76,7 @@ export function InvitePage() {
         <div className="invite-preview-card">
           <span className="meta-pill meta-pill-status">Ссылка действительна</span>
           <h2>{preview.tournament.title}</h2>
-          <p>Приглашение действует до {dateTime(preview.expiresAt)}. После входа подтвердите присоединение.</p>
+          <p>{preview.expiresAt ? `Приглашение действует до ${dateTime(preview.expiresAt)}.` : 'Приглашение действует без срока.'} После входа подтвердите присоединение.</p>
           {acceptError && <div className="state-card state-card-error" role="alert">{acceptError}</div>}
           {joined ? (
             <div className="invite-preview-actions" role="status"><strong>Вы присоединились к турниру.</strong><Link className="button button-small" to="/dashboard">Открыть кабинет</Link></div>

@@ -1,11 +1,27 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
-## Текущий срез: P5-02 — браузерная проверка адаптивности и доступности
+## Срез P5-02 — браузерная проверка адаптивности и доступности
 
-- Статус: `IN_PROGRESS`.
+- Статус: `IN_REVIEW` (PR #73, CI 5/5, sync с develop после merge #70/#71).
 - Ветка: `feature/agent-5-p5-02-browser-checks`, база `origin/develop` `f9da1dda236fe66bcca30b79505f9f86e2fd426c`. PR #70 (P5-03a) и #71 (P5-03b) ещё не слиты.
 - Пути: `frontend/src/pages/Admin.css` (размер цели ссылок хлебных крошек), эта карточка, собственный аудит. Backend не меняется.
 - Проверено на реальном стенде при 320 px: нет горизонтального переполнения на `/`, `/login`, `/register`, `/watch`, `/watch/{id}`, `/invites/{token}`, 404, `/dashboard`, `/admin`, странице турнира и странице сетки; видимый фокус клавиатуры (3 px solid); у всех интерактивных элементов есть имя; правила `prefers-reduced-motion` присутствуют. Замечание: ссылки хлебных крошек 19–22 px по высоте (< 24 px, WCAG 2.2 SC 2.5.8).
+
+## Срез P5-03b — состояния loading/error/empty/retry и очистка приватных данных при выходе
+
+- Статус: `IN_REVIEW` (PR #71, CI 5/5, sync с develop после merge #70).
+- Ветка: `feature/agent-5-states-and-drafts`, база `origin/develop` `f9da1dda236fe66bcca30b79505f9f86e2fd426c` (merge #69). PR #70 (P5-03a) ещё не слит.
+- Пути: `frontend/src/auth/AuthContext.tsx`, новый `frontend/src/workspace/privateStorage.ts`, их тесты; при необходимости страницы workspace/spectator и их тесты. Backend не меняется.
+- Цель: logout удаляет локальные черновики и ключи отправки вышедшего пользователя (docs/architecture/security.md:71); проверить состояния ошибки и повтора в workspace/spectator на отсутствующих endpoint.
+- `WAITING_CONNECT` (проверено на develop `f9da1dd`): HTTP `GET/PATCH /matches/{id}`, start/ready, условие задачи, список языков, публичный снимок и SSE отсутствуют, в develop есть только сервисы run (#69). Владельцы: A4 (match/run/public), A3 (problem/language/submissions/draft).
+
+## Срез P5-03a — real auth/invite/admin/bracket CONNECT
+
+- Статус: `DONE` — PR #70 MERGED в develop (implementation/integration); browser acceptance частичная.
+- Ветка: `feature/agent-5-real-connect-admin`, база `origin/develop` `a6083263b54538275317d86f23d1034125813848` (merge #66, ROADMAP v5).
+- Пути: `frontend/src/pages/AdminMatchPage.tsx`, `frontend/src/pages/AdminMatchPage.test.tsx`, при необходимости `frontend/src/pages/Admin*.tsx`/`InvitePage.tsx` и их стили/тесты; `context/contracts/` (запрос A4), эта карточка, собственный аудит. Backend не меняется.
+- Цель: пройти реальным браузером и локальным backend путь admin → турнир → приглашение → два participant → сетка; исправить расхождения на стороне frontend, расхождения backend передать A4 запросом в `context/contracts/`.
+- Проверка в локальном стенде (SQLite, Django runserver, Vite): вход, создание турнира, приглашение, регистрация/вход/join двух участников по ссылке прошли. Страница «Сетка и матчи» показывала «endpoint недоступен»: backend отвечает 404 `not_found` на `GET /tournaments/{id}/bracket` до генерации, frontend ждал `bracket_not_found`.
 
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 

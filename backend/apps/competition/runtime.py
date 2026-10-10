@@ -178,6 +178,9 @@ def configure_match_run(
             )
             if len(slots) != 2 or len({slot.participant_id for slot in slots}) != 2:
                 raise MatchRuntimeError("both match participants must be assigned")
+            participant_user_ids = [
+                str(slot.participant.user_id) for slot in slots
+            ]
             if match.current_run_id:
                 current = match.current_run
                 if (
@@ -186,6 +189,7 @@ def configure_match_run(
                     and current.start_mode == normalized_mode
                     and current.score_rule == rules_snapshot
                     and current.problem_versions == problems
+                    and current.participant_user_ids == participant_user_ids
                 ):
                     return current
                 raise MatchRuntimeError("match already has a configured run")
@@ -201,6 +205,7 @@ def configure_match_run(
                 score_rule=rules_snapshot,
                 start_mode=normalized_mode,
                 problem_versions=problems,
+                participant_user_ids=participant_user_ids,
             )
             match.current_run = run
             match.status = Match.Status.READY
