@@ -14,7 +14,7 @@ Agent 1 теперь является историческим alias актив�
 - Независимый резерв: P1-04 actual build/Compose/readiness, P1-01.1 concurrency stability.
 - Владение: common/config/accounts/tournaments/deploy/Compose/startup/CI.
 - Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
-- [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
+- [ROADMAP v4](../../ROADMAP.md), принятые границы. При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
 
 
 Перепланировано координатором по поручению команды 2026-10-09, наблюдаемые факты не присваивают работу автора.
@@ -28,4 +28,4 @@ Agent 1 теперь является историческим alias актив�
 - Full T01/T02/T03/T04/T05/T18/T20/T21 открыты. P1-05 release/demo только после R1/R2/official acceptance.
 - Перед edits: собственный IN_PROGRESS/branch/base/paths; после каждого среза новый audit, PR→develop, merge commit. Старые audits сохранены.
 
-[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [повторная ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
+[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), повторная ревизия, [handoffs](../../docs/architecture/runtime-handoffs.md).

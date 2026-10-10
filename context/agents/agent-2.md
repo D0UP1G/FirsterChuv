@@ -11,15 +11,15 @@
 - Источник: прямое поручение команды перераспределить оставшийся MVP и создать нового frontend owner. Это текущее назначение; прежние author checkpoints ниже сохранены как история.
 - Статус назначения: READY; фактический IN_PROGRESS выставляет владелец при начале edits в своём изолированном checkout.
 - Первое действие: исправить проверенные #57–59 (0073fbd/1f3fae5/latest9eb394c): SQLite read→write/full bounded retry, exact-command replay, revoke/reopen downstream после разрешённого rematch. Participant snapshot/late old result fix уже есть в latest9eb394c — сохранить; file-backed tests. PR только в develop, после #50 база доступна без переписывания веток. Persistence cores уже написаны, не повторять. Затем P2-03 get/config/start/ready + production gateway/snapshot, по одному endpoint.
-- Независимый резерв: HTTP serializers/permissions для config/start/ready, P2-04 durable failure sink/finalization/promotion, P2-05 API/replacement. #58 accepted/result и #59 actions исправлять по конкретным замечаниям [review](../../docs/reviews/2026-10-10-mvp-readiness.md), не реализовывать повторно.
+- Независимый резерв: HTTP serializers/permissions для config/start/ready, P2-04 durable failure sink/finalization/promotion, P2-05 API/replacement. #58 accepted/result и #59 actions исправлять по конкретным замечаниям review, не реализовывать повторно.
 - Владение: competition/models/services/migrations/tests; events переданы A4.
 - Fresh develop после подтверждённого merge integration feature; #21 CAS исправлен, #50 pairings/reset проверяется вместе, #53 не integrated/нужен fix. Готовые cores не повторять.
-- [ROADMAP v4](../../ROADMAP.md), [принятые границы](../contracts/2026-10-10-mvp-boundaries.md). При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
+- [ROADMAP v4](../../ROADMAP.md), принятые границы. При WAITING одного CONNECT в той же сессии брать следующий READY пункт. Explicit user stop важнее назначения; Git сам не переключает соседний checkout.
 
 
 Перепланировано координатором по поручению команды 2026-10-09; audit history владельца сохранена.
 
-- Коррекция аудита P2-03: короткий ref `6320b4b` раскрывается в `6320b4bb75a0dbc5284946cb0161cb1842d15847`; две исходные записи не переписывались. См. [коррекционный аудит](../audits/2026-10-10T002548+0300-agent-2-P2-03-base-sha-correction.md).
+- Коррекция аудита P2-03: короткий ref `6320b4b` раскрывается в `6320b4bb75a0dbc5284946cb0161cb1842d15847`; две исходные записи не переписывались. См. коррекционный аудит.
 
 - Проверены/integration feature: pure clock #11 28d6cda и score #13 19bbf88, по 12 tests. Доступность в develop — после MERGED общего integration PR; cores не заменяют persistence/API.
 - Первое READY P2-02.1: fix #7 1952244 generate/reset/pairings только draft/scheduled, SQLite transactional lifecycle guard + regression. Ordinary registration/rank/import уже готовы. Затем merge #7 и P2-02.2 HTTP/idempotency/reason/full pairings.
@@ -33,7 +33,7 @@
 - Пути текущего независимого среза: `backend/apps/competition/domain/start_policy.py`, тесты в `backend/apps/competition/tests/test_clock.py`, эта карточка и audit. Pure clock #11 повторно не реализуется.
 - Граница: закрыть идемпотентную ready policy и auto-start обоих игроков для `both_ready`; не добавлять persistence/API. `Match`/`MatchRun` модели принадлежат незавершённому PR #7, поэтому ORM wiring продолжается после его интеграции.
 - Реализация: [P2-03 readiness gate, PR #34](https://github.com/D0UP1G/FirsterChuv/pull/34), latest head `fba94a28aabbfd773e025e9ee626dc11b8326994`, OPEN/CLEAN; четыре CI check прошли.
-- Аудиты сессии и публикации: [readiness gate](../audits/2026-10-09T231559+0300-agent-2-P2-03-readiness-gate.md), [PR #34 publication](../audits/2026-10-09T231837+0300-agent-2-P2-03-readiness-publication.md), [зелёные checks](../audits/2026-10-09T232130+0300-agent-2-P2-03-readiness-checks.md).
+- Аудиты сессии и публикации: readiness gate, PR #34 publication, зелёные checks.
 - Свежая GitHub сверка: PR #7 head `1a2b54a` OPEN/DIRTY; PR #16 head `a0b1dcc` OPEN/DIRTY; integration PR #32 MERGED и develop на `6320b4b`. MatchRun persistence остаётся WAITING_CONNECT на PR #7.
 - Следующий независимый срез Agent 2: P2-04 accepted-ledger/result domain core в отдельной `feature/*` ветке; P2-03 persistence/API продолжить после интеграции #7.
 
@@ -48,9 +48,9 @@
 - Планируемые пути: `backend/apps/competition/domain/result_ledger.py`, tests в существующем `backend/apps/competition/tests/test_scoring.py` (suite уже запускает этот файл), эта карточка и audit. Shared suite runner/API/ORM/events не менять в этом срезе.
 - Подзадача: immutable `AttemptReceipt` registry, duplicate/conflicting/out-of-order `ResultReceipt`, stale/superseded run без score mutation, pending-aware финализация по runtime handoff. Полный P2-04 дополнительно требует persistence, infrastructure-failure port/outbox и atomic downstream/event transition.
 - PR #7 head `1a2b54a12d2070c39c1c47ef67d37396c345a064` и PR #16 head `a0b1dcc682fac8f2fb1285743a62758310feeaa3` остаются OPEN/DIRTY; чужие ветки не менялись.
-- Начальный audit P2-04: [accepted ledger core](../audits/2026-10-09T232844+0300-agent-2-P2-04-ledger-core.md).
-- Publication audit P2-04: [PR #38](../audits/2026-10-09T233257+0300-agent-2-P2-04-ledger-publication.md).
-- Develop sync P2-04: [fresh-ref merge](../audits/2026-10-09T233507+0300-agent-2-P2-04-develop-sync.md).
+- Начальный audit P2-04: accepted ledger core.
+- Publication audit P2-04: PR #38.
+- Develop sync P2-04: fresh-ref merge.
 - Следующий независимый срез: P2-05 persisted command/effects core, отдельная ветка от свежего develop; не смешивать с #38.
 
 ## Текущий checkpoint
@@ -61,16 +61,16 @@
 - Статус: `IN_PROGRESS` — P2-05 idempotent admin-command receipt core; ветка `feature/match-admin-command-store`, база синхронизирована до `origin/develop` `25a82c092236d98275f897d624452b24bd501883`.
 - Пути: `backend/apps/competition/domain/command_store.py`, tests в `backend/apps/competition/tests/test_admin_actions.py`, эта карточка и новый audit. Не менять persisted models/API/shared wiring.
 - Подзадача: строгая fingerprint для intent (match/key/actor/action/reason/arguments), exact retry возвращает первоначальный plan, тот же key с другим payload — conflict; чистый helper не заявляется как durable production store.
-- Audit P2-05: [command receipt core](../audits/2026-10-09T234217+0300-agent-2-P2-05-command-store.md).
+- Audit P2-05: command receipt core.
 - Реализация опубликована в [PR #41](https://github.com/D0UP1G/FirsterChuv/pull/41), head `5c5740a34fb5cc498167cbb44cc8596741332b89`, OPEN; при publication: contracts/sandbox-unit выполнялись, backend/domain были в очереди.
-- Publication audit: [PR #41](../audits/2026-10-09T234419+0300-agent-2-P2-05-command-publication.md).
+- Publication audit: PR #41.
 
-[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), [ревизия](../../docs/reviews/2026-10-09-integration-review.md), [handoffs](../../docs/architecture/runtime-handoffs.md).
+[ROADMAP v3](../../ROADMAP.md), [STATE](../STATE.md), ревизия, [handoffs](../../docs/architecture/runtime-handoffs.md).
 
 ## Авторский checkpoint синхронизации #7, 2026-10-10
 
 - Source head f3001505fb70e9e810cd5da774a9a6dda996240f: обычный merge develop fb9edb3 в feature/bracket-runtime; 25 bracket/175 backend (2 skips), check/drift PASS у автора.
-- [Оригинальный sync audit](../audits/2026-10-10T000400+0300-agent-2-P2-02-1-develop-sync.md) сохранён без изменений. Исторический source card доступен в ancestry f300150.
+- Оригинальный sync audit сохранён без изменений. Исторический source card доступен в ancestry f300150.
 - Автор продолжает независимый P2-06.2 в собственной event feature во время review #7. Прежние readiness/ledger/command checkpoints этой карточки сохранены.
 - Код P2-01/P2-02.1 уже в develop через MERGED #44 (03a4636); текущий coordinator closeout объединяет поздний source sync и audit. После его MERGED обновить свою ветку из fresh develop и продолжить готовый подпункт.
 
@@ -90,29 +90,29 @@
 - The branch includes merge `f12ab03` from updated P2-04 PR #58 head `733acc6`.
 - Admin API routes from `docs/architecture/api.md` now require active admin session, CSRF, exact input fields and `Idempotency-Key`; actor is taken from the authenticated request.
 - Remaining P2-05 integration: typed public lifecycle event variants and full live browser/access acceptance are outside current score.changed event contract.
-- Session audit: [P2-05 replacement and immutable run roster](../audits/2026-10-10T012500+0300-agent-2-P2-05-participant-replacement.md).
+- Session audit: P2-05 replacement and immutable run roster.
 
 ## P2-04 finalization continuation, 2026-10-10
 
 - Status: `IN_REVIEW` — deadline reconciliation and pending-result drain committed to `feature/a2-p2-04-result-persistence`, base SHA `1f3fae5fc3ee70ab4e2bff713fd3a6cd7439d6a8` (PR #58).
 - Changes: RUNNING→FINALIZING on exact deadline; completion only after all accepted receipts have results; terminal result, winner/next-slot update, and public `score.changed` event commit in one DB transaction. Ties remain explicitly TIED for rematch policy.
 - Verification on updated head: focused ledger persistence 8 passed; full backend 250 passed, 2 skipped; Django check, migration drift, compileall, four competition domain suites and `git diff --check` clean.
-- Session audit: [P2-04 FINALIZING drain and atomic score event](../audits/2026-10-10T013100+0300-agent-2-P2-04-finalizing-drain.md).
-- Added standalone `python manage.py run_match_clock` process: bounded polling every 250ms by default or `--once`; current expired RUNNING runs use the idempotent finalization transaction. Audit [clock process](../audits/2026-10-10T014500+0300-agent-2-P2-04-clock-process.md).
+- Session audit: P2-04 FINALIZING drain and atomic score event.
+- Added standalone `python manage.py run_match_clock` process: bounded polling every 250ms by default or `--once`; current expired RUNNING runs use the idempotent finalization transaction. Audit clock process.
 - Residual full P2-04: shared deployment config/process supervision still needs coordinator wiring for the clock command; result/queue adapter is CONNECT; infrastructure failure sink and audited recovery are separate; public events remain limited to allowlisted `score.changed`.
 
 ### P2-05 authenticated API adapter — IN_REVIEW
 
 - Branch: `feature/a2-p2-05-pause-resume-extend`, PR #59. Use existing session auth, `IsApplicationAdmin`, CSRF and the server-resolved request actor.
 - Implemented routes: pause, resume, extend, technical result, rematch and participant replacement. Strict API body serializers match `docs/architecture/api.md`; role, CSRF, idempotency, exact replay/conflict and mutation responses are covered.
-- Session audit: [P2-05 authenticated admin API](../audits/2026-10-10T014100+0300-agent-2-P2-05-admin-api.md).
+- Session audit: P2-05 authenticated admin API.
 
 ## P2-05 PR closeout refresh, 2026-10-10
 
 - PR #59 was synced with the latest PR #58 head `dc884e6`, which also carries the ordinary `origin/develop` merge `7ad8073`; merge commit on P2-05 is `dd8bd9d`.
 - Full backend suite on the synchronized P2-05 branch: 284 passed, 4 skipped. Django check passed, migration drift check reported no changes, compileall and diff check passed.
 - PR #57 exact synchronized-head CI is 5/5 green. PR #58 CI is in progress at time of this checkpoint; P2-05 CI will start after this branch is pushed.
-- Audit: [P2-05 PR synchronization](../audits/2026-10-10T024000+0300-agent-2-P2-05-pr-sync.md).
+- Audit: P2-05 PR synchronization.
 
 ## Current publication closeout (2026-10-10)
 
@@ -131,7 +131,7 @@
 - PR #58 (`feature/a2-p2-04-result-persistence`) was synced with `origin/develop` `85e0cd0` using ordinary merge commit `7ad8073`; one documentation-card conflict was resolved by retaining both sides' entries. No feature-code conflict occurred.
 - On the synchronized branch: full backend suite 271 passed, 4 skipped; Django check passed; `makemigrations --check --dry-run` reported no changes; `compileall` and `git diff --check` passed.
 - GitHub CI for the synced head is pending publication. P2-04 deployment supervisor, trusted result/queue adapter and infra-failure recovery remain explicit integration work; do not count them complete here.
-- Session audit: [P2-04 PR synchronization](../audits/2026-10-10T023500+0300-agent-2-P2-04-pr-sync.md).
+- Session audit: P2-04 PR synchronization.
 
 ## Исторический checkpoint P2-06.2, source PR #53
 

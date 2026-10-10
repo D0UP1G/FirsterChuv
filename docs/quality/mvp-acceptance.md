@@ -1,6 +1,6 @@
 # Приёмка MVP
 
-Статус полных T01–21: NOT_RUN/NOT_ACCEPTED; отдельные core/API/DI/UI проверки не являются full PASS. Текущие владельцы — ROADMAP v5: A3 runtime/system acceptance, A4 API/domain/events, A5 browser/frontend. [Первый матч M0](m0-demo.md) проверяется отдельно и не закрывает обязательные блоки кейса автоматически. Точные SHA/выполненные checks/ограничения — [новая ревизия](../reviews/2026-10-10-mvp-readiness.md), исторические evidence сохранены ниже.
+Статус полных T01–21: NOT_RUN/NOT_ACCEPTED; отдельные core/API/DI/UI проверки не являются full PASS. Текущие владельцы — ROADMAP v5: A3 runtime/system acceptance, A4 API/domain/events, A5 browser/frontend. [Первый матч M0](m0-demo.md) проверяется отдельно и не закрывает обязательные блоки кейса автоматически. Точные SHA/выполненные checks/ограничения — новая ревизия, исторические evidence сохранены ниже.
 
 Готовность по кейсу требует блоки 1–3; команда также включает базовую визуализацию. Первый working slice — промежуточный результат, не повод пропускать обязательные строки.
 
@@ -57,7 +57,7 @@ T01–21 выполнены на integration/release SHA, ошибки испр�
 
 ## Передача владельцев и новая ревизия 2026-10-10
 
-Исторический первый абзац — снимок прошлой ревизии. Текущие combined checks: backend255/4skips, file-backed draft18/bracket24, frontend82/typecheck/build, domain68/sandbox15/schema9; это не полные T01–21. A5 отвечает за browser/UI в строках выше; A4 events/public HTTP/SSE и scripts/acceptance/evidence вместе с domain владельцами. T16/T17 — producer A4 + competition A2 + consumer A5. #53 snapshot blocker не закрыт. [Актуальный report](../reviews/2026-10-10-mvp-readiness.md), [план](../../ROADMAP.md). Evidence для полного сценария обязательно на actual integration SHA с раздельными sessions/real providers/official bundle.
+Исторический первый абзац — снимок прошлой ревизии. Текущие combined checks: backend255/4skips, file-backed draft18/bracket24, frontend82/typecheck/build, domain68/sandbox15/schema9; это не полные T01–21. A5 отвечает за browser/UI в строках выше; A4 events/public HTTP/SSE и scripts/acceptance/evidence вместе с domain владельцами. T16/T17 — producer A4 + competition A2 + consumer A5. #53 snapshot blocker не закрыт. Актуальный report, [план](../../ROADMAP.md). Evidence для полного сценария обязательно на actual integration SHA с раздельными sessions/real providers/official bundle.
 
 
 ## Актуальная передача v5, 2026-10-10

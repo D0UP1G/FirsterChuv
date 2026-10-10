@@ -8,4 +8,4 @@
 - Пути: `frontend/design/**`, `docs/architecture/decisions.md` (ADR18), эта карточка, собственный аудит. `frontend/src` не менялся.
 - Следующий шаг для агента 4: перенести токены и классы из `frontend/design/blitz.css` в существующие CSS-файлы по README, не меняя логику и тесты; проверить `npm run build` и `npm test`.
 
-[Аудит D-01](../audits/2026-10-10T004342+0300-design-D-01-blitz-arena.md), [README макетов](../../frontend/design/README.md).
+Аудит D-01, [README макетов](../../frontend/design/README.md).
