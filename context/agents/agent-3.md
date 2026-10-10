@@ -14,7 +14,9 @@
 - Existing stale task worktrees не использовать и не редактировать.
 - Реализация: factory строит executor вокруг `DjangoProblemCatalog`, `LocalJudge`, `DjangoCompetitionGateway`, реального `RunProblemSnapshotProvider` и result/failure adapters. Контейнеры получают owner/submission/fencing-token labels; периодический reaper удаляет только container, чей точный DB claim больше не активен. `cpp20.verified` не менялся; Compose и Docker Engine недоступны, поэтому полного runtime claim здесь нет.
 - Проверки: targeted submissions+judge suites — 68 PASS, 2 SKIP; sandbox runner — 16 PASS; Django `check`, migration drift, contract fixtures/import boundaries, `compileall` и `git diff --check` — PASS. Полный backend suite: 343 tests, 19 SKIP и один intermittent failure в чужом `tournaments` concurrency test `test_simultaneous_accept_never_exceeds_roster_capacity` (`database_busy`); изолированный повтор прошёл. Docker daemon недоступен, real smoke NOT_RUN.
-- Следующий шаг: оформить implementation audit, commit code+audit+card и открыть PR в `develop`; PR и ветку не сливать.
+- Implementation commit: `226130fcbd0b422894e8f4236c57208e09536a9c`; PR [#83](https://github.com/D0UP1G/FirsterChuv/pull/83) в `develop`, открыт, mergeable и не слит.
+- CI для head `226130f`: backend, frontend, domain, sandbox-unit и contracts/common-imports — 5/5 PASS. Публикационный audit: [`2026-10-10T054933+0300-agent-3-P3-04.2-publication.md`](../audits/2026-10-10T054933+0300-agent-3-P3-04.2-publication.md).
+- Следующий шаг: ждать review/решения команды; PR не сливать. После подключения P3-02.2 compiler proof и P1-04 Docker runtime продолжить реальное acceptance.
 
 
 ## Текущая сессия P4-08 · disposable system acceptance harness · 2026-10-10
