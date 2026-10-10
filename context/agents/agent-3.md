@@ -1,5 +1,19 @@
 # Агент 3: задачи, очередь, песочница и запуск
 
+## Волна 1 · текущая задача P3-02.2 · 2026-10-10
+
+- Статус: import implementation slice готов к review; полный P3-02.2 остаётся IN_PROGRESS до настоящего compiler probe.
+- Ветка: `feature/p3-02-2-programmatic-demo-import`; база `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`.
+- Объём: программный normalized demo import command с корректным private/public split и сохранением неготового статуса, пока production compiler не подтверждён; настоящий compiler probe запускается только через gated Docker smoke.
+- Сверенные требования: P01/P02/E02; T12/T13/T20 — только частичный import/compiler implementation slice.
+- Пути: `backend/apps/problems/management/commands/`, собственные importer/demo fixture tests, `backend/apps/problems/README.md`, эта карточка и отдельный audit. Compiler registry, shared contracts, чужие app/worktrees и Compose не менять.
+- Ограничение среды: Docker Engine отсутствует (`/var/run/docker.sock`); `cpp20.verified` остаётся `False`. Никакие manifest поля не смогут включить compiler.
+- Старые worktrees `normalized-problem-import-management` и `problem-catalog-management` не открывать на запись; работа ведётся только в этой свежей ветке.
+- Реализован `import_demo_problem`: bounded regular-file input для internal normalized ZIP или встроенный synthetic M0 archive, общий hardened parser/storage, идемпотентный checksum, `NOT_READY` при unverified compiler. Fixture содержит valid PNG, markdown/TeX/table/examples/limits и private tests/reference. Официальный package/Yandex mapping не заявляются.
+- Проверки: problems+judge 42 PASS/1 skip; полный backend 347 PASS/20 skip; sandbox runner 15 PASS; Django check, migration drift, 9 v1 fixtures, common import boundary, compileall и diff check PASS. Docker Engine недоступен; gated compiler smoke NOT_RUN, registry остается `verified=False`.
+- Implementation audit: [`2026-10-10T055921+0300-agent-3-P3-02.2-demo-import.md`](../audits/2026-10-10T055921+0300-agent-3-P3-02.2-demo-import.md).
+- Следующий шаг: commit implementation + card + audits и открыть PR в `develop`, не сливать; пока compiler probe ждёт Docker Engine, продолжить P1-04.2 в отдельном свежем worktree.
+
 ## Текущая сессия P4-08 · disposable system acceptance harness · 2026-10-10
 
 - ID задачи: `P4-08`; implementation slice: `IN_REVIEW`; полная задача: `IN_PROGRESS`.
