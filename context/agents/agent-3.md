@@ -1,5 +1,16 @@
 # Агент 3: задачи, очередь, песочница и запуск
 
+## Текущая сессия P4-08 · disposable system acceptance harness · 2026-10-10
+
+- ID задачи: `P4-08`; статус: `IN_PROGRESS`.
+- Ветка: `feature/p4-08-acceptance`; базовый SHA: `origin/develop=475cdf71fa88de6aa5aad2142fc9fdbdf90625f6`.
+- Объём по ROADMAP v5 и `docs/quality/m0-demo.md`: создать собственный disposable acceptance harness для реально доступных HTTP/runtime путей; фиксировать каждую проверку как `PASS`/`FAIL`/`NOT_RUN`, не выдавая test doubles или отсутствующие production endpoints за PASS.
+- Пути планируемых изменений: `scripts/acceptance/`, `docs/quality/evidence/`, эта карточка и отдельный audit `context/audits/`; общие API, контракты, Compose и production apps не менять.
+- Предшествующие P3-04.2/import worktree активны отдельно; их исходники и карточки не изменять. Требуемые кейсовые ограничения: D01/D03, J01/J03/J04, T01/T04–T10/T14/T18/T19/T20/T21; полный M0 и T01–21 не объявлять без подтверждения сквозного SHA.
+- Реализован narrow real-HTTP runner `scripts/acceptance/run_api_smoke.py`: временная SQLite, временный application admin и participant sessions, loopback WSGI, auth/CSRF/role/invite/idempotent join/bracket permission checks. Evidence контракт и ограничения описаны в [`docs/quality/evidence/README.md`](../../docs/quality/evidence/README.md).
+- Проверки разработки: 13/13 API checks PASS на disposable DB; optional `--sandbox` сообщил `NOT_RUN` из-за недоступного Docker Engine; все полные G01–G06 и T01–T21 остаются `NOT_RUN`. Ruff, `py_compile`, `git diff --check` прошли. При разработочном прогоне worktree был dirty; сохранённое acceptance evidence будет создано после commit на точном SHA.
+- Следующий шаг: code+implementation audit одним commit; после него повторить runner на clean SHA, сохранить evidence/follow-up audit и опубликовать PR в `develop`. Полное P4-08 остаётся `IN_PROGRESS` до реальных queue/recovery/compiler/runtime и acceptance CONNECT сценариев.
+
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
 - Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
