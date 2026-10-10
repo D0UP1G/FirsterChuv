@@ -428,7 +428,7 @@ export function ParticipantWorkspacePage() {
                     </div>
                   </div>
                   <div className="workspace-submit-row">
-                    <p>{match.status === 'PAUSED' ? 'Матч на паузе: новые посылки недоступны.' : match.status !== 'RUNNING' ? 'Матч не принимает новые посылки.' : !transport?.submissionsEnabled ? 'Submission API не подключён в этом сценарии.' : 'Посылка попадёт в серверную очередь проверки.'}</p>
+                    <p>{match.status === 'PAUSED' ? 'Матч на паузе: новые посылки недоступны.' : match.status !== 'RUNNING' ? 'Матч не принимает новые посылки.' : remainingMs <= 0 ? 'Время матча вышло: новые посылки не принимаются.' : !transport?.submissionsEnabled ? 'Submission API не подключён в этом сценарии.' : 'Посылка попадёт в серверную очередь проверки.'}</p>
                     <button className="button button-small" type="button" onClick={() => void handleSubmit()} disabled={!submitAllowed || submissionBusy || draft.status === 'conflict'}>
                       {submissionBusy ? 'Отправляем…' : 'Отправить решение'}
                     </button>
