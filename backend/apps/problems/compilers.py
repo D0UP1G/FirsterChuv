@@ -1,5 +1,6 @@
 """Server-owned compiler definitions; bundle data cannot supply commands/images."""
 
+import os
 from dataclasses import dataclass
 
 
@@ -12,6 +13,16 @@ class CompilerSpec:
     compile_argv: tuple[str, ...]
     default_template: str
     verified: bool
+
+
+def _verified_languages() -> frozenset[str]:
+    """Languages an operator declared runtime-proven, e.g. SANDBOX_VERIFIED_LANGUAGES=cpp20.
+
+    Docker Compose sets it where the pinned sandbox image is built and runs; without it every
+    compiler stays unverified, so a bare checkout never claims a working judge it cannot run.
+    """
+    raw = os.environ.get("SANDBOX_VERIFIED_LANGUAGES", "")
+    return frozenset(item.strip() for item in raw.split(",") if item.strip())
 
 
 COMPILERS: dict[str, CompilerSpec] = {
@@ -32,8 +43,9 @@ COMPILERS: dict[str, CompilerSpec] = {
             "/work/program",
         ),
         default_template="#include <iostream>\nint main() {\n    return 0;\n}\n",
-        # The code/image are defined by the sandbox harness; mark usable only after runtime proof.
-        verified=False,
+        # The code/image are defined by the sandbox harness; usable only after runtime proof, which the
+        # operator declares through SANDBOX_VERIFIED_LANGUAGES (set in compose.yaml).
+        verified="cpp20" in _verified_languages(),
     ),
 }
 
