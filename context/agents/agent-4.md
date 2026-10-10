@@ -1,14 +1,14 @@
 # Агент 4 (прежний 1): API и логика соревнования
 
-## Текущая работа · Волна 1 · P1-03 · 2026-10-10
+## Текущая работа · Волна 1 · P1-01.1 · 2026-10-10
 
-- Статус: IN_REVIEW в `feature/a4-p1-03-public-access`, base `origin/develop` `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`.
-- Scope: existing PublicAccessV1/public snapshot; hashed tournament share grants с expiry/revoke; read-only/IDOR/DTO privacy; socket-peer rate limit без доверия client XFF; safe fragment/header transport.
-- Изменённые пути: `backend/apps/{accounts/views.py,common/{middleware.py,throttles.py},events/{access.py,views.py,test_public_match_api.py},tournaments/{models.py,serializers.py,share_links.py,views.py,urls.py,tests.py,migrations/0004_tournamentsharelink.py}`, API/security/realtime/contracts/requirements/STATE/ROADMAP docs и audit. A3-owned Nginx/settings/Compose и A5 frontend не менялись.
-- Проверки: `events+tournaments+accounts` 71 tests (66 PASS, 5 skipped), focused P1-03 21/21, error-header probe 3/3, domain 68 PASS, 9 contract fixtures, imports/check/migration/compile/diff PASS. Полный T20 и actual proxy/container log smoke не заявляются.
-- Ограничение: legacy invite token ещё находится в URI path; A3-owned proxy/dev-server log redaction записан отдельным [contract request](../contracts/agent-3-token-access-log-redaction.md). Новому consumer нужен A5 fragment→header CONNECT. [P1-03 audit](../audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md).
-- P2-03.4 DONE: PR [#82](https://github.com/D0UP1G/FirsterChuv/pull/82), merge `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`, exact-head CI 5/5 SUCCESS, локальный `develop` синхронизирован. [Implementation audit](../audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md), [merge audit](../audits/2026-10-10T054825+0300-agent-4-P2-03-4-merge.md).
-- После P1-03 выполнить независимый P1-01.1 и остановиться после Wave 1 A4; Wave 2 не начинать по прямому поручению пользователя.
+- Статус: IN_REVIEW, PR [#87](https://github.com/D0UP1G/FirsterChuv/pull/87) в `develop`; feature `feature/a4-p1-01-1-invite-concurrency`, base `origin/develop` `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, head `29ee920e667d6a265cfae3befe271180b76876fb`.
+- Подзадачи: (1) перепроверить P1-01 acceptance и последний invite audit, воспроизвести file/shared-cache race; (2) стабилизировать accepted count/use ledger без ослабления capacity/use assertions; (3) regression на независимых соединениях/повторах и полный A4 invite suite; (4) audit/PR/merge.
+- Планируемые пути: только invite-owned `backend/apps/tournaments/{services.py,tests.py}` при необходимости, плюс собственные audit/card/ROADMAP; не редактировать A3/A5 work.
+- Реализация P1-01.1 опубликована: write reservation до чтения acceptance state, bounded exponential lock retry, exact capacity/use assertions и same-user concurrent retry. Regression воспроизводился до fix; после fix concurrency suite 10/10 запусков, весь tournaments suite 34/34, Django check/migration drift/compile/diff PASS. [Implementation audit](../audits/2026-10-10T060811+0300-agent-4-P1-01-1-invite-concurrency.md); GitHub CI на точном head проверяется.
+- P2-03.4 DONE: PR [#82](https://github.com/D0UP1G/FirsterChuv/pull/82), merge `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`, exact-head CI 5/5. [Implementation audit](../audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md), [merge audit](../audits/2026-10-10T054825+0300-agent-4-P2-03-4-merge.md).
+- P1-03 A4 implementation DONE по PR [#84](https://github.com/D0UP1G/FirsterChuv/pull/84), merge `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, exact-head CI 5/5; [implementation audit](../audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md), [merge audit](../audits/2026-10-10T060220+0300-agent-4-P1-03-merge.md). T20/A5 browser remain partial; A3 legacy invite log redaction request [WAITING_CONNECT](../contracts/agent-3-token-access-log-redaction.md).
+- После этой задачи остановиться по прямому поручению после Wave 1 A4; Wave 2 не начинать.
 
 ## Результат предыдущей задачи · P4-07 · public snapshot · 2026-10-10
 

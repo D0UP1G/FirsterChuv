@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from threading import Event, Thread
-from typing import Protocol
+from typing import Callable, Protocol
 
 from backend.apps.common.contracts import JudgeInfrastructureError, JudgeResult
 
@@ -91,6 +91,7 @@ class SubmissionWorker:
         executor: SubmissionExecutor | None,
         result_sink: ResultSink | None,
         failure_sink: InfrastructureFailureSink | None,
+        recovery_hook: Callable[[], object] | None = None,
     ) -> None:
         if service is None or executor is None or result_sink is None or failure_sink is None:
             raise IntegrationUnavailable(
@@ -109,6 +110,7 @@ class SubmissionWorker:
         self.executor = executor
         self.result_sink = result_sink
         self.failure_sink = failure_sink
+        self.recovery_hook = recovery_hook
 
     def run_once(
         self,
@@ -127,6 +129,9 @@ class SubmissionWorker:
             or not 0 < lease_seconds <= MAX_LEASE_SECONDS
         ):
             raise ValueError("worker lease must be a positive bounded integer")
+
+        if self.recovery_hook is not None:
+            self.recovery_hook()
 
         delivery = self.service.claim_pending_result(now=now, lease_seconds=lease_seconds)
         if delivery is not None:

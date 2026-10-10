@@ -153,6 +153,89 @@ describe('admin bracket and match controls', () => {
     expect(screen.queryByText(/endpoint недоступен/)).not.toBeInTheDocument()
   })
 
+  describe('against the real HTTP contract', () => {
+    const tournament = {
+      id: 'tournament-1', title: 'Осенний отбор', description: '', status: 'draft', format: 'single_elimination',
+      startsAt: '2026-10-11T10:00:00Z', endsAt: '2026-10-11T13:00:00Z', participantLimit: 4, visibility: 'public',
+      matchDurationSec: 1800, startMode: 'manual', rosterFrozenAt: null,
+      scoringRule: { wrongAttemptPenaltySec: 300 },
+    }
+    const players = [
+      { id: 'part-1', userId: 'u-1', displayName: 'Игрок 1', seed: null },
+      { id: 'part-2', userId: 'u-2', displayName: 'Игрок 2', seed: null },
+    ]
+    const roster = players.map((player) => ({ userId: player.userId, displayName: player.displayName, seed: null, status: 'ACTIVE', addedAt: '2026-10-10T00:00:00Z', removedAt: null }))
+    const bracket = {
+      tournamentId: 'tournament-1', bracketSize: 2, rosterFrozenAt: '2026-10-10T00:00:00Z',
+      matches: [{
+        id: 'match-1', key: 'r1-p1', roundIndex: 0, position: 0, kind: 'MATCH', status: 'WAITING', winner: null, nextMatchId: null, nextSlot: null,
+        slots: players.map((participant, index) => ({ index, resolution: 'PLAYER', participant, sourceMatchId: null })),
+      }],
+    }
+    const matchView = {
+      matchId: 'match-1', runId: 'run-1', status: 'READY', serverNow: '2026-10-10T01:00:00Z', elapsedMs: 0, remainingMs: 1_200_000,
+      allowedDurationMs: 1_200_000, leaderUserId: null, winnerUserId: null, lastEventId: 0, scoringRule: tournament.scoringRule,
+      players: players.map((player) => ({ userId: player.userId, displayName: player.displayName, solvedCount: 0, penaltyMs: 0, tasks: [] })),
+      tournamentId: 'tournament-1', startMode: 'manual', readyUserIds: [],
+      problemVersions: [{ problemId: 'problem-1', label: 'A', version: 'v1', conditionAvailable: false }],
+    }
+
+    function stubBackend(catalog: unknown[], configured = false) {
+      const calls: Array<{ url: string; init?: RequestInit }> = []
+      let isConfigured = configured
+      vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        calls.push({ url, init })
+        if (url.endsWith('/auth/csrf')) return Promise.resolve(jsonResponse({ csrfToken: 'csrf-match-ui-test' }))
+        if (url.endsWith('/me')) return Promise.resolve(jsonResponse({ id: 'admin-1', displayName: 'Организатор', role: 'admin' }))
+        if (url.endsWith('/tournaments/tournament-1')) return Promise.resolve(jsonResponse(tournament))
+        if (url.includes('/tournaments/tournament-1/participants')) return Promise.resolve(jsonResponse({ results: roster, count: 2 }))
+        if (url.includes('/problems')) return Promise.resolve(jsonResponse({ results: catalog, count: catalog.length }))
+        if (url.endsWith('/tournaments/tournament-1/bracket')) return Promise.resolve(jsonResponse(bracket))
+        if (url.endsWith('/matches/match-1') && init?.method === 'PATCH') {
+          isConfigured = true
+          return Promise.resolve(jsonResponse(matchView))
+        }
+        if (url.endsWith('/matches/match-1')) {
+          return Promise.resolve(isConfigured
+            ? jsonResponse(matchView)
+            : jsonResponse({ error: { code: 'match_run_not_configured', message: 'У матча ещё нет настроенного запуска.', fields: null } }, 409))
+        }
+        return Promise.resolve(jsonResponse({ error: { code: 'not_found', message: 'Not found.', fields: null } }, 404))
+      }))
+      return calls
+    }
+
+    it('lets the organizer configure a match that has two players but no saved run yet', async () => {
+      stubBackend([])
+      window.history.replaceState({}, '', '/admin/tournaments/tournament-1/matches')
+      render(<App />)
+
+      expect(await screen.findByRole('heading', { name: 'Настройки матча · Игрок 1 — Игрок 2' })).toBeInTheDocument()
+      expect(screen.queryByText('Нет матча первого раунда, доступного для управления.')).not.toBeInTheDocument()
+      expect(screen.getByText('Каталог не вернул готовые версии задач.')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Сохранить настройки' })).toBeDisabled()
+    })
+
+    it('saves the match config with an idempotency key and then shows the manual start', async () => {
+      const user = userEvent.setup()
+      const calls = stubBackend([{ problemId: 'problem-1', label: 'A', version: 'v1', readiness: 'READY' }])
+      window.history.replaceState({}, '', '/admin/tournaments/tournament-1/matches')
+      render(<App />)
+
+      await user.click(await screen.findByRole('checkbox', { name: /A/ }))
+      await user.click(screen.getByRole('button', { name: 'Сохранить настройки' }))
+
+      expect(await screen.findByRole('button', { name: 'Запустить матч' })).toBeInTheDocument()
+      const patch = calls.find((call) => call.init?.method === 'PATCH')
+      expect(patch?.url).toBe('/api/v1/matches/match-1')
+      expect(JSON.parse(String(patch?.init?.body))).toEqual({ problemIds: ['problem-1'], matchDurationSec: 1800, startMode: 'manual' })
+      const headers = new Headers(patch?.init?.headers)
+      expect(headers.get('Idempotency-Key')).toMatch(/\S{8,}/)
+      expect(headers.get('X-CSRFToken')).toBe('csrf-match-ui-test')
+    })
+  })
+
   it('shows the missing production endpoint instead of switching to fixture data', async () => {
     window.history.replaceState({}, '', '/admin/tournaments/tournament-1/matches')
     render(<App />)

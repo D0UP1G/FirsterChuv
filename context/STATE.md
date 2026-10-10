@@ -1,8 +1,8 @@
 # Состояние проекта: три агента и первый рабочий матч
 
-Текущий интеграционный снимок 2026-10-10T05:58:46+03:00, Europe/Moscow. `origin/develop=48cb06a4fc5a02121f117cd1f17330f0cde13fdf`; обычный merge PR #82 интегрировал A4 P2-03.4, exact-head CI 5/5 SUCCESS. Ready HTTP и body-bound config/start/ready receipts доступны в `develop`; тесты/evidence — [implementation audit](audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md) и [merge audit](audits/2026-10-10T054825+0300-agent-4-P2-03-4-merge.md).
+Текущий интеграционный снимок 2026-10-10T06:02:48+03:00, Europe/Moscow. `origin/develop=ee755af6ed93e7c3996cb5e70edd8d21e527c56a`; обычный merge PR #82 интегрировал A4 P2-03.4 (ready HTTP/body-bound match receipts), exact-head CI 5/5 SUCCESS. PR #84 обычным merge интегрировал A4 P1-03 share access; exact-head CI 5/5 SUCCESS. [P1-03 implementation audit](audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md), [P1-03 merge audit](audits/2026-10-10T060220+0300-agent-4-P1-03-merge.md).
 
-A4 P1-03 находится `IN_REVIEW` в `feature/a4-p1-03-public-access` от базы выше; hashed unlisted share grant, fragment/header transport и remote-peer throttle пока только в feature. Evidence: [P1-03 audit](audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md). P1-01.1 следует после P1-03. Конкретное legacy invite URI access-log redaction передано A3 в [contract request](contracts/agent-3-token-access-log-redaction.md); A4 не меняет A3-owned Nginx/settings/Compose. Wave 2 не начата. Полный M0 остаётся NOT_ACCEPTED.
+A4 выполняет последнюю независимую задачу Wave 1 P1-01.1 в `feature/a4-p1-01-1-invite-concurrency` от `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`. A3 legacy invite URI access-log redaction передано в [contract request](contracts/agent-3-token-access-log-redaction.md); A4 не меняет A3-owned Nginx/settings/Compose. Wave 2 не начата. Полный M0 остаётся NOT_ACCEPTED.
 
 Снимок 2026-10-10T03:55:27+03:00, Europe/Moscow. Активные роли: A3, A4 (прежний A1/координатор), A5. [ROADMAP v5](../ROADMAP.md), [M0 demo](../docs/quality/m0-demo.md), [review](../docs/reviews/2026-10-10-mvp-readiness.md).
 

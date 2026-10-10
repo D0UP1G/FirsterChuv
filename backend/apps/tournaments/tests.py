@@ -1104,10 +1104,25 @@ class InviteAcceptanceConcurrencyTests(TransactionTestCase):
             blocked[0],
             (
                 ("unavailable", InviteUnavailable.code),
-                ("rejected", "database_busy"),
             ),
             results,
         )
+        self.assertEqual(invite.used_count, 1)
+        self.assertEqual(invite.acceptances.count(), 1)
+        self.assertEqual(self.tournament.active_participant_count, 1)
+
+    def test_simultaneous_retry_by_same_participant_consumes_one_use(self):
+        invite, token = create_invite(
+            self.tournament,
+            self.admin,
+            expires_at=None,
+            max_uses=1,
+        )
+        results = self.run_accept_race(token, [self.players[0], self.players[0]])
+
+        invite.refresh_from_db()
+        self.tournament.refresh_from_db()
+        self.assertCountEqual(results, [("accepted", True), ("accepted", False)])
         self.assertEqual(invite.used_count, 1)
         self.assertEqual(invite.acceptances.count(), 1)
         self.assertEqual(self.tournament.active_participant_count, 1)
@@ -1128,6 +1143,11 @@ class InviteAcceptanceConcurrencyTests(TransactionTestCase):
         ).count()
         self.assertEqual(sum(result[0] == "accepted" for result in results), 2, results)
         self.assertEqual(sum(result[0] == "rejected" for result in results), 1, results)
+        self.assertEqual(
+            [result for result in results if result[0] == "rejected"],
+            [("rejected", "capacity_reached")],
+            results,
+        )
         self.assertEqual(invite.used_count, 2)
         self.assertEqual(invite.acceptances.count(), 2)
         self.assertEqual(self.tournament.active_participant_count, 2)
