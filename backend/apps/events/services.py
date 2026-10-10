@@ -107,6 +107,22 @@ def read_events_after(
     return [_serialize_event(event) for event in events]
 
 
+def read_match_events_after(
+    *,
+    match_id: UUID | str,
+    after_event_id: int = 0,
+    limit: int = 50,
+) -> list[dict]:
+    """Read one bounded page of a single match's public events in durable ID order."""
+    match_uuid = _scope_uuid(match_id, name="match_id")
+    if type(after_event_id) is not int or after_event_id < 0:
+        raise PublicEventInputError("after_event_id must be a non-negative integer")
+    if type(limit) is not int or not 1 <= limit <= MAX_EVENT_BATCH_SIZE:
+        raise PublicEventInputError(f"limit must be between 1 and {MAX_EVENT_BATCH_SIZE}")
+    events = MatchEvent.objects.filter(match_id=match_uuid, id__gt=after_event_id).order_by("id")[:limit]
+    return [_serialize_event(event) for event in events]
+
+
 def current_event_cursor(*, tournament_id: UUID | str) -> int:
     """Return the latest event ID for a tournament, or zero when empty."""
     tournament_uuid = _scope_uuid(tournament_id, name="tournament_id")
