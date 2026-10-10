@@ -14,6 +14,7 @@ from backend.apps.common.contracts import (
 from backend.apps.competition.domain.scoring import Verdict
 from backend.apps.competition.ledger_persistence import (
     LedgerPersistenceError,
+    LedgerPersistenceBusy,
     apply_result,
     record_infrastructure_failure,
     register_accepted,
@@ -26,7 +27,8 @@ from backend.apps.competition.models import (
     MatchRun,
     MatchSlot,
 )
-from backend.apps.events.models import MatchEvent
+from backend.apps.events.models import MatchEvent, MatchSnapshot
+from backend.apps.events.services import PublicSnapshotBusy
 from backend.apps.competition.runtime import configure_match_run, mark_match_ready, start_match_run
 from backend.apps.competition.services import generate_bracket
 from backend.apps.tournaments.models import Tournament
@@ -150,6 +152,11 @@ class PersistedLedgerTests(TestCase):
         self.assertEqual(problem["outcome"], "SOLVED")
         self.assertEqual(problem["lastVerdict"], "OK")
         self.assertEqual(run.score_snapshot["participants"][0]["penaltyMs"], 90_000)
+        event = MatchEvent.objects.filter(match_id=self.match.pk, run_id=self.run.pk).latest("id")
+        snapshot = MatchSnapshot.objects.get(match_id=self.match.pk)
+        self.assertEqual(snapshot.run_id, self.run.pk)
+        self.assertEqual(snapshot.last_event_id, event.pk)
+        self.assertEqual(snapshot.payload, event.payload)
 
     def test_conflicting_result_is_rejected(self):
         accepted = register_accepted(self.accepted())
@@ -172,6 +179,25 @@ class PersistedLedgerTests(TestCase):
         self.assertFalse(AttemptResult.objects.filter(accepted_id=accepted.pk).exists())
         self.assertEqual(MatchRun.objects.get(pk=self.run.pk).score_snapshot, score_before)
         self.assertEqual(MatchEvent.objects.filter(match_id=self.match.pk).count(), 0)
+        self.assertFalse(MatchSnapshot.objects.filter(match_id=self.match.pk).exists())
+
+    def test_snapshot_busy_retries_whole_result_transaction_and_maps_to_503_error(self):
+        accepted = register_accepted(self.accepted())
+
+        with (
+            patch(
+                "backend.apps.competition.ledger_persistence.save_snapshot",
+                side_effect=PublicSnapshotBusy("database remained busy"),
+            ) as save,
+            patch("backend.apps.competition.ledger_persistence.time.sleep"),
+        ):
+            with self.assertRaises(LedgerPersistenceBusy):
+                apply_result(self.result(accepted, Verdict.OK))
+
+        self.assertEqual(save.call_count, 3)
+        self.assertFalse(AttemptResult.objects.filter(accepted_id=accepted.pk).exists())
+        self.assertEqual(MatchEvent.objects.filter(match_id=self.match.pk).count(), 0)
+        self.assertFalse(MatchSnapshot.objects.filter(match_id=self.match.pk).exists())
 
     def test_stale_run_result_is_recorded_without_mutating_its_score(self):
         accepted = register_accepted(self.accepted())

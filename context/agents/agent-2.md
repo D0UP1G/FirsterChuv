@@ -132,3 +132,8 @@
 - On the synchronized branch: full backend suite 271 passed, 4 skipped; Django check passed; `makemigrations --check --dry-run` reported no changes; `compileall` and `git diff --check` passed.
 - GitHub CI for the synced head is pending publication. P2-04 deployment supervisor, trusted result/queue adapter and infra-failure recovery remain explicit integration work; do not count them complete here.
 - Session audit: [P2-04 PR synchronization](../audits/2026-10-10T023500+0300-agent-2-P2-04-pr-sync.md).
+
+## Исторический checkpoint P2-06.2, source PR #53
+
+- PR #53 `feature/public-events-sse`, исходный head `fd79038847a23b38bb8a444c028b87ce75ed9571`; snapshot changes and source audit `2026-10-10T005500+0300-agent-2-P2-06-2-snapshot.md` are carried into Agent 4's P4-07 feature by an ordinary merge. The source branch remains untouched; production integration awaits the P4-07 PR merge.
+- Source audit records durable MatchSnapshot payload/run/cursor, with stale cursor ignored. P4-07 continues this work with file-backed race, equal-cursor conflict, atomic rollback and public HTTP coverage before integration.

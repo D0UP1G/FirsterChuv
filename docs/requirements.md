@@ -113,9 +113,9 @@ ROADMAP v4 сохраняет все37 требований и21 acceptance. Н�
 | Область | Реализовано/integrated | Открыто сейчас |
 |---|---|---|
 | M01–04/TEAM01 | auth/CRUD/roster/invites/bracket/manual pairings/reset | full browser/cap/history/permissions acceptance A4+A5 |
-| M05–08/P03 | pure clock/score/readiness/ledger/admin cores | persisted run/gateway/result/failure/finalization/admin API; #57–59 fixes A4 |
+| M05–08/P03 | persisted run/config/start, gateway/workspace, ledger/result/failure/finalization and admin cores | `both_ready` HTTP, key/body receipts, A3 consumer CONNECT, P2-05 admin API/browser |
 | P01–02/E01–04/J01–04 | normalized catalog, LocalJudge/harness, durable queue/outboxes/draft CAS, editor UI | real import/compiler/worker/provider/workspace CONNECT A3+A4+A5; admission race A3; official adapter отдельно |
-| V01–04/TEAM02 | safe event store, map/reducer/projector UI | #53 snapshot fix/access/public HTTP/SSE A4, real map CONNECT A5 |
+| V01–04/TEAM02 | safe event store; P4-07 snapshot/public-only GET implementation in A4 feature, awaiting integration | hashed unlisted access P1-03; public bracket/SSE; real map CONNECT A5 |
 | S01–02/TEAM06 | basic roles/guards/private split/isolation cores | actual full-system IDOR/injections/privacy/hostile/restart evidence A3+A4+A5 |
 | D01–06 | README/env/архитектура/history/CI/case/design | actual one-command runtime A3, M0→full official/demo/video evidence всей команды |
 

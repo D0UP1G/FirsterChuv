@@ -13,10 +13,14 @@ from backend.apps.competition.domain.scoring import (
 )
 from backend.apps.events.models import MatchEvent
 from backend.apps.events.public_payloads import PublicEventInputError
+from backend.apps.events.projectors import project_score_changed_payload
 from backend.apps.events.services import (
+    PublicSnapshotConflict,
     append_event,
     current_event_cursor,
     read_events_after,
+    read_snapshot,
+    save_snapshot,
 )
 
 
@@ -91,6 +95,30 @@ class PublicEventStoreTests(TestCase):
             public_payload=payload if payload is not None else self.score_payload(),
         )
 
+    def test_snapshot_cursor_is_monotonic_and_roundtrips_public_payload(self):
+        payload = self.score_payload()
+        self.assertTrue(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=payload))
+        self.assertFalse(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=3, public_payload=payload))
+        snapshot = read_snapshot(match_id=self.match_id)
+        self.assertEqual(snapshot["lastEventId"], 4)
+        self.assertEqual(snapshot["payload"], payload)
+
+    def test_equal_cursor_is_idempotent_only_for_same_run_and_payload(self):
+        payload = self.score_payload()
+        self.assertTrue(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=payload))
+        self.assertTrue(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=payload))
+
+        changed_payload = self.score_payload()
+        changed_payload["players"][0]["displayName"] = "Other public name"
+        with self.assertRaises(PublicSnapshotConflict):
+            save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=changed_payload)
+        with self.assertRaises(PublicSnapshotConflict):
+            save_snapshot(match_id=self.match_id, run_id=uuid4(), last_event_id=4, public_payload=payload)
+
+        snapshot = read_snapshot(match_id=self.match_id)
+        self.assertEqual(snapshot["runId"], str(self.run_id))
+        self.assertEqual(snapshot["payload"], payload)
+
     def payload_from_scoring_result(self, attempts):
         match_score = calculate_match_score(
             run_id=str(self.run_id),
@@ -103,39 +131,36 @@ class PublicEventStoreTests(TestCase):
             str(problem_id): label
             for problem_id, label in zip(self.problems, ("A", "B"))
         }
-        payload = {
-            "leaderUserId": match_score.winner_user_id,
-            "players": [],
-        }
-        for participant in match_score.participants:
-            payload["players"].append(
-                {
-                    "userId": participant.user_id,
-                    "displayName": (
-                        "Игрок A"
-                        if participant.user_id == str(self.users[0])
-                        else "Игрок B"
-                    ),
-                    "solvedCount": participant.solved_count,
-                    "penaltyMs": participant.penalty_ms,
-                    "lastAcceptedElapsedMs": participant.last_accepted_elapsed_ms,
-                    "tasks": [
-                        {
-                            "problemId": problem.problem_id,
-                            "label": labels[problem.problem_id],
-                            "status": problem.outcome.value,
-                            "attempts": problem.attempts,
-                            "lastVerdict": (
-                                problem.last_verdict.value
-                                if problem.last_verdict is not None
-                                else None
-                            ),
-                        }
-                        for problem in participant.problems
-                    ],
-                }
-            )
+        payload = project_score_changed_payload(
+            match_score,
+            display_names={
+                str(self.users[0]): "Игрок A",
+                str(self.users[1]): "Игрок B",
+            },
+            problem_labels=labels,
+        )
         return match_score, payload
+
+    def test_score_projector_requires_exact_public_names_and_problem_labels(self):
+        match_score, _payload = self.payload_from_scoring_result([])
+        with self.assertRaisesRegex(PublicEventInputError, "display_names"):
+            project_score_changed_payload(
+                match_score,
+                display_names={str(self.users[0]): "Игрок A"},
+                problem_labels={
+                    str(self.problems[0]): "A",
+                    str(self.problems[1]): "B",
+                },
+            )
+        with self.assertRaisesRegex(PublicEventInputError, "problem_labels"):
+            project_score_changed_payload(
+                match_score,
+                display_names={
+                    str(self.users[0]): "Игрок A",
+                    str(self.users[1]): "Игрок B",
+                },
+                problem_labels={str(self.problems[0]): "A"},
+            )
 
     def test_public_envelope_matches_score_event_v1(self):
         event_id = self.append_score()
@@ -337,6 +362,23 @@ class PublicEventStoreTests(TestCase):
                 self.append_score()
                 raise RuntimeError("rollback")
         self.assertEqual(MatchEvent.objects.count(), 0)
+
+    def test_outer_rollback_removes_event_and_snapshot_together(self):
+        with self.assertRaisesRegex(RuntimeError, "rollback event and snapshot"):
+            with transaction.atomic():
+                event_id = self.append_score()
+                self.assertTrue(
+                    save_snapshot(
+                        match_id=self.match_id,
+                        run_id=self.run_id,
+                        last_event_id=event_id,
+                        public_payload=self.score_payload(),
+                    )
+                )
+                raise RuntimeError("rollback event and snapshot")
+
+        self.assertEqual(MatchEvent.objects.count(), 0)
+        self.assertIsNone(read_snapshot(match_id=self.match_id))
 
     def test_validation_copies_payload_before_storing(self):
         payload = self.score_payload()

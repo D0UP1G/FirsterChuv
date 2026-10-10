@@ -1,9 +1,9 @@
-<!-- Статус реализации: снимок в context/STATE.md. Будущие routes не означают реализованные endpoints. Контракты независимой разработки: parallel-contracts.md. -->
+<!-- Статус интеграции: снимок в context/STATE.md. P4-07 public match snapshot реализован в текущей A4 feature и ожидает PR/merge; остальные будущие routes не означают реализованные endpoints. Контракты независимой разработки: parallel-contracts.md. -->
 
 > Актуальная передача 2026-10-10, ROADMAP v5: A4 (прежний A1) owns API/accounts/tournaments/competition/events/common contracts; A3 owns problems/submissions/drafts/judge/worker + config/Compose/CI/system acceptance; A5 весь frontend. A2 больше не активный producer. Старые датированные назначения ниже — история; поля v1 и принятые additive boundaries не меняются. Missing provider блокирует только CONNECT, не всю роль.
 # API и права доступа
 
-Целевой contract DRF API. Реализацию конкретных маршрутов сверять с [STATE](../../context/STATE.md) и аудиторскими evidence: наличие pure core/catalog не означает, что его HTTP route готов. PR #74 интегрировал A4 P2-03.2 private match read/config/manual-start routes в `develop`; ready, gateway/workspace/condition/language, ledger/result lifecycle, admin effects и browser CONNECT ещё отдельные slices. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; маршруты не имеют завершающего `/`.
+Целевой contract DRF API. Реализацию конкретных маршрутов сверять с [STATE](../../context/STATE.md) и аудиторскими evidence: наличие pure core/catalog не означает, что его HTTP route готов. PR #74 интегрировал private match read/config/manual-start routes; PR #77 интегрировал `CompetitionGateway`/`WorkspaceAccess` provider в `develop`. `both_ready` HTTP, production A3 consumer CONNECT, language route, admin API/browser CONNECT и full M0 ещё отдельные slices. P4-07 добавил anonymous public-only match snapshot в текущую feature; до её merge production `develop` этот route ещё не содержит. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; маршруты не имеют завершающего `/`.
 
 Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csrf` выдаёт `csrfToken` в JSON и HttpOnly CSRF cookie; frontend посылает `X-CSRFToken`. Register/login/logout имеют явную CSRF protection, не полагаются только на SessionAuthentication. Публичные GET не требуют login.
 
@@ -142,10 +142,10 @@ Draft PUT `{runId, source, expectedRevision}` возвращает новый re
 | GET `/public/tournaments/{slug}` | Public | Турнир без user email/secrets |
 | GET `/public/tournaments/{slug}/bracket` | Public | Сетка, statuses, scores |
 | GET `/public/tournaments/{slug}/events` | Public | SSE advancement/lifecycle |
-| GET `/public/matches/{id}` | Public | Public snapshot с lastEventId/server clock |
+| GET `/public/matches/{id}` | Public | P4-07 feature: anonymous public-only snapshot с lastEventId/server clock; integration pending |
 | GET `/public/matches/{id}/events` | Public | SSE allowlist, Last-Event-ID, heartbeat/resync |
 
-Unlisted read требует share token; хранить hash, redact token query в логах, `Referrer-Policy: no-referrer`. Ни один public маршрут не изменяет state и не возвращает исходник, tests, checker, private email или CE diagnostics. Error payload не раскрывает private object existence.
+Unlisted read требует share token; хранить hash, redact token query в логах, `Referrer-Policy: no-referrer`. Текущий P4-07 provider fail-closed скрывает unlisted match до P1-03 реализации хешированного share token. Реализованный snapshot отвечает `Cache-Control: no-store` и `Referrer-Policy: no-referrer`. Ни один public маршрут не изменяет state и не возвращает исходник, tests, checker, private email или CE diagnostics. Error payload не раскрывает private object existence.
 
 ## Ошибки и ограничения
 

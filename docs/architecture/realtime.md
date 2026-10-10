@@ -1,10 +1,12 @@
 # Public snapshots и SSE
 
-Поток однонаправленный: commands/submit через REST, updates через SSE. Вариант разрешён кейсом. Backend агент 2 владеет логом/проекцией, frontend агент 4 — подключением/отображением.
+Поток однонаправленный: commands/submit через REST, updates через SSE. Вариант разрешён кейсом. A4 владеет логом, проекцией и public API; A5 — frontend подключением и отображением.
 
 ## Согласованность
 
-State change и MatchEvent сохраняются одной SQLite транзакцией. EventId монотонный и durable. Snapshot содержит `lastEventId` вместе с state на согласованной точке: выполнить короткое согласованное чтение, чтобы событие не оказалось включено в state, но отсутствовало в cursor.
+В P4-07 result transition, typed `score.changed` MatchEvent и MatchSnapshot сохраняются в одной внешней SQLite транзакции. EventId монотонный и durable. Snapshot содержит `lastEventId` вместе с state на согласованной точке. Запись резервирует SQLite writer до чтения строки и повторяет полный snapshot transaction при BUSY/LOCKED; cursor ниже сохранённого игнорируется, equal cursor разрешён только для того же run и идентичного payload. После исчерпания retries result transaction возвращает retryable busy error. Другие lifecycle/accepted producers ещё не подключены.
+
+`GET /api/v1/public/matches/{id}` реализован в P4-07 feature как первый anonymous snapshot CONNECT. Один короткий read transaction проверяет public visibility, строит current match DTO и использует durable score snapshot только при совпадении run/cursor. Ответ фильтруется по `public-match` v1 allowlist, `no-store`, `no-referrer`; неизвестные и unlisted турниры скрыты до P1-03 share-token provider. До merge feature интегрированный `develop` не содержит этот endpoint.
 
 Browser сначала получает snapshot, потом открывает SSE с cursor (`afterEventId` для первого подключения, `Last-Event-ID` для reconnect). Сервер отправляет события с ID больше cursor. При слишком старом/неверном cursor сообщает `stream.resync_required`; frontend перечитывает snapshot. Транспортное дублирование допустимо, повторная анимация/изменение score не допускается: dedupe по ID, score приходит authoritative.
 
@@ -55,4 +57,4 @@ SSE frame: `id: 43`, `event: score.changed`, `data: <JSON>`, пустая стр
 
 Обгон определяется сменой authoritative leader, победа — FINISHED, task solve — переходом в SOLVED. Initial snapshot/replay после reconnect обновляет state; уже прошедшие события не запускают повторную победную анимацию. Projector включает крупный timer, players/score, task grid и bracket navigation; управление отдельно от публичного экрана.
 
-Public tournament checked до snapshot/stream. Unlisted token даёт только read, его hash хранится в DB, query token редактируется в логах и не отправляется referer. Длинные соединения имеют rate/connection cap, heartbeat, отключение медленного клиента; unlimited SSE может перегрузить MVP даже без права submit.
+Public tournament checked до snapshot/stream. Полная поддержка unlisted token должна давать только read, хранить hash в DB, редактировать query token в логах и исключать его из referer; это следующий P1-03 slice. SSE route/heartbeat/Last-Event-ID/resync/rate and connection caps остаются отдельной незавершённой задачей. Polling snapshot — промежуточный CONNECT и не закрывает V03/T17.
