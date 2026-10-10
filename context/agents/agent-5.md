@@ -1,5 +1,13 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Текущий срез: P5-03a — real auth/invite/admin/bracket CONNECT
+
+- Статус: `IN_PROGRESS`.
+- Ветка: `feature/agent-5-real-connect-admin`, база `origin/develop` `a6083263b54538275317d86f23d1034125813848` (merge #66, ROADMAP v5).
+- Пути: `frontend/src/pages/AdminMatchPage.tsx`, `frontend/src/pages/AdminMatchPage.test.tsx`, при необходимости `frontend/src/pages/Admin*.tsx`/`InvitePage.tsx` и их стили/тесты; `context/contracts/` (запрос A4), эта карточка, собственный аудит. Backend не меняется.
+- Цель: пройти реальным браузером и локальным backend путь admin → турнир → приглашение → два participant → сетка; исправить расхождения на стороне frontend, расхождения backend передать A4 запросом в `context/contracts/`.
+- Проверка в локальном стенде (SQLite, Django runserver, Vite): вход, создание турнира, приглашение, регистрация/вход/join двух участников по ссылке прошли. Страница «Сетка и матчи» показывала «endpoint недоступен»: backend отвечает 404 `not_found` на `GET /tournaments/{id}/bracket` до генерации, frontend ждал `bracket_not_found`.
+
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
 - Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
