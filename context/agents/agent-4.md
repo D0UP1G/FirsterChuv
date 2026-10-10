@@ -2,12 +2,13 @@
 
 ## Текущая работа · P2-03.3 · CompetitionGateway/WorkspaceAccess · 2026-10-10
 
-- Статус: IN_PROGRESS, локальная реализация готова к публикации. Ветка `feature/a4-p2-03-gateway-workspace` создана от синхронизированного `origin/develop` и merge commit `ab008220858e7a5cde6b6dc203c3b9bf3d395abd`; до документационного task-start рабочая копия чистая.
+- Статус: IN_REVIEW. PR [#77](https://github.com/D0UP1G/FirsterChuv/pull/77), base `develop`, исходный implementation head `483f5d5a1b066dbe411d6714fd7f74af26241899`; карточка/audit checkpoint дополняют публикацию, после них нужно подтвердить все 5 checks на exact final head. База feature — свежий `origin/develop` `ab008220858e7a5cde6b6dc203c3b9bf3d395abd`.
 - Подзадачи: (1) gateway authorize_submission проверяет match/run/problem, frozen participant, активное членство и серверные часы/deadline; (2) реализовать workspace actions по purpose с закрытием чужих ID и условием до старта; (3) реализовать RunProblemSnapshotProvider только из immutable snapshot конкретного run с проверкой checksum; (4) regression coverage на IDOR, замену состава, рематч и time/action boundaries; (5) аудит/CI/PR, затем выбрать следующую независимую A4 READY задачу.
 - Основание: ROADMAP v5 P2-03.3, M05/M06/P03 и T07–09; runtime handoffs (ADOPTED contracts), API v1 и requirements. Исторические participant IDs из P2-04 доступны в develop. A3 production startup/consumer CONNECT отдельный; его config/submission/draft файлы не менять.
 - Затронутые файлы: `backend/apps/competition/gateway.py`, `backend/apps/competition/tests/test_gateway.py`, competition README, API docs, собственная карточка и append-only audits. `backend/apps/submissions/`, `backend/apps/drafts/`, `backend/config/` принадлежат соседним границам и не входят в этот срез. Общий STATE и roadmap обновлены только для подтверждённого merge #76 и task-start P2-03.
 - Реализация: `DjangoCompetitionGateway` оборачивает accepted/result/failure ledger, проверяет frozen actor/membership/match/run/problem/deadline; WorkspaceAccess выдаёт purpose actions и скрывает participant condition до start; `RunProblemSnapshotProvider` только читает checksum/version из run JSON, в том числе superseded run. A3 production factory и A5 browser не подключены. [Implementation audit](../audits/2026-10-10T034539+0300-agent-4-P2-03.3-gateway-workspace.md).
 - Local evidence: focused gateway 9/9, competition suite 156/10 skipped, Django check, migration drift, 9 contract fixtures, common import isolation, compileall и diff check PASS. Remote exact-head CI ждёт публикации PR; M0 всё ещё NOT_ACCEPTED.
+- Publication audit: [P2-03.3 publication start](../audits/2026-10-10T035132+0300-agent-4-P2-03.3-publication-start.md). PR при открытии показывает 5 required checks, их исход на обновлённом checkpoint head ещё не подтверждён.
 
 ## Завершённая работа · P2-04 · ledger/result/failure/finalization · 2026-10-10
 
