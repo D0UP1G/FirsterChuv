@@ -28,21 +28,20 @@ services:
       start_period: 20s
     restart: unless-stopped
 
-  # Enable after agent 4 produces frontend/dist.
+  # Opt-in until the full demo startup is wired; the image builds static assets from the lockfile.
   web:
-    image: nginx:1.29-alpine
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     profiles: [web]
     depends_on:
       api:
         condition: service_healthy
     ports:
       - "127.0.0.1:8080:80"
-    volumes:
-      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./frontend/dist:/usr/share/nginx/html:ro
     restart: unless-stopped
 
-  # These opt-in profiles become runnable when agents 2 and 3 add commands.
+  # Keep these opt-in until the clock command and production worker factory are integrated.
   match-clock:
     build:
       context: .

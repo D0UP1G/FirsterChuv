@@ -67,6 +67,7 @@ class APIContractTests(TestCase):
                 self.assertEqual(response.json()["error"]["code"], "not_found")
                 self.assertIn("requestId", response.json())
                 self.assertNotIn("Location", response)
+                self.assertEqual(response["Cache-Control"], "no-store")
 
 
 class SharedTypedPortTests(TestCase):

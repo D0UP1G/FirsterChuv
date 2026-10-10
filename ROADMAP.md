@@ -4,11 +4,11 @@
 
 ## Что уже есть и что мешает запуску
 
-В develop 85e0cd0 интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, clock/score/readiness/ledger/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 MERGED. Это готовые части, их не нужно переписывать.
+В develop `ab00822` интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, persisted-run configure/readiness, match GET/config/manual start, durable clock/score/ledger/failure/finalization/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 и Agent 4 PR #67/#69/#74/#76 MERGED. #76 завершил P2-04, сохранив source ancestry #58/#59. Это готовые части, их не нужно переписывать.
 
 #63 уточняет static reference по кейсу, #64 переносит токены бренда в React, #65 добавляет минимальные mobile/focus правила и own audit. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — [ревизия](docs/reviews/2026-10-10-mvp-readiness.md).
 
-Реального сквозного MVP пока нет. Не подключены полностью persisted run/gateway/snapshot/result+failure sinks, actual worker executor/readiness и production API/UI. #53 и #57–59 пока не включены: воспроизведены SQLite races и rematch/downstream defect. Последний #57 5ae4af5 синхронизирован с develop, но runtime.py не изменён относительно проверенного 0073fbd. #58 b66b6cd добавляет clock command; это не исправляет найденные races. В #59 0ba3119 надо сохранить frozen participant fix из 9eb394c, исправив оставшиеся дефекты.
+Реального сквозного MVP пока нет. P2-03.1/.2 routes, P2-04 ledger/failure/finalization и frozen participant snapshots доступны в develop; gateway/WorkspaceAccess provider, RunProblemSnapshot producer, ready HTTP, actual worker executor, production startup/browser path и public transport ещё не собраны. A4 начал собственную P2-03.3 feature от `ab00822`; #53 snapshot fix остаётся открытым резервом и исходную ветку менять нельзя.
 
 Дополнительный первый приоритет A3: в attempt 1 CI #63 на неизменённом backend concurrent same-key admission дал uncaught SQLite lock в QueueCounter. Attempt 2 зелёный; ошибка записана, не считается исправленной повтором CI.
 
@@ -16,7 +16,7 @@
 
 | Владелец | Вся зона | Первое READY задание | Независимый резерв |
 |---|---|---|---|
-| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | P1-02.5 короткие additive ports; P2-03 безопасный persisted run + config/start/read APIs + gateway | P2-04 ledger/failure/clock; P1-03 access/security; P2-05 admin guards; P4-07 snapshots |
+| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | P2-03.3 frozen-run gateway/WorkspaceAccess + RunProblemSnapshot (текущая feature) | P4-07 snapshot correctness/public transport; P1-03 access/security; P2-05 admin HTTP |
 | A3 | problems/submissions/drafts/judge/sandbox, config/factories/Compose/start scripts/CI, system acceptance | P3-04.1 admission contention; P3-04.2 реальный LocalJudge executor/factory + programmatic smoke import | P3-02 import/assets/compiler probes; P1-04 one-command build; P3-05 private draft access; P4-08 acceptance harness |
 | A5 | весь frontend: React/design/styles/typed clients/editor/map/UI/browser checks | P5-03 подключить готовые auth/invite/admin/bracket API; минимальный бренд из #64 | typed match/workspace clients, loading/error/empty states, draft isolation, keyboard/minimal responsive |
 
@@ -64,19 +64,19 @@ PublicAccessV1 для anonymous public и отдельного hashed unlisted s
 
 #50 integrated через #60. Admin PUT full first-round pairs по User UUID, POST reset до первого start, reason/actor/Idempotency-Key/exact receipt. Roster/history не стирать. Подключать A5 сейчас. M04/T06.
 
-### P2-03 · persisted run / clock / gateway · M0 critical, READY
+### P2-03 · persisted run / clock / gateway · M0 critical, PARTIAL
 
-1. Сохранить #57 через обычный merge в собственной feature от develop; убрать read→write race configure (ORM catalog reads до первого write). Write-first/короткая transaction либо bounded retry всей операции только BUSY/LOCKED; exhausted contention → контролируемый retryable ответ. File-backed first configure/update/start concurrency + rollback. Base уже develop, но найденный дефект не исправлен.
-2. Frozen original run participants/problem versions/checksums/rules/languages, reuse participant snapshot fix #59. Минимальные real GET match, PATCH config, POST start; ready/both_ready следующим коротким PR. Trusted server elapsed/deadline, two distinct players, idempotent start; management clock restart, готовые cores использовать.
-3. CompetitionGateway/WorkspaceAccess и RunProblemSnapshot producer: membership/actor/run/problem/time/actions, condition hidden до start. Minimal start+gateway публиковать без ожидания полной admin API, judge/UI/SSE. Доставленная старая посылка использует original run, не current/latest. M05/M06/P03; T07–09.
+1. DONE: source #57 сохранён обычным merge в feature; configure read→write SQLite race исправлен и прошёл file-backed regression/rollback suite. PR #69 MERGED в `f9da1dd`, CI 5/5; Agent 4 card/audit содержат evidence.
+2. DONE: match `GET/config/manual-start` routes в PR #74, merge `475cdf7`, exact-head CI 5/5 SUCCESS. Первая backend попытка поймала A3-owned QueueCounter lock regression; same-head повторный backend job прошёл. Retry не исправляет/не закрывает admission race; владелец A3 и P3-04.1 остаются ответственными. Implementation/publication/merge evidence — Agent 4 card и аудиты.
+3. IN_PROGRESS в `feature/a4-p2-03-gateway-workspace` от `ab00822`: frozen participant snapshot уже integrated через #76; написать production `CompetitionGatewayV1`/`WorkspaceAccess` и `RunProblemSnapshotProvider`. Проверять active membership, actor/run/problem/deadline, actions и скрывать condition участнику до старта; historical access и submission identity идут по immutable run snapshot, а не mutable slots/catalog latest. A3 startup/queue/draft CONNECT отдельный. `both_ready` HTTP, key→body receipts и browser M0 остаются отдельными задачами. M05/M06/P03; T07–09.
 
-### P2-04 · ledger / result / failure / promotion · M0 critical, READY параллельно P2-03
+### P2-04 · ledger / result / failure / promotion · M0 critical, IN_PROGRESS
 
-Сохранить #58 b66b6cd (clock command/finalization) и frozen participant fix из #59. register_accepted/apply_result не читают до безопасной write/retry boundary; реальные concurrent file-backed tests. Accepted/result/failure sink выполняют exactly-once effects в admission/delivery transaction. Deadline → FINALIZING до завершения accepted queue; delayed accepted OK считается. Infra failure не WA/RE/поражение и не бесконечное молчаливое ожидание. Unique solved/penalty/tie, durable clock, winner/downstream/event атомарны; old run не меняет new score. Публиковать real sinks малым PR. M05/M07/J04; T09/T10/T19.
+DONE: PR #76 MERGED ordinary commit `ab00822`, final head `83df978`; exact-head CI 5/5 SUCCESS. Ledger accepted/result, bounded failure records, finalization, score/winner/downstream/event and same-key/rematch protections are integrated. Implementation and merge evidence в карточке A4 и `context/audits/2026-10-10T034413+0300-agent-4-P2-04-merge.md`. M05/M07/J04; T09/T10/T19 implementation integrated; full M0/J04 acceptance remains open.
 
-### P2-05 · admin effects/API · обязательный следующий этап, READY резерв
+### P2-05 · admin effects/API · effects integrated, API/UI partial
 
-#59 0ba3119 пока не mergeable: read-before-write same-key race и rematch оставляет старого winner в downstream. Revoke/reopen unstarted downstream атомарно; started downstream запрещает пересмотр. Pause/resume/extend/technical/rematch/replacement, actor/reason/exact receipt/conflicting key409, original run immutable. Готовые guards/command cores уже integrated; не переписывать. Реальные file-backed replay/downstream tests, затем HTTP/UI CONNECT. M08/T11/T20.
+P2-05 effect/core fixes are included through #76, including write-first exact same-key and downstream rematch repair. Remaining independent slice: admin HTTP/browser CONNECT for pause/resume/extend/technical/rematch/replacement with actor/reason/exact receipt/conflict handling; preserve original runs. Do not rewrite ready command cores. M08/T11/T20.
 
 ### P2-06 · public events/SSE · PARTIAL, owner A4
 

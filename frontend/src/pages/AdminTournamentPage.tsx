@@ -11,6 +11,7 @@ import {
   type TournamentInput,
 } from '../api/client'
 import { TournamentForm } from '../components/TournamentForm'
+import { statusLabel } from './tournamentStatus'
 import './Admin.css'
 
 function messageFor(error: unknown): string {
@@ -255,7 +256,7 @@ export function AdminTournamentPage() {
     <section className="page-section management-page">
       <nav className="breadcrumbs" aria-label="Навигационная цепочка"><Link to="/admin">Турниры</Link><span aria-hidden="true">/</span><span>{tournament.title}</span></nav>
       <div className="management-heading">
-        <div><p className="eyebrow">Управление турниром · {tournament.status}</p><h1>{tournament.title}</h1><p>{activeCount} из {tournament.participantLimit} участников · {tournament.rosterFrozenAt ? 'состав заморожен' : 'состав открыт'}</p></div>
+        <div><p className="eyebrow">Управление турниром · {statusLabel[tournament.status] ?? tournament.status}</p><h1>{tournament.title}</h1><p>{activeCount} из {tournament.participantLimit} участников · {tournament.rosterFrozenAt ? 'состав заморожен' : 'состав открыт'}</p></div>
         <div className="management-actions">
           <Link className="button button-outline button-small" to={`/admin/tournaments/${encodeURIComponent(tournament.id)}/matches`}>Сетка и матчи</Link>
           <button className="button button-quiet button-small" type="button" onClick={() => { setLoading(true); setPageError(null); void load() }}>Обновить</button>
@@ -266,7 +267,7 @@ export function AdminTournamentPage() {
       {actionMessage && <div className="state-card" role="status">{actionMessage}</div>}
 
       <section className="management-panel" aria-labelledby="tournament-settings-heading">
-        <div className="panel-heading"><div><h2 id="tournament-settings-heading">Параметры турнира</h2><p>Ограничения lifecycle, состава и прав проверяются сервером.</p></div></div>
+        <div className="panel-heading"><div><h2 id="tournament-settings-heading">Параметры турнира</h2><p>Ограничения статуса турнира, состава и прав проверяются сервером.</p></div></div>
         <TournamentForm
           key={`${tournament.id}:${tournament.rosterFrozenAt ?? 'open'}:${tournament.status}`}
           initial={tournament}
@@ -325,7 +326,7 @@ export function AdminTournamentPage() {
       </section>
 
       <section className="management-panel" aria-labelledby="invites-heading">
-        <div className="panel-heading"><div><h2 id="invites-heading">Приглашения</h2><p>Ссылка выдаётся один раз при создании. В списке остаются только ограниченные metadata без raw token.</p></div></div>
+        <div className="panel-heading"><div><h2 id="invites-heading">Приглашения</h2><p>Ссылка выдаётся один раз при создании. В списке остаются только ограниченные данные приглашения, без секретного токена.</p></div></div>
         <form className="tournament-form" onSubmit={(event) => void createInvite(event)}>
           <div className="form-grid">
             <label className="form-field"><span>Действует до</span><input type="datetime-local" min={inviteMinDate} value={inviteExpiresAt} onChange={(event) => setInviteExpiresAt(event.target.value)} disabled={Boolean(tournament.rosterFrozenAt) || busy === 'invite:create'} /></label>
@@ -339,7 +340,7 @@ export function AdminTournamentPage() {
           <div className="invite-result">
             <strong>Новая ссылка — скопируйте её сейчас</strong>
             <div className="invite-url-row"><input aria-label="Ссылка-приглашение" readOnly value={new URL(newInvite.url, window.location.origin).toString()} onFocus={(event) => event.currentTarget.select()} /><button className="button button-small" type="button" onClick={() => void copyInvite()}>{inviteCopied ? 'Скопировано' : 'Скопировать'}</button></div>
-            <span className="invite-status">Секретный token останется только в памяти этой страницы. Список приглашений не возвращает его повторно.</span>
+            <span className="invite-status">Секретный токен останется только в памяти этой страницы. Список приглашений не возвращает его повторно.</span>
           </div>
         )}
         <div className="invite-list" aria-label="Список приглашений">

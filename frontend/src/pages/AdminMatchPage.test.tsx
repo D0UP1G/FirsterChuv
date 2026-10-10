@@ -126,6 +126,33 @@ describe('admin bracket and match controls', () => {
     expect(screen.getByText('Новый участник', { selector: '.bracket-slot span' })).toBeInTheDocument()
   })
 
+  it('offers bracket generation when the server has no bracket yet and answers with a generic 404', async () => {
+    const tournament = {
+      id: 'tournament-1', title: 'Осенний отбор', description: '', status: 'draft', format: 'single_elimination',
+      startsAt: '2026-10-11T10:00:00Z', endsAt: '2026-10-11T13:00:00Z', participantLimit: 4, visibility: 'public',
+      matchDurationSec: 1800, startMode: 'manual', rosterFrozenAt: null,
+      scoringRule: { wrongAttemptPenaltySec: 300 },
+    }
+    const roster = ['u-1', 'u-2'].map((userId, index) => ({
+      id: `entry-${index}`, userId, displayName: `Игрок ${index + 1}`, status: 'ACTIVE', seed: null,
+    }))
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/auth/csrf')) return Promise.resolve(jsonResponse({ csrfToken: 'csrf-match-ui-test' }))
+      if (url.endsWith('/me')) return Promise.resolve(jsonResponse({ id: 'admin-1', displayName: 'Организатор', role: 'admin' }))
+      if (url.endsWith('/tournaments/tournament-1')) return Promise.resolve(jsonResponse(tournament))
+      if (url.includes('/tournaments/tournament-1/participants')) return Promise.resolve(jsonResponse({ results: roster, count: 2 }))
+      if (url.includes('/problems')) return Promise.resolve(jsonResponse({ results: [] }))
+      return Promise.resolve(jsonResponse({ error: { code: 'not_found', message: 'Not found.', fields: null } }, 404))
+    }))
+    window.history.replaceState({}, '', '/admin/tournaments/tournament-1/matches')
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: 'Сетка не создана' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Сформировать сетку' })).toBeEnabled()
+    expect(screen.queryByText(/endpoint недоступен/)).not.toBeInTheDocument()
+  })
+
   it('shows the missing production endpoint instead of switching to fixture data', async () => {
     window.history.replaceState({}, '', '/admin/tournaments/tournament-1/matches')
     render(<App />)

@@ -4,6 +4,7 @@ from collections.abc import Mapping
 
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect
 from rest_framework import serializers, status
 from rest_framework.exceptions import APIException, NotFound, ValidationError
@@ -19,8 +20,23 @@ from backend.apps.competition.bracket_commands import (
     execute_bracket_command,
 )
 from backend.apps.competition.domain.bracket import BracketInputError
-from backend.apps.competition.models import Match
-from backend.apps.competition.serializers import TournamentBracketSerializer
+from backend.apps.competition.domain.admin_actions import AdminAction
+from backend.apps.competition.admin_runtime import (
+    AdminCommandPersistenceError,
+    execute_match_admin_command,
+)
+from backend.apps.competition.match_api import MatchProjectionError, match_view_payload
+from backend.apps.competition.models import Match, MatchSlot
+from backend.apps.competition.runtime import (
+    MatchRuntimeError,
+    configure_match_run,
+    start_match_run,
+)
+from backend.apps.competition.serializers import (
+    StrictEmptyObjectSerializer,
+    StrictMatchConfigRequestSerializer,
+    TournamentBracketSerializer,
+)
 from backend.apps.competition.services import (
     BracketPersistenceError,
     generate_bracket,
@@ -29,6 +45,7 @@ from backend.apps.competition.services import (
 )
 from backend.apps.tournaments.models import Tournament, TournamentParticipant
 from backend.apps.tournaments.services import RosterMutationError
+from backend.apps.problems.catalog import DjangoProblemCatalog
 
 
 class BracketRequestError(APIException):
@@ -52,6 +69,161 @@ class BracketReadPermission(BasePermission):
             and user.is_active
             and user.role in (User.Roles.ADMIN, User.Roles.PARTICIPANT)
         )
+
+
+class MatchReadPermission(BasePermission):
+    message = "Нужен admin или участник этого матча."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and user.is_active
+            and user.role in (User.Roles.ADMIN, User.Roles.PARTICIPANT)
+        )
+
+
+class MatchRequestError(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_code = "match_runtime_conflict"
+
+    def __init__(self, message, *, code="match_runtime_conflict", status_code=None):
+        if status_code is not None:
+            self.status_code = status_code
+        self.default_code = code
+        super().__init__(detail=message, code=code)
+
+
+def _require_match_idempotency_key(request):
+    key = request.headers.get("Idempotency-Key")
+    if not key or len(key) > 200:
+        raise ValidationError(
+            {"Idempotency-Key": "Укажите непустой ключ длиной не более 200 символов."}
+        )
+    return key
+
+
+def _runtime_scoring_rule(tournament_config):
+    stored = tournament_config.get("scoring_rule", {})
+    if not isinstance(stored, Mapping):
+        raise ValidationError({"scoringRule": "Ожидается объект правил подсчёта."})
+    return {
+        "order": stored.get(
+            "order", ["solved_desc", "penalty_asc", "last_accepted_asc"]
+        ),
+        "wrongAttemptPenaltySec": stored.get("wrong_attempt_penalty_sec", 60),
+        "penalizedVerdicts": stored.get(
+            "penalized_verdicts", ["WA", "TL", "ML", "RE"]
+        ),
+        "finalTiePolicy": stored.get("final_tie_policy", "rematch"),
+    }
+
+
+def _match_detail_queryset(request):
+    queryset = (
+        Match.objects.filter(kind=Match.Kind.PLAYED)
+        .select_related("tournament", "current_run", "winner__user")
+    )
+    if request.user.role != User.Roles.ADMIN:
+        queryset = queryset.filter(
+            slots__resolution=MatchSlot.Resolution.PLAYER,
+            slots__participant__user=request.user,
+            slots__participant__status=TournamentParticipant.Status.ACTIVE,
+        )
+    return queryset
+
+
+def _match_response(match, *, actor):
+    try:
+        payload = match_view_payload(match, actor=actor, now=timezone.now())
+    except MatchProjectionError as error:
+        raise MatchRequestError(str(error), code=error.code) from error
+    response = Response(payload, status=status.HTTP_200_OK)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class MatchDetailView(APIView):
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [MatchReadPermission()]
+        return [IsApplicationAdmin()]
+
+    def get(self, request, match_id):
+        match = get_object_or_404(_match_detail_queryset(request), pk=match_id)
+        return _match_response(match, actor=request.user)
+
+    def patch(self, request, match_id):
+        serializer = StrictMatchConfigRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        _require_match_idempotency_key(request)
+        match = get_object_or_404(
+            Match.objects.select_related("tournament"), pk=match_id
+        )
+        if match.kind != Match.Kind.PLAYED:
+            raise MatchRequestError(
+                "Автоматический проход нельзя настраивать как матч.",
+                code="match_not_playable",
+            )
+
+        config = serializer.validated_data
+        tournament_config = match.tournament.default_match_config
+        scoring_rule = _runtime_scoring_rule(tournament_config)
+        try:
+            configure_match_run(
+                match.pk,
+                problem_ids=config["problem_ids"],
+                allowed_duration_ms=config["match_duration_sec"] * 1000,
+                start_mode=config["start_mode"],
+                scoring_rule=scoring_rule,
+                catalog=DjangoProblemCatalog(),
+            )
+        except MatchRuntimeError as error:
+            raise MatchRequestError(
+                str(error),
+                code=error.code,
+                status_code=error.status_code,
+            ) from error
+
+        updated = get_object_or_404(
+            Match.objects.select_related("tournament", "current_run", "winner__user"),
+            pk=match_id,
+        )
+        return _match_response(updated, actor=request.user)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class StartMatchView(APIView):
+    permission_classes = [IsApplicationAdmin]
+
+    def post(self, request, match_id):
+        serializer = StrictEmptyObjectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        _require_match_idempotency_key(request)
+        match = get_object_or_404(
+            Match.objects.select_related("current_run"), pk=match_id
+        )
+        if match.kind != Match.Kind.PLAYED or match.current_run_id is None:
+            raise MatchRequestError(
+                "Сначала настройте запускаемый матч.",
+                code="match_run_not_configured",
+            )
+        try:
+            start_match_run(match.current_run_id, now=timezone.now())
+        except MatchRuntimeError as error:
+            raise MatchRequestError(
+                str(error),
+                code=error.code,
+                status_code=error.status_code,
+            ) from error
+
+        updated = get_object_or_404(
+            Match.objects.select_related("tournament", "current_run", "winner__user"),
+            pk=match_id,
+        )
+        return _match_response(updated, actor=request.user)
 
 
 class GenerateBracketRequestSerializer(serializers.Serializer):
@@ -122,6 +294,44 @@ class ResetBracketRequestSerializer(serializers.Serializer):
                 {"non_field_errors": "Ожидается только поле reason."}
             )
         return super().to_internal_value(data)
+
+
+class StrictAdminActionRequestSerializer(serializers.Serializer):
+    """Reject unknown fields so clients cannot supply trusted actor/state data."""
+
+    def to_internal_value(self, data):
+        if not isinstance(data, Mapping) or set(data) != set(self.fields):
+            allowed = ", ".join(sorted(self.fields)) or "no fields"
+            raise ValidationError({"non_field_errors": f"Expected exactly: {allowed}."})
+        return super().to_internal_value(data)
+
+
+class PauseMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class ResumeMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    pass
+
+
+class ExtendMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    seconds = StrictPositionField(min_value=1, max_value=600)
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class TechnicalResultRequestSerializer(StrictAdminActionRequestSerializer):
+    winner_user_id = serializers.UUIDField()
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class ReasonOnlyMatchRequestSerializer(StrictAdminActionRequestSerializer):
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
+
+
+class ReplaceParticipantRequestSerializer(StrictAdminActionRequestSerializer):
+    old_user_id = serializers.UUIDField()
+    new_user_id = serializers.UUIDField()
+    reason = serializers.CharField(max_length=500, allow_blank=False, trim_whitespace=True)
 
 
 def bracket_payload(tournament: Tournament, matches: list[Match]) -> dict:
@@ -292,6 +502,93 @@ class ResetBracketView(APIView):
         response = Response(payload, status=status.HTTP_200_OK)
         response["Cache-Control"] = "no-store"
         return response
+
+
+class MatchAdminActionRequestError(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_code = "admin_command_conflict"
+
+    def __init__(self, error):
+        self.status_code = getattr(error, "status_code", self.status_code)
+        self.default_code = getattr(error, "code", self.default_code)
+        super().__init__(detail=str(error), code=self.default_code)
+
+
+class MatchAdminActionView(APIView):
+    permission_classes = [IsApplicationAdmin]
+    action = None
+    serializer_class = None
+
+    def command_arguments(self, values):
+        if self.action is AdminAction.EXTEND:
+            return {"seconds": values["seconds"], "reason": values["reason"]}
+        if self.action is AdminAction.TECHNICAL_RESULT:
+            return {
+                "winner_user_id": values["winner_user_id"],
+                "reason": values["reason"],
+            }
+        if self.action is AdminAction.REPLACE_PARTICIPANT:
+            return {
+                "old_user_id": values["old_user_id"],
+                "replacement_user_id": values["new_user_id"],
+                "reason": values["reason"],
+            }
+        if self.action in (AdminAction.PAUSE, AdminAction.REMATCH):
+            return {"reason": values["reason"]}
+        return {}
+
+    def post(self, request, match_id):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            payload = execute_match_admin_command(
+                actor_user_id=request.user.pk,
+                match_id=match_id,
+                command_id=_idempotency_key(request),
+                action=self.action,
+                **self.command_arguments(serializer.validated_data),
+            )
+        except AdminCommandPersistenceError as error:
+            raise MatchAdminActionRequestError(error) from error
+        response = Response(payload, status=status.HTTP_200_OK)
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class PauseMatchView(MatchAdminActionView):
+    action = AdminAction.PAUSE
+    serializer_class = PauseMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ResumeMatchView(MatchAdminActionView):
+    action = AdminAction.RESUME
+    serializer_class = ResumeMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ExtendMatchView(MatchAdminActionView):
+    action = AdminAction.EXTEND
+    serializer_class = ExtendMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class TechnicalResultView(MatchAdminActionView):
+    action = AdminAction.TECHNICAL_RESULT
+    serializer_class = TechnicalResultRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class RematchView(MatchAdminActionView):
+    action = AdminAction.REMATCH
+    serializer_class = ReasonOnlyMatchRequestSerializer
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ReplaceParticipantView(MatchAdminActionView):
+    action = AdminAction.REPLACE_PARTICIPANT
+    serializer_class = ReplaceParticipantRequestSerializer
 
 
 class TournamentBracketView(APIView):
