@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ApiError, api, type LoginInput, type RegisterInput, type User } from '../api/client'
+import { purgePrivateBrowserData } from '../workspace/privateStorage'
 import { AuthContext } from './context'
 import type { AuthStatus } from './context'
 
@@ -80,9 +81,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback((input: RegisterInput) => api.register(input), [])
 
+  const userId = useRef<string | null>(null)
+  useEffect(() => {
+    userId.current = user?.id ?? null
+  }, [user])
+
   const signOut = useCallback(async () => {
     const operationId = ++operationSequence.current
+    const signedOutUserId = userId.current
     await api.logout()
+    if (signedOutUserId) purgePrivateBrowserData(signedOutUserId)
     if (operationId !== operationSequence.current) return
     setUser(null)
     setError(null)
