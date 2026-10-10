@@ -2,6 +2,16 @@
 
 Модуль `problems` хранит неизменяемые версии задач и предоставляет порт `ProblemCatalogV1`. Это внутренний нормализованный формат FirsterChuv для MVP, а не формат архива организаторов и не описание API Яндекс Контеста. Внешнее сопоставление будет добавлено отдельным P3-06 только по предоставленному README пакета.
 
+Для programmatic M0 seed запусти `DJANGO_DEBUG=true uv run --project . python manage.py import_demo_problem`. Команда собирает встроенную явно synthetic задачу и через общий parser/storage импортирует public markdown/TeX, PNG asset, Markdown table, examples/limits и private tests/reference. Повторный запуск идемпотентен. Можно передать `--archive PATH` только для внутреннего normalized ZIP; файл ограничен теми же 16 MiB и принимается как regular file. ZIP не извлекается на диск, скрипты/код при импорте не запускаются.
+
+Этот seed не является официальным пакетом или точным кейсовым условием. При `cpp20.verified=False` версия сохраняется как `NOT_READY` и не попадает в playable catalog — manifest не может заявить verified status. Настоящий компилятор проверяется gated LocalJudge smoke после подготовки закреплённого sandbox image и доступности Docker Engine:
+
+```bash
+FIRSTERCHUV_REAL_JUDGE_SMOKE=1 DJANGO_DEBUG=true uv run --project . python manage.py test backend.apps.judge.tests.test_real_smoke --verbosity 2
+```
+
+Без успешного реального compile/run и проверки isolation limits нельзя менять production compiler registry на `verified=True`. После подтверждения и обновления server-owned registry повторный запуск того же importer переводит эту неизменную версию с тем же checksum в `READY`. Этот demo importer/compiler smoke закрывает только часть P01/P02/E02 и T12/T13/T20; не доказывает official package import или полный M0.
+
 ## Формат синтетического архива
 
 Архив ZIP содержит `manifest.json` версии `schemaVersion: 1`, необязательные публичные файлы `public/assets/*` и закрытые файлы `private/tests/*`, `private/checkers/*`, `private/validators/*`, `private/references/*`. Точный пример создаётся в unit tests, а не позиционируется как официальный пакет.
