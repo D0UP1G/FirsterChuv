@@ -102,6 +102,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = PROJECT_ROOT / ".data" / "static"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Trusted execution is available only in the isolated judge-worker process.
+# The API never receives Docker access or a code-execution adapter.
+SUBMISSION_WORKER_FACTORY = "backend.apps.submissions.runtime.build_submission_worker"
+
 sqlite_path = Path(os.getenv("SQLITE_PATH", ".data/db.sqlite3"))
 if not sqlite_path.is_absolute():
     sqlite_path = PROJECT_ROOT / sqlite_path

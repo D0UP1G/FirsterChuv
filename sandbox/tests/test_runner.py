@@ -13,10 +13,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from backend.apps.judge.runner import (  # noqa: E402
     CPP20_COMPILER_ARGV,
     IMAGE,
+    LEASE_LABEL,
     MAX_INPUT_BYTES,
     MAX_SOURCE_BYTES,
+    OWNER_LABEL,
+    OWNER_VALUE,
+    SUBMISSION_LABEL,
     DockerRunner,
     RunnerInfrastructureError,
+    SandboxClaim,
     _cleanup,
     _run_docker,
     build_docker_create_args,
@@ -98,6 +103,20 @@ class DockerPolicyTests(unittest.TestCase):
     def test_container_name_cannot_be_supplied_by_a_caller(self) -> None:
         with self.assertRaises(ValueError):
             build_docker_create_args("arbitrary-name;touch /tmp/pwned", "run")
+
+    def test_claimed_containers_have_submission_and_fencing_labels(self) -> None:
+        from uuid import UUID
+
+        submission_id = UUID("1c877449-e281-48ad-a6bf-e6243e90f07a")
+        lease_token = UUID("c96aa9c5-a408-4900-aea4-9dcc3172abf5")
+        command = build_docker_create_args(
+            "firsterchuv-a3-01-" + "c" * 32,
+            "compile",
+            claim=SandboxClaim(submission_id, lease_token),
+        )
+        self.assertIn(f"{OWNER_LABEL}={OWNER_VALUE}", command)
+        self.assertIn(f"{SUBMISSION_LABEL}={submission_id}", command)
+        self.assertIn(f"{LEASE_LABEL}={lease_token}", command)
 
     def test_only_compile_and_run_modes_are_accepted(self) -> None:
         name = "firsterchuv-a3-01-" + "b" * 32
