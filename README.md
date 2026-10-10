@@ -4,9 +4,9 @@
 
 ## Текущее состояние
 
-Auth/roles/CRUD/roster/invites, bracket/manual pairings/reset, clock/score/readiness/ledger cores, queue/worker/outboxes, normalized catalog, LocalJudge, drafts CAS и React editor/map интегрированы через #60/#61/#62. Полного рабочего MVP пока нет: требуется production run/gateway/providers/worker/sinks и реальный browser сценарий. #53/#57–59 требуют correctness fixes и пока не слиты. #63/#64/#65 reference/React бренд/mobile входят в текущую coordinator feature до её MERGED.
+Полного рабочего MVP пока нет: требуется соединить API run/results, worker providers, проверку настоящим компилятором и реальный browser сценарий. P1-04.2 добавляет Compose wiring и команду запуска, но сама команда и весь стек ещё не прошли проверку на Docker Engine; worker factory и demo import/compiler probe выполняются отдельными интеграционными срезами. Не выдавать этот срез за принятую demo или M0.
 
-[ROADMAP v5](ROADMAP.md): три активных владельца — A4 (прежний A1) API/domain/events/common contracts, A3 judge/tasks/queue + config/Compose/startup/CI/acceptance, A5 весь frontend. Первым делаем [M0: реальный матч двух участников](docs/quality/m0-demo.md); полные обязательные блоки кейса остаются отдельной приёмкой. [STATE](context/STATE.md), [review/проверки](docs/reviews/2026-10-10-mvp-readiness.md), [contracts](docs/architecture/parallel-contracts.md), [handoffs](docs/architecture/runtime-handoffs.md), [дизайн](frontend/design/README.md).
+[ROADMAP](ROADMAP.md): владельцы — A4 API/domain/events/common contracts, A3 judge/tasks/queue + config/Compose/startup/CI/acceptance, A5 frontend. Первым делаем [M0: реальный матч двух участников](docs/quality/m0-demo.md); полные обязательные блоки кейса остаются отдельной приёмкой. [STATE](context/STATE.md), [review/проверки](docs/reviews/2026-10-10-mvp-readiness.md), [contracts](docs/architecture/parallel-contracts.md), [handoffs](docs/architecture/runtime-handoffs.md), [дизайн](frontend/design/README.md).
 
 ## Начать работу
 
@@ -34,3 +34,9 @@ Auth/roles/CRUD/roster/invites, bracket/manual pairings/reset, clock/score/readi
 Команда выбрала Django REST Framework + React, SQLite3 и собственную песочницу для проверки решений (вариант Б кейса). Яндекс Контест используется только для планируемого импорта задач. Текущий frontend использует TypeScript, CodeMirror 6 и безопасный Markdown/TeX renderer; SSE transport ещё подключается. Подробные [решения и ограничения](docs/architecture/decisions.md) нужны агентам перед реализацией.
 
 Репозиторий: [D0UP1G/FirsterChuv](https://github.com/D0UP1G/FirsterChuv).
+
+## Локальный запуск
+
+Требуются Linux, Docker Engine с доступным пользователю `/var/run/docker.sock` и Docker Compose plugin. Скопируйте `.env.example` в `.env`, задайте приватный `DJANGO_SECRET_KEY`, затем выполните `./scripts/start-demo.sh`. Скрипт собирает sandbox image и запускает сервисы Compose; он не удаляет volume с данными. Web доступен на `http://localhost:8080`, API — на `http://localhost:8000`.
+
+На этом SHA реальный запуск ещё не подтверждён. Production worker закрыто отказывает, пока не подключены и не слиты его factory/providers; synthetic import и compiler probe также не являются официальным пакетом задач. Полные условия и ограничения см. в [runbook](docs/operations/runbook.md) и [M0 checklist](docs/quality/m0-demo.md).
