@@ -1,5 +1,31 @@
 # Агент 3: задачи, очередь, песочница и запуск
 
+## Текущая сессия P4-08 · disposable system acceptance harness · 2026-10-10
+
+- ID задачи: `P4-08`; implementation slice: `IN_REVIEW`; полная задача: `IN_PROGRESS`.
+- Ветка: `feature/p4-08-acceptance`; базовый SHA: `origin/develop=475cdf71fa88de6aa5aad2142fc9fdbdf90625f6`.
+- Объём по ROADMAP v5 и `docs/quality/m0-demo.md`: создать собственный disposable acceptance harness для реально доступных HTTP/runtime путей; фиксировать каждую проверку как `PASS`/`FAIL`/`NOT_RUN`, не выдавая test doubles или отсутствующие production endpoints за PASS.
+- Пути планируемых изменений: `scripts/acceptance/`, `docs/quality/evidence/`, эта карточка и отдельный audit `context/audits/`; общие API, контракты, Compose и production apps не менять.
+- Предшествующие P3-04.2/import worktree активны отдельно; их исходники и карточки не изменять. Требуемые кейсовые ограничения: D01/D03, J01/J03/J04, T01/T04–T10/T14/T18/T19/T20/T21; полный M0 и T01–21 не объявлять без подтверждения сквозного SHA.
+- Реализован narrow real-HTTP runner `scripts/acceptance/run_api_smoke.py`: временная SQLite, временный application admin и participant sessions, loopback WSGI, auth/CSRF/role/invite/idempotent join/bracket permission checks. Evidence контракт и ограничения описаны в [`docs/quality/evidence/README.md`](../../docs/quality/evidence/README.md).
+- Проверки разработки: 13/13 API checks PASS на disposable DB; optional `--sandbox` сообщил `NOT_RUN` из-за недоступного Docker Engine; все полные G01–G06 и T01–T21 остаются `NOT_RUN`. Ruff, `py_compile`, `git diff --check` прошли. При разработочном прогоне worktree был dirty; сохранённое acceptance evidence будет создано после commit на точном SHA.
+- Следующий шаг: опубликовать reviewable PR в `develop`, не сливать; полное P4-08 остаётся `IN_PROGRESS` до реальных queue/recovery/compiler/runtime и acceptance CONNECT сценариев.
+
+### Checkpoint P4-08 evidence · 2026-10-10T03:15:07+03:00
+
+- Code + implementation audit зафиксированы в `fdf75d89f8c2ee2417d3528e2eb0c36ac022482c`.
+- На clean SHA создан [`docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json`](../../docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json): 13/13 HTTP checks PASS, `worktreeClean=true` до записи manifest. Docker probe `NOT_RUN`; все G01–G06 и T01–T21 остаются `NOT_RUN`. См. [follow-up audit](../audits/2026-10-10T031507+0300-agent-3-P4-08-evidence.md).
+- Publication: PR [#75](https://github.com/D0UP1G/FirsterChuv/pull/75) открыт в `develop`, head `6fed027648fc7b6070305cf194d13d58a47638ac`, merge state `CLEAN`, не слит. CI run `38008387145` на этом head: 5/5 SUCCESS; backend 279 tests, 9 skipped. См. [publication audit](../audits/2026-10-10T031939+0300-agent-3-P4-08-publication.md).
+- Следующий шаг: дождаться review/интеграции без merge со стороны A3; продолжать P4-08 с реальными queue/recovery/compiler/runtime и acceptance CONNECT только на доступном свежем integration SHA.
+
+### Сверка после CI PR #75 · 2026-10-10T03:25:00+03:00
+
+- PR #75 остаётся OPEN/CLEAN на head 2d008692aee71ba1443456aecb2a46ac2a33ebce; CI run 38008613938 прошёл 5/5 jobs. PR не слит.
+- Свежий fetch оставил origin/develop на 475cdf71fa88de6aa5aad2142fc9fdbdf90625f6. В develop уже есть отдельный ручной workflow sandbox-real-smoke.yml; дублирующий запуск не добавлялся. Этот Docker smoke в follow-up не запускался.
+- A3 LocalJudge/executor, import, worker и draft ветки ведутся в отдельных worktrees; PR #76 с A4 persistence ещё открыт. Чужая работа не менялась. Свободного READY среза без пересечения на этой сверке не найдено.
+- Следующий шаг: оставить #75 открытым и после командной интеграции свежих producer/provider SHA продолжить фактические P4-08 queue/runtime проверки. Подробности: [follow-up audit](../audits/2026-10-10T032500+0300-agent-3-P4-08-followup.md).
+
+
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
 - Источник: последнее прямое уточнение команды — ровно три роли A3/A4(прежний A1)/A5.
