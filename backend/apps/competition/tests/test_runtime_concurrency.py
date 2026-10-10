@@ -26,6 +26,7 @@ from backend.apps.competition.models import (
     AttemptResult,
     Match,
     MatchAdminCommandReceipt,
+    MatchCommandReceipt,
     MatchRun,
     MatchRunReady,
 )
@@ -35,6 +36,7 @@ from backend.apps.competition.runtime import (
     mark_match_ready,
     start_match_run,
 )
+from backend.apps.competition.match_commands import execute_match_command
 from backend.apps.competition.services import generate_bracket
 from backend.apps.tournaments.models import Tournament
 from backend.apps.tournaments.services import assign_participant
@@ -170,6 +172,42 @@ class MatchRuntimeConcurrencyTests(TransactionTestCase):
         self.assertEqual(stored.started_at, NOW)
         self.assertEqual(MatchRunReady.objects.filter(run=run).count(), 2)
         self.assertEqual({result.pk for result in results}, {run.pk})
+
+    def test_concurrent_ready_commands_commit_both_receipts_and_start_once(self):
+        run = self.configure(mode="both_ready")
+
+        def make_command(index):
+            actor = self.players[index]
+
+            def perform(_prepared):
+                ready_run = mark_match_ready(
+                    run.pk, actor_user_id=actor.pk, now=NOW
+                )
+                return {"runId": str(ready_run.pk), "status": ready_run.status}
+
+            return lambda: execute_match_command(
+                match_id=self.match.pk,
+                actor_id=actor.pk,
+                action="match.ready",
+                # Identical strings remain independent across participants.
+                idempotency_key="ready-concurrent",
+                body={},
+                perform=perform,
+            )
+
+        results = self.concurrently(make_command, Barrier(2))
+        stored = MatchRun.objects.get(pk=run.pk)
+
+        self.assertEqual(stored.status, MatchRun.Status.RUNNING)
+        self.assertEqual(stored.started_at, NOW)
+        self.assertEqual(MatchRunReady.objects.filter(run=run).count(), 2)
+        self.assertEqual(
+            MatchCommandReceipt.objects.filter(
+                match=self.match, action="match.ready"
+            ).count(),
+            2,
+        )
+        self.assertEqual({item["status"] for item in results}, {MatchRun.Status.READY, MatchRun.Status.RUNNING})
 
     def test_concurrent_start_is_idempotent_and_persists_one_transition(self):
         run = self.configure()

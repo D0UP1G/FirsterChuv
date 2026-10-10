@@ -1,5 +1,16 @@
 # Агент 4 (прежний 1): API и логика соревнования
 
+## Текущая работа · Волна 1 · P2-03.4 · 2026-10-10
+
+- Статус: IN_REVIEW в `feature/a4-p2-03-4-ready`, база `origin/develop` `4bb521b4980c3262d49f8b91387499f4d2a4acc1`; implementation audit готов, PR/CI/merge ожидаются.
+- Scope: `POST /matches/{id}/ready`, серверный `both_ready` auto-start, idempotency receipts с actor/action/body binding для match config/start/ready.
+- Планируемые пути: `backend/apps/competition/{models.py,runtime.py,views.py,urls.py,serializers.py,match_commands.py}`, своя migration и competition API/concurrency tests, `docs/architecture/{api.md,parallel-contracts.md}`, этот файл, ROADMAP/audit при необходимости.
+- Остальные пункты первой волны A4 — P1-03 и P1-01.1; до их выполнения не переходить ко второй волне. После завершения всех трёх пунктов остановиться по прямому поручению пользователя и ждать остальные агенты.
+- Ранее завершённый P4-07 интегрирован PR [#78](https://github.com/D0UP1G/FirsterChuv/pull/78), merge `fbcbca6aec775b1bec3678910e21ac8c5ab5d522`, CI 5/5 SUCCESS; локальный `develop` синхронизирован до v6 `4bb521b`.
+- P2-03.4: [implementation audit](../audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md). Focused API/runtime 21/21; full competition 163 found, 11 skipped; file-backed ready concurrency 1/1; contracts/import/domain/check/migration/compile PASS.
+
+## Результат предыдущей задачи · P4-07 · public snapshot · 2026-10-10
+
 ## Текущая работа · P4-07 · public snapshot correctness/transport · 2026-10-10
 
 - Статус: PR [#78](https://github.com/D0UP1G/FirsterChuv/pull/78) открыт в `develop`; при создании head `7f2fbd86b309ad4b0969df54249c908e84c96581`, base `5f8e7d5a76e296e3cdc3bafe88782540c4168179`, `MERGEABLE`. Пять GitHub CI jobs при публикации были `IN_PROGRESS`; merge не выполнялся.

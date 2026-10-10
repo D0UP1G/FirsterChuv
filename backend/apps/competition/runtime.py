@@ -139,6 +139,13 @@ def _problem_snapshot(problem_ids: Sequence[UUID | str], catalog: ProblemCatalog
         raise MatchRuntimeError("a configured problem is not ready for execution") from error
 
 
+def snapshot_match_problems(
+    problem_ids: Sequence[UUID | str], *, catalog: ProblemCatalogV1
+) -> list[dict]:
+    """Resolve a verified immutable problem snapshot before opening a write transaction."""
+    return _problem_snapshot(problem_ids, catalog)
+
+
 def configure_match_run(
     match_id: UUID | str,
     *,
@@ -147,6 +154,7 @@ def configure_match_run(
     start_mode: StartMode | str,
     scoring_rule: Mapping[str, object] | None,
     catalog: ProblemCatalogV1,
+    problem_versions: Sequence[Mapping[str, object]] | None = None,
 ) -> MatchRun:
     """Create the first run from verified immutable task and rule snapshots."""
     if type(allowed_duration_ms) is not int or allowed_duration_ms < 1:
@@ -161,7 +169,11 @@ def configure_match_run(
     # snapshot that later has to be upgraded into a writer.
 
     try:
-        problems = _problem_snapshot(problem_ids, catalog)
+        problems = (
+            _problem_snapshot(problem_ids, catalog)
+            if problem_versions is None
+            else [dict(item) for item in problem_versions]
+        )
         with transaction.atomic():
             # This write reservation is deliberately the first ORM operation in
             # the transaction; all following reads share the serialized view.
