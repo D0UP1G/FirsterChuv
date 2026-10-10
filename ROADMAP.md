@@ -158,9 +158,9 @@ Disposable DB/identities, available auth/invite/bracket APIs, compiler/isolation
 
 Все T01–21: три отдельные browser identities + anonymous spectator, полуфинал→финал, admin interventions/both_ready/draft, official package, real hostile/restart/private leaks, one command, demo/video≤5min. A3 координирует system evidence, A5 browser и A4 domain. Missing official package блокирует только official subset.
 
-### P1-05 · release/demo · после acceptance, owner A3
+### P1-05 · release/demo · выпуск по поручению команды
 
-README/env/архитектура/вариант Б, demo либо video≤5min, кейс и full checks. release/*→main+tag→develop только после подтверждённой приёмки/поручения выпуска. До того main bootstrap и доступные M0 tasks.
+README/env/архитектура/вариант Б, demo либо video≤5min, кейс и full checks. По прямому поручению команды готовится `release/0.1.0` → PR в `main` → tag → back-merge в `develop`. Полная M0/M1/M2 приёмка остаётся неполной и перечислена в `docs/releases/0.1.0.md`; этот релиз не меняет статусы acceptance на PASS.
 
 ### P3-06 · official package adapter · WAITING_EXTERNAL только этот пункт
 
