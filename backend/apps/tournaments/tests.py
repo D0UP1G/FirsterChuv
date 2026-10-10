@@ -18,6 +18,7 @@ from backend.apps.tournaments.models import (
     InviteAcceptance,
     Tournament,
     TournamentParticipant,
+    TournamentShareLink,
 )
 from backend.apps.tournaments.serializers import TournamentSerializer
 from backend.apps.tournaments.services import (
@@ -916,6 +917,123 @@ class InviteAPITests(TestCase):
             format="json",
         )
         self.assertEqual(forbidden.status_code, 403)
+
+
+class TournamentShareLinkAPITests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            email="share-admin@example.test",
+            display_name="Share Admin",
+            password="valid-test-password-123",
+            role=User.Roles.ADMIN,
+        )
+        self.participant = User.objects.create_user(
+            email="share-player@example.test",
+            display_name="Share Player",
+            password="valid-test-password-123",
+        )
+        now = timezone.now()
+        self.tournament = Tournament.objects.create(
+            title="Unlisted Tournament",
+            starts_at=now,
+            ends_at=now + timedelta(hours=1),
+            participant_limit=4,
+            visibility=Tournament.Visibility.UNLISTED,
+            created_by=self.admin,
+        )
+        self.client = APIClient(enforce_csrf_checks=True)
+
+    @property
+    def collection_url(self):
+        return f"/api/v1/tournaments/{self.tournament.pk}/share-links"
+
+    def authenticate(self, user):
+        self.client.force_login(user)
+        csrf = self.client.get("/api/v1/auth/csrf")
+        self.client.credentials(HTTP_X_CSRFTOKEN=csrf.json()["csrfToken"])
+
+    def test_admin_issues_one_time_hash_only_fragment_share_and_can_revoke(self):
+        self.authenticate(self.admin)
+        response = self.client.post(
+            self.collection_url,
+            {"expiresAt": (timezone.now() + timedelta(hours=2)).isoformat()},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertEqual(response["Referrer-Policy"], "no-referrer")
+        payload = response.json()
+        token = payload["shareToken"]
+        self.assertEqual(payload["accessHeader"], "X-Tournament-Share-Token")
+        self.assertEqual(
+            payload["shareUrl"],
+            f"/watch/{self.tournament.pk}#shareToken={token}",
+        )
+        self.assertNotIn("?", payload["shareUrl"])
+        self.assertEqual(set(payload["share"]), {
+            "id", "tournamentId", "expiresAt", "revoked", "createdAt"
+        })
+        stored = TournamentShareLink.objects.get(pk=payload["share"]["id"])
+        self.assertEqual(stored.token_hash, hashlib.sha256(token.encode()).hexdigest())
+        self.assertNotEqual(stored.token_hash, token)
+
+        listed = self.client.get(self.collection_url)
+        self.assertEqual(listed.status_code, 200, listed.content)
+        self.assertEqual(listed["Cache-Control"], "no-store")
+        self.assertNotIn("token", listed.json()[0])
+        self.assertNotIn("tokenHash", listed.content.decode())
+        self.assertNotIn(token, listed.content.decode())
+
+        revoke_url = f"{self.collection_url}/{stored.pk}"
+        self.assertEqual(self.client.delete(revoke_url).status_code, 204)
+        self.assertEqual(self.client.delete(revoke_url).status_code, 204)
+        stored.refresh_from_db()
+        self.assertIsNotNone(stored.revoked_at)
+
+    def test_share_link_admin_csrf_strictness_and_unlisted_only(self):
+        self.client.force_login(self.admin)
+        no_csrf = self.client.post(
+            self.collection_url,
+            {"expiresAt": (timezone.now() + timedelta(hours=1)).isoformat()},
+            format="json",
+        )
+        self.assertEqual(no_csrf.status_code, 403)
+
+        self.authenticate(self.participant)
+        participant_denied = self.client.post(
+            self.collection_url,
+            {"expiresAt": (timezone.now() + timedelta(hours=1)).isoformat()},
+            format="json",
+        )
+        self.assertEqual(participant_denied.status_code, 403)
+
+        self.authenticate(self.admin)
+        invalid_expiry = self.client.post(
+            self.collection_url,
+            {"expiresAt": (timezone.now() - timedelta(seconds=1)).isoformat()},
+            format="json",
+        )
+        unknown_field = self.client.post(
+            self.collection_url,
+            {
+                "expiresAt": (timezone.now() + timedelta(hours=1)).isoformat(),
+                "revoked": False,
+            },
+            format="json",
+        )
+        self.assertEqual(invalid_expiry.status_code, 400)
+        self.assertEqual(unknown_field.status_code, 400)
+
+        self.tournament.visibility = Tournament.Visibility.PUBLIC
+        self.tournament.save(update_fields=("visibility", "updated_at"))
+        public_denied = self.client.post(
+            self.collection_url,
+            {"expiresAt": (timezone.now() + timedelta(hours=1)).isoformat()},
+            format="json",
+        )
+        self.assertEqual(public_denied.status_code, 409)
+        self.assertEqual(TournamentShareLink.objects.count(), 0)
 
 
 class InviteAcceptanceConcurrencyTests(TransactionTestCase):

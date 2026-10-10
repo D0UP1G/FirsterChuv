@@ -1,10 +1,12 @@
 import json
+from unittest.mock import patch
 from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
 
 from django.test import TestCase
+from django.core.cache import cache
 from django.utils import timezone
 from jsonschema import Draft202012Validator, FormatChecker
 from rest_framework.test import APIClient
@@ -18,6 +20,8 @@ from backend.apps.competition.runtime import configure_match_run, start_match_ru
 from backend.apps.competition.services import generate_bracket
 from backend.apps.events.models import MatchEvent, MatchSnapshot
 from backend.apps.tournaments.models import Tournament
+from backend.apps.tournaments.share_links import create_share_link, revoke_share_link
+from backend.apps.common.throttles import RemoteAddressScopedRateThrottle
 from backend.apps.tournaments.services import assign_participant
 
 
@@ -174,6 +178,90 @@ class PublicMatchSnapshotAPITests(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()["error"]["code"], "not_found")
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertEqual(response["Referrer-Policy"], "no-referrer")
+
+    def test_unlisted_read_requires_scoped_unexpired_share_header(self):
+        self.tournament.visibility = Tournament.Visibility.UNLISTED
+        self.tournament.save(update_fields=("visibility", "updated_at"))
+        _link, token = create_share_link(
+            self.tournament,
+            self.admin,
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+        path = f"/api/v1/public/matches/{self.match.pk}"
+
+        query_token = self.client.get(path, {"shareToken": token})
+        valid = self.client.get(path, HTTP_X_TOURNAMENT_SHARE_TOKEN=token)
+        mutation = self.client.post(
+            path,
+            {},
+            format="json",
+            HTTP_X_TOURNAMENT_SHARE_TOKEN=token,
+        )
+        other_tournament = Tournament.objects.create(
+            title="Other unlisted tournament",
+            starts_at=timezone.now(),
+            ends_at=timezone.now() + timedelta(hours=1),
+            participant_limit=2,
+            visibility=Tournament.Visibility.UNLISTED,
+            created_by=self.admin,
+        )
+        other_match = Match.objects.create(
+            tournament=other_tournament,
+            round_index=1,
+            position=999,
+            kind=Match.Kind.PLAYED,
+        )
+        wrong_object = self.client.get(
+            f"/api/v1/public/matches/{other_match.pk}",
+            HTTP_X_TOURNAMENT_SHARE_TOKEN=token,
+        )
+
+        self.assertEqual(query_token.status_code, 404)
+        self.assertEqual(valid.status_code, 200, valid.content)
+        self.assertEqual(valid["Cache-Control"], "no-store")
+        self.assertEqual(valid["Referrer-Policy"], "no-referrer")
+        self.assertEqual(mutation.status_code, 405)
+        self.assertEqual(wrong_object.status_code, 404)
+
+        expired_link, expired_token = create_share_link(
+            self.tournament,
+            self.admin,
+            expires_at=timezone.now() + timedelta(seconds=1),
+        )
+        expired_link.expires_at = timezone.now() - timedelta(seconds=1)
+        expired_link.save(update_fields=("expires_at",))
+        expired = self.client.get(
+            path, HTTP_X_TOURNAMENT_SHARE_TOKEN=expired_token
+        )
+        self.assertEqual(expired.status_code, 404)
+        self.assertEqual(expired["Referrer-Policy"], "no-referrer")
+
+        revoke_share_link(self.tournament.pk, _link.pk)
+        revoked = self.client.get(path, HTTP_X_TOURNAMENT_SHARE_TOKEN=token)
+        self.assertEqual(revoked.status_code, 404)
+
+    def test_public_rate_limit_ignores_spoofed_forwarded_for(self):
+        cache.clear()
+        path = f"/api/v1/public/matches/{self.match.pk}"
+        with patch.dict(
+            RemoteAddressScopedRateThrottle.extra_rates,
+            {"public_snapshot": "1/minute"},
+        ):
+            first = self.client.get(
+                path,
+                REMOTE_ADDR="198.51.100.10",
+                HTTP_X_FORWARDED_FOR="203.0.113.1",
+            )
+            second = self.client.get(
+                path,
+                REMOTE_ADDR="198.51.100.10",
+                HTTP_X_FORWARDED_FOR="203.0.113.2",
+            )
+
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(second.status_code, 429, second.content)
 
     def test_public_match_without_a_configured_run_has_no_partial_dto(self):
         self.match.current_run = None

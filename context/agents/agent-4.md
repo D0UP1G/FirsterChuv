@@ -1,13 +1,14 @@
 # Агент 4 (прежний 1): API и логика соревнования
 
-## Текущая работа · Волна 1 · P2-03.4 · 2026-10-10
+## Текущая работа · Волна 1 · P1-03 · 2026-10-10
 
-- Статус: IN_REVIEW в `feature/a4-p2-03-4-ready`, база `origin/develop` `4bb521b4980c3262d49f8b91387499f4d2a4acc1`; implementation audit готов, PR/CI/merge ожидаются.
-- Scope: `POST /matches/{id}/ready`, серверный `both_ready` auto-start, idempotency receipts с actor/action/body binding для match config/start/ready.
-- Планируемые пути: `backend/apps/competition/{models.py,runtime.py,views.py,urls.py,serializers.py,match_commands.py}`, своя migration и competition API/concurrency tests, `docs/architecture/{api.md,parallel-contracts.md}`, этот файл, ROADMAP/audit при необходимости.
-- Остальные пункты первой волны A4 — P1-03 и P1-01.1; до их выполнения не переходить ко второй волне. После завершения всех трёх пунктов остановиться по прямому поручению пользователя и ждать остальные агенты.
-- Ранее завершённый P4-07 интегрирован PR [#78](https://github.com/D0UP1G/FirsterChuv/pull/78), merge `fbcbca6aec775b1bec3678910e21ac8c5ab5d522`, CI 5/5 SUCCESS; локальный `develop` синхронизирован до v6 `4bb521b`.
-- P2-03.4: [implementation audit](../audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md). Focused API/runtime 21/21; full competition 163 found, 11 skipped; file-backed ready concurrency 1/1; contracts/import/domain/check/migration/compile PASS.
+- Статус: IN_REVIEW в `feature/a4-p1-03-public-access`, base `origin/develop` `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`.
+- Scope: existing PublicAccessV1/public snapshot; hashed tournament share grants с expiry/revoke; read-only/IDOR/DTO privacy; socket-peer rate limit без доверия client XFF; safe fragment/header transport.
+- Изменённые пути: `backend/apps/{accounts/views.py,common/{middleware.py,throttles.py},events/{access.py,views.py,test_public_match_api.py},tournaments/{models.py,serializers.py,share_links.py,views.py,urls.py,tests.py,migrations/0004_tournamentsharelink.py}`, API/security/realtime/contracts/requirements/STATE/ROADMAP docs и audit. A3-owned Nginx/settings/Compose и A5 frontend не менялись.
+- Проверки: `events+tournaments+accounts` 71 tests (66 PASS, 5 skipped), focused P1-03 21/21, error-header probe 3/3, domain 68 PASS, 9 contract fixtures, imports/check/migration/compile/diff PASS. Полный T20 и actual proxy/container log smoke не заявляются.
+- Ограничение: legacy invite token ещё находится в URI path; A3-owned proxy/dev-server log redaction записан отдельным [contract request](../contracts/agent-3-token-access-log-redaction.md). Новому consumer нужен A5 fragment→header CONNECT. [P1-03 audit](../audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md).
+- P2-03.4 DONE: PR [#82](https://github.com/D0UP1G/FirsterChuv/pull/82), merge `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`, exact-head CI 5/5 SUCCESS, локальный `develop` синхронизирован. [Implementation audit](../audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md), [merge audit](../audits/2026-10-10T054825+0300-agent-4-P2-03-4-merge.md).
+- После P1-03 выполнить независимый P1-01.1 и остановиться после Wave 1 A4; Wave 2 не начинать по прямому поручению пользователя.
 
 ## Результат предыдущей задачи · P4-07 · public snapshot · 2026-10-10
 
