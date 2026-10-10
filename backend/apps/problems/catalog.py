@@ -55,6 +55,32 @@ class DjangoProblemCatalog:
             raise ProblemNotReady("one or more problem versions have no verified compiler")
         return tuple(self._public_projection(by_problem_id[problem_id]) for problem_id in problem_ids)
 
+    def describe_pinned(self, problem_id: UUID, version: str, checksum: str) -> PublicProblemVersion:
+        """Public projection of the exact version frozen into a run, never the latest active one.
+
+        Statement display needs no compiler: the run was configured only from ready, verified
+        versions. The stored checksum must equal the frozen one so a replaced bundle is never shown.
+        """
+        record = (
+            ProblemVersion.objects.filter(
+                problem_id=problem_id,
+                version=version,
+                checksum=checksum,
+                readiness=ProblemVersion.Readiness.READY,
+            )
+            .select_related("public_data")
+            .prefetch_related(
+                Prefetch(
+                    "public_data__assets",
+                    queryset=ProblemPublicAsset.objects.only("id", "public_data_id", "asset_id").order_by("asset_id"),
+                )
+            )
+            .first()
+        )
+        if record is None:
+            raise ProblemNotReady("pinned problem version is unknown, changed or not ready")
+        return self._public_projection(record)
+
     def _record_compilers_verified(self, record: ProblemVersion) -> bool:
         language_ids = {item["id"] for item in record.public_data.languages}
         try:
