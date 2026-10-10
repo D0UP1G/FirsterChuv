@@ -1,5 +1,13 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: волна 2 (3/4) — backend публичный список, сетка и SSE (по прямому поручению команды)
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-wave2-public-sse`, база `origin/develop` `feef318`.
+- Поручение: пользователь передал A5 задачи волны 2 всех агентов; здесь — задачи A4 (P2-06.3: публичная сетка и SSE). Правки в зоне `backend/apps/events/` минимальные, контракты v1 не меняются.
+- Пути: `backend/apps/events/{public_views.py,urls.py,services.py,tests/}`, эта карточка, собственный аудит.
+- Цель: `GET /public/tournaments`, `GET /public/tournaments/{id}/bracket` (DTO без идентификаторов аккаунтов), `GET /public/matches/{id}/events` (SSE: `Last-Event-ID`, heartbeat, `stream.resync_required`, лимит соединений, ограниченная длительность соединения). Событийное хранилище сейчас поддерживает только `score.changed` (ограничение БД); остальные типы (`submission.*`, `match.*`) требуют типизированных payload и миграции A4 и не добавляются.
+
 ## Срез: волна 2 (1/4) — backend API участника: условие, языки, подключение провайдеров (по прямому поручению команды)
 
 - Статус: `IN_REVIEW`.
