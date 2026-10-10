@@ -1,5 +1,14 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: волна 2 (1/4) — backend API участника: условие, языки, подключение провайдеров (по прямому поручению команды)
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-wave2-participant-api`, база `origin/develop` — см. аудит.
+- Поручение: пользователь передал A5 задачи волны 2 всех агентов (A3 условие/языки/черновики, A4 публичная сетка и SSE). Другие агенты по cards на этот момент волну 2 не начинали. Правки в зонах A3/A4 выполняются по прямому поручению и минимально, без смены контрактов v1.
+- Пути: `backend/apps/problems/{catalog.py,workspace_views.py,urls.py,tests/}`, `backend/apps/submissions/{runtime.py,tests/}`, `backend/config/settings.py`, `docs/architecture/api.md` (только уточнения реализованных маршрутов), эта карточка, собственный аудит.
+- Цель: `GET /matches/{id}/problems/{problemId}` (условие по закреплённой версии замороженного запуска, после старта) и `.../languages` (только проверенные компиляторы); задать `WORKSPACE_ACCESS_FACTORY` и `SUBMISSION_SERVICE_FACTORY`, чтобы API черновиков и посылок не отвечал 503 в рабочем окружении.
+- Остальные срезы волны 2: (2) frontend рабочее место P5-03c, (3) backend публичная сетка и SSE, (4) frontend карта на SSE.
+
 ## Срез: P5-03e — публичная карта на реальном снимке матча (ROADMAP v6, волна 1)
 
 - Статус: `IN_REVIEW` (PR #81, CI 5/5, sync с develop после merge #80 и PR A3/A4).

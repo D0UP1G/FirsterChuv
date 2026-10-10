@@ -2,7 +2,7 @@ from uuid import UUID, uuid4
 from unittest.mock import patch
 
 from django.db import OperationalError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from backend.apps.accounts.models import User
@@ -125,6 +125,7 @@ class DraftAPITests(TestCase):
         self.assertNotIn("database is locked", str(response.json()))
         self.assertEqual(save_once.call_count, 3)
 
+    @override_settings(WORKSPACE_ACCESS_FACTORY=None)
     def test_missing_workspace_port_fails_closed(self):
         response = self.get_draft()
         self.assertEqual(response.status_code, 503)
