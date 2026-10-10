@@ -10,6 +10,7 @@ from backend.apps.tournaments.models import (
     Invite,
     Tournament,
     TournamentParticipant,
+    TournamentShareLink,
     default_match_config,
 )
 from backend.apps.tournaments.services import (
@@ -316,3 +317,25 @@ class InviteMetadataSerializer(serializers.ModelSerializer):
             "revoked_at",
         )
         read_only_fields = fields
+
+
+class ShareLinkCreateSerializer(StrictInputSerializer):
+    expires_at = serializers.DateTimeField()
+
+    def validate_expires_at(self, value):
+        if value <= timezone.now():
+            raise serializers.ValidationError("Срок действия должен быть в будущем.")
+        return value
+
+
+class ShareLinkMetadataSerializer(serializers.ModelSerializer):
+    tournament_id = serializers.UUIDField(read_only=True)
+    revoked = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TournamentShareLink
+        fields = ("id", "tournament_id", "expires_at", "revoked", "created_at")
+        read_only_fields = fields
+
+    def get_revoked(self, instance):
+        return instance.revoked_at is not None

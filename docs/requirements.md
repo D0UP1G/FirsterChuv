@@ -106,16 +106,16 @@ P-ID выше ведут к ROADMAP v3, старые A-ID сохранены. Co
 ROADMAP v4 сохраняет все37 требований и21 acceptance. Новые#21 CAS/#50 pairings/reset/#52 frontend CI/#54 дизайн проверены в integration feature до MERGED; #53 snapshots исключён с correctness blockers. [Case comparison и exact SHA/проверки](reviews/2026-10-10-mvp-readiness.md). P4 UI задачи теперьA5; A4 public events/SSE и system evidence. GET draft selector и additive snapshot/failure/fencing [приняты](../context/contracts/2026-10-10-mvp-boundaries.md). Полные обязательные блоки1–3/official/hostile/one-command/demo ещё неaccepted; static design/pure tests не закрывают их.
 
 
-## Текущее назначение и приоритет, ROADMAP v5
+## Текущее назначение и приоритет, ROADMAP v6
 
-Последнее уточнение команды: A3, A4 (прежний A1/координатор), A5. A4 API/domain/common/events, A3 tasks/queue/judge + runtime/config/Compose/CI/acceptance, A5 весь frontend. P-ID в матрицах выше сохраняют смысл; бывшие A1/A2 задачи переназначены, не удалены. [Полный план](../ROADMAP.md), [M0](quality/m0-demo.md).
+Последнее уточнение команды: A3, A4 (прежний A1/координатор), A5. A4 API/domain/common/events, A3 tasks/queue/judge + runtime/config/Compose/CI/acceptance, A5 весь frontend. P-ID в матрицах выше сохраняют смысл; бывшие A1/A2 задачи переназначены, не удалены. Текущий develop `48cb06a4` включает PR #82. [Полный план](../ROADMAP.md), [M0](quality/m0-demo.md).
 
 | Область | Реализовано/integrated | Открыто сейчас |
 |---|---|---|
 | M01–04/TEAM01 | auth/CRUD/roster/invites/bracket/manual pairings/reset | full browser/cap/history/permissions acceptance A4+A5 |
-| M05–08/P03 | persisted run/config/start, gateway/workspace, ledger/result/failure/finalization and admin cores | `both_ready` HTTP, key/body receipts, A3 consumer CONNECT, P2-05 admin API/browser |
+| M05–08/P03 | persisted run/config/start/ready, gateway/workspace, ledger/result/failure/finalization and admin cores | A3 consumer CONNECT, P2-05 admin API/browser |
 | P01–02/E01–04/J01–04 | normalized catalog, LocalJudge/harness, durable queue/outboxes/draft CAS, editor UI | real import/compiler/worker/provider/workspace CONNECT A3+A4+A5; admission race A3; official adapter отдельно |
-| V01–04/TEAM02 | safe event store; P4-07 snapshot/public-only GET implementation in A4 feature, awaiting integration | hashed unlisted access P1-03; public bracket/SSE; real map CONNECT A5 |
+| V01–04/TEAM02 | safe event store; P4-07 snapshot/public-only GET integrated PR #78 | hashed unlisted access in current P1-03 A4 feature; A3 legacy invite URI log-redaction follow-up; public bracket/SSE; real map CONNECT A5 |
 | S01–02/TEAM06 | basic roles/guards/private split/isolation cores | actual full-system IDOR/injections/privacy/hostile/restart evidence A3+A4+A5 |
 | D01–06 | README/env/архитектура/history/CI/case/design | actual one-command runtime A3, M0→full official/demo/video evidence всей команды |
 

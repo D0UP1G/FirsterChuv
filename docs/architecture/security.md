@@ -4,6 +4,14 @@
 
 Текущая документация не означает, что защита уже реализована. Каждый контроль подтверждается в T18/T20 и аудите владельца.
 
+## Актуальное состояние P1-03 (2026-10-10)
+
+`feature/a4-p1-03-public-access` добавляет tournament-scoped read-only share grant: в БД остаётся только SHA-256, секрет выдаётся admin один раз, срок действия обязателен, отзыв немедленно закрывает дальнейшие чтения. Raw token передаётся browser fragment → API header `X-Tournament-Share-Token`, не query/path; публичная карта выдаёт только существующий `public-match` allowlist и ставит `no-store`/`no-referrer`. Неизвестные, expired, revoked и другие tournament IDs одинаково скрываются 404. Admin share management требует global application role и CSRF.
+
+Anonymous scoped throttles для login/register/invite preview/public snapshot используют `REMOTE_ADDR` socket peer и намеренно игнорируют client-supplied `X-Forwarded-For`. Public snapshot ограничен 120/minute; login/register/invite используют существующие rates. Это fail-closed выбор: при одном Nginx proxy разные внешние IP в Django могут разделить peer bucket; Compose сейчас держит один API process, а shared throttle cache для нескольких процессов остаётся эксплуатационным требованием. Nginx forwarding chain проверяется отдельно; A4 не меняет A3-owned proxy/Compose/settings.
+
+Остался отдельный A3 deployment request для default access log: текущий invite-preview token находится в path, который combined Nginx access log записывает как request URI. Новые public share token в URI не входят, но legacy invite path требует log redaction/`access_log off` в Nginx либо согласованного transport migration. До изменения `deploy/nginx/default.conf` (владение A3) это конкретное deployment follow-up, а не утверждение о полной log-redaction приёмке; contract-запрос: [A3 token access-log redaction](../../context/contracts/agent-3-token-access-log-redaction.md).
+
 Текущий `develop` на `cad34ea` содержит integrated account/roster PR #5/#8 и invite API P1-01 PR #12: явную CSRF-защиту mutations, HttpOnly cookies, серверную роль participant, admin-only writes, roster capacity/freeze guards и atomic invite accept. `freeze_roster` перед фиксацией повторно проверяет active account и роль `participant`; `IsApplicationAdmin` не доверяет Django staff flags. Строгие serializers отклоняют неизвестные/read-only поля. Replacement после игры остаётся контролируемым действием A2; private match ownership — ответственностью A2/A3. Частичные тесты не закрывают T02/T20 целиком. DRF throttle cache process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
 
 ### Частичные доказательства backend slices Agent 1

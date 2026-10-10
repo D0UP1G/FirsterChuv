@@ -1,9 +1,9 @@
-<!-- Статус интеграции: снимок в context/STATE.md. PR #78 с P4-07 уже интегрирован; P2-03.4 route описан и реализован в текущей A4 feature, его доступность в develop сверять по PR/STATE. Остальные целевые routes не означают реализованные endpoints. -->
+<!-- Статус интеграции: снимок в context/STATE.md. PR #78 (P4-07) и PR #82 (P2-03.4) интегрированы; P1-03 share/access routes описаны и реализуются в текущей A4 feature. Остальные целевые routes не означают реализованные endpoints. -->
 
 > Актуальная передача 2026-10-10, ROADMAP v5: A4 (прежний A1) owns API/accounts/tournaments/competition/events/common contracts; A3 owns problems/submissions/drafts/judge/worker + config/Compose/CI/system acceptance; A5 весь frontend. A2 больше не активный producer. Старые датированные назначения ниже — история; поля v1 и принятые additive boundaries не меняются. Missing provider блокирует только CONNECT, не всю роль.
 # API и права доступа
 
-Целевой contract DRF API. Реализацию конкретных маршрутов сверять с [STATE](../../context/STATE.md) и аудиторскими evidence: наличие pure core/catalog не означает, что его HTTP route готов. PR #74 интегрировал private match read/config/manual-start routes; PR #77 интегрировал `CompetitionGateway`/`WorkspaceAccess` provider; PR #78 интегрировал public match snapshot в `develop`. A4 P2-03.4 feature добавляет participant ready HTTP и устойчивые receipts для config/start/ready; production A3 consumer CONNECT, language route, admin API/browser CONNECT и full M0 остаются отдельными slices. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; маршруты не имеют завершающего `/`.
+Целевой contract DRF API. Реализацию конкретных маршрутов сверять с [STATE](../../context/STATE.md) и аудиторскими evidence: наличие pure core/catalog не означает, что его HTTP route готов. PR #74 интегрировал private match read/config/manual-start; PR #77 — `CompetitionGateway`/`WorkspaceAccess`; PR #78 — public match snapshot; PR #82 — participant ready и body-bound receipts. P1-03 adds unlisted share access in current A4 feature; production A3 consumer CONNECT, language route, admin API/browser CONNECT and full M0 remain separate slices. Префикс `/api/v1`, JSON camelCase, UUID, время RFC 3339 UTC. Django routes не должны молча перенаправлять POST из-за trailing slash; маршруты не имеют завершающего `/`.
 
 Session auth через HttpOnly cookie и CSRF для mutations. `GET /auth/csrf` выдаёт `csrfToken` в JSON и HttpOnly CSRF cookie; frontend посылает `X-CSRFToken`. Register/login/logout имеют явную CSRF protection, не полагаются только на SessionAuthentication. Публичные GET не требуют login.
 
@@ -144,10 +144,32 @@ Draft PUT `{runId, source, expectedRevision}` возвращает новый re
 | GET `/public/tournaments/{slug}` | Public | Турнир без user email/secrets |
 | GET `/public/tournaments/{slug}/bracket` | Public | Сетка, statuses, scores |
 | GET `/public/tournaments/{slug}/events` | Public | SSE advancement/lifecycle |
-| GET `/public/matches/{id}` | Public | P4-07 feature: anonymous public-only snapshot с lastEventId/server clock; integration pending |
+| GET `/public/matches/{id}` | Public | Anonymous public/unlisted snapshot; unlisted uses `X-Tournament-Share-Token`, `public-match` v1 allowlist |
+| GET `/tournaments/{id}/share-links` | A | Share-link metadata only; no raw token or hash |
+| POST `/tournaments/{id}/share-links` | A | CSRF; `{expiresAt}`; raw token returned once; link uses URL fragment |
+| DELETE `/tournaments/{id}/share-links/{shareLinkId}` | A | CSRF; idempotent revoke |
 | GET `/public/matches/{id}/events` | Public | SSE allowlist, Last-Event-ID, heartbeat/resync |
 
-Unlisted read требует share token; хранить hash, redact token query в логах, `Referrer-Policy: no-referrer`. Текущий P4-07 provider fail-closed скрывает unlisted match до P1-03 реализации хешированного share token. Реализованный snapshot отвечает `Cache-Control: no-store` и `Referrer-Policy: no-referrer`. Ни один public маршрут не изменяет state и не возвращает исходник, tests, checker, private email или CE diagnostics. Error payload не раскрывает private object existence.
+Unlisted read требует действующий tournament-scoped share grant. В БД хранится SHA-256; create endpoint показывает raw token один раз. Он передаётся через URL fragment (`/watch/{tournamentId}#shareToken=...`), который browser не отправляет серверу; frontend читает его и передаёт API заголовком `X-Tournament-Share-Token`. Query/path token transport не поддерживается. Unknown, чужой, истёкший и отозванный grant дают одинаковый 404. Grant даёт только read-only доступ и не является invite/membership. Public response устанавливает `Cache-Control: no-store` и `Referrer-Policy: no-referrer`. Public DTO не включает source, tests, checker, private email или CE diagnostics; public routes state не меняют.
+
+Share management contracts: `GET /tournaments/{id}/share-links` returns an array of metadata `{id,tournamentId,expiresAt,revoked,createdAt}`. `POST` accepts only `{expiresAt}` and returns `201` once with:
+
+```json
+{
+  "share": {
+    "id": "<share-link-uuid>",
+    "tournamentId": "<tournament-uuid>",
+    "expiresAt": "<RFC-3339 UTC>",
+    "revoked": false,
+    "createdAt": "<RFC-3339 UTC>"
+  },
+  "shareToken": "<one-time secret>",
+  "shareUrl": "/watch/<tournament-uuid>#shareToken=<one-time secret>",
+  "accessHeader": "X-Tournament-Share-Token"
+}
+```
+
+The fragment consumer must not copy the secret into query/path; send it only as the named header to a public read. `DELETE /tournaments/{id}/share-links/{shareLinkId}` returns 204 and may be retried. Share-link admin GET/POST/DELETE require active global admin; unsafe requests require CSRF. Raw token is absent from list/revoke responses.
 
 ## Ошибки и ограничения
 
@@ -159,6 +181,6 @@ Role permission проверяется вместе с ownership/run state. За
 
 ## Уточнение и текущие маршруты после новой ревизии 2026-10-10
 
-#50 реализует admin PUT /tournaments/{id}/bracket/pairings и POST /tournaments/{id}/bracket/reset с reason и Idempotency-Key. #74 реализует match GET/config/manual-start; #76 добавил durable submission ledger/finalization/admin effects; A4 P2-03.4 реализует participant ready route и bound receipts в текущей feature. A3 workspace provider CONNECT, language/condition endpoints и browser/system acceptance остаются отдельными slices. #21 private draft CAS исправлен; endpoint требует WorkspaceAccess: GET /matches/{id}/problems/{problemId}/draft?runId=...&languageId=...; missing record 404, PUT body прежний. [Selector принят координатором](../../context/contracts/2026-10-10-mvp-boundaries.md).
+#50 реализует admin PUT /tournaments/{id}/bracket/pairings и POST /tournaments/{id}/bracket/reset с reason и Idempotency-Key. #74 реализует match GET/config/manual-start; #76 добавил durable submission ledger/finalization/admin effects; #82 реализует participant ready route и body-bound receipts. P1-03 добавляет в current A4 feature share links/PublicAccess для public и unlisted snapshot reads. A3 workspace provider CONNECT, language/condition endpoints and browser/system acceptance остаются отдельными slices. #21 private draft CAS исправлен; endpoint требует WorkspaceAccess: GET /matches/{id}/problems/{problemId}/draft?runId=...&languageId=...; missing record 404, PUT body прежний. [Selector принят координатором](../../context/contracts/2026-10-10-mvp-boundaries.md).
 
 P2-04 через PR #76 добавил durable accepted/result/failure ledger и pending-aware finalization. A4 P2-03.3 в отдельной feature реализует provider `backend.apps.competition.gateway.DjangoCompetitionGateway`: его factory пути — `get_competition_gateway` и `get_run_problem_snapshot_provider`. Он проверяет активное членство, actor из frozen run roster, assignment задачи, current run и server deadline для submit; version/checksum возвращаются только по `runId` из immutable run snapshot. `authorize_workspace` выдаёт actions по purpose, не допускает admin к draft/source и не открывает participant condition до старта. Provider не считается production-connected до A3 factory/startup/consumer CONNECT; browser/M0 остаётся NOT_ACCEPTED.

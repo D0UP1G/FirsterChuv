@@ -4,7 +4,7 @@
 
 ## Распределение v6: волны и контракты между зонами
 
-Прямое поручение команды 2026-10-10: A5 — весь frontend, A3 и A4 — всё остальное; работа идёт параллельно. P-ID v5 сохранены, готовое не переписывается. [Копия v5](docs/history/ROADMAP-2026-10-10-before-v6-waves.md). Состояние `develop` `7819fc7`: слиты #68/#70/#71/#72/#73/#75/#78 и #53 через #78; сквозного матча нет. Backend 320 тестов OK (14 пропущены: реальный Docker), frontend 91 тест OK.
+Прямое поручение команды 2026-10-10: A5 — весь frontend, A3 и A4 — всё остальное; работа идёт параллельно. P-ID v5 сохранены, готовое не переписывается. [Копия v5](docs/history/ROADMAP-2026-10-10-before-v6-waves.md). Текущий `origin/develop` `48cb06a4`: PR #82 добавил ready HTTP/body-bound match receipts поверх интегрированных #68/#70/#71/#72/#73/#75/#78; сквозного матча всё ещё нет. Backend 320 тестов OK (14 пропущены: реальный Docker), frontend 91 тест OK — это результаты снимка предыдущей интеграционной проверки, не exact-head suite #82.
 
 Правило независимости: производитель эндпоинта первым коротким PR публикует маршрут и форму ответа в `docs/architecture/api.md`; потребитель в тот же день пишет клиент и контрактные тесты по фикстурам и не ждёт реализации. Общие файлы (`api_urls.py`, `settings.py`, карточки) каждый меняет минимально и только в своём PR.
 
@@ -12,7 +12,7 @@
 
 | Владелец | Задачи |
 |---|---|
-| A4 | P2-03.4: `IN_REVIEW` в текущей feature — `POST /matches/{id}/ready`, автостарт `both_ready`, квитанции config/start/ready с привязкой к телу. P1-03 и P1-01.1 — READY и последующие пункты первой волны |
+| A4 | P1-03: `IN_REVIEW` в `feature/a4-p1-03-public-access`. P2-03.4 интегрирован PR #82. P1-01.1 — следующая независимая задача первой волны |
 | A3 | P3-04.2: реальный исполнитель LocalJudge, фабрика воркера и `SUBMISSION_WORKER_FACTORY`, очистка контейнеров после убитого процесса. P3-02.2: программный импорт демо-задачи и проверка компилятора (сейчас `verified=False`). P1-04.2: запуск одной командой, API, воркер и таймер в Compose |
 | A5 | P5-03d: админский матч на реальные `GET/PATCH /matches/{id}`, start, pause, resume, extend, technical-result, rematches, replacements. P5-03e: публичная карта на слитом `GET /public/matches/{id}` с опросом. Кнопка «Готов» и состояния по контракту A4 |
 
@@ -37,11 +37,11 @@ M1: ручные пары и BYE в браузере, все админские 
 
 ## Что уже есть и что мешает запуску
 
-В develop `5f8e7d5` интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, persisted-run configure/readiness, match GET/config/manual start, frozen-run gateway/WorkspaceAccess/RunProblemSnapshot provider, durable clock/score/ledger/failure/finalization/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 и Agent 4 PR #67/#69/#74/#76/#77 MERGED. #77 завершил P2-03.3; A3 worker/draft consumer CONNECT и full M0 ещё не закрыты. Это готовые cores, их не нужно переписывать.
+В develop `48cb06a4` интегрированы auth/roles, tournament CRUD/roster/invites, bracket ORM и manual pairings/reset HTTP, persisted-run configure/readiness, match GET/config/manual start/ready, frozen-run gateway/WorkspaceAccess/RunProblemSnapshot provider, durable clock/score/ledger/failure/finalization/admin cores, normalized catalog, queue/worker/outboxes, LocalJudge, draft CAS, React editor/map и frontend CI. #60/#61/#62 и Agent 4 PR #67/#69/#74/#76/#77/#78/#82 MERGED. #82 завершил P2-03.4; A3 worker/draft consumer CONNECT и full M0 ещё не закрыты. Это готовые cores, их не нужно переписывать.
 
 #63 уточняет static reference по кейсу, #64 переносит токены бренда в React, #65 добавляет минимальные mobile/focus правила и own audit. В текущей coordinator feature они сохранены обычными merge commits; доступны другим владельцам после подтверждённого MERGED её PR. Runtime этих PR не меняет backend/providers. Проверки и точные source SHA — [ревизия](docs/reviews/2026-10-10-mvp-readiness.md).
 
-Реального сквозного MVP пока нет. P2-03 routes/gateway provider, P2-04 ledger/failure/finalization и frozen participant snapshots доступны в develop; A3 worker/draft CONNECT, ready HTTP, actual isolated executor, production startup/browser path и public transport ещё не собраны. A4 реализовал P4-07 snapshot correctness и public match snapshot в `feature/a4-p4-07-snapshot-correctness` от `5f8e7d5`; integration PR/CI pending. Source PR #53 открыт и его исходная ветка сохранена.
+Реального сквозного MVP пока нет. P2-03 routes/gateway provider, P2-04 ledger/failure/finalization и frozen participant snapshots доступны в develop; A3 worker/draft CONNECT, actual isolated executor, production startup/browser path и full realtime public transport ещё не собраны. A4 P4-07 snapshot correctness/public match snapshot интегрирован PR #78; исходный source PR #53 сохранён нетронутым и merged via ordinary commit.
 
 Дополнительный первый приоритет A3: в attempt 1 CI #63 на неизменённом backend concurrent same-key admission дал uncaught SQLite lock в QueueCounter. Attempt 2 зелёный; ошибка записана, не считается исправленной повтором CI.
 
@@ -49,7 +49,7 @@ M1: ручные пары и BYE в браузере, все админские 
 
 | Владелец | Вся зона | Первое READY задание | Независимый резерв |
 |---|---|---|---|
-| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | P4-07 snapshot correctness/public snapshot (текущая feature) | P1-03 PublicAccess/share security; P2-03 both_ready HTTP; P2-05 admin HTTP |
+| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | Wave 1: P2-03.4 DONE; P1-03 IN_REVIEW; P1-01.1 next | P2-05 admin HTTP and later Wave 2 producer tasks |
 | A3 | problems/submissions/drafts/judge/sandbox, config/factories/Compose/start scripts/CI, system acceptance | P3-04.1 admission contention; P3-04.2 реальный LocalJudge executor/factory + programmatic smoke import | P3-02 import/assets/compiler probes; P1-04 one-command build; P3-05 private draft access; P4-08 acceptance harness |
 | A5 | весь frontend: React/design/styles/typed clients/editor/map/UI/browser checks | P5-03 подключить готовые auth/invite/admin/bracket API; минимальный бренд из #64 | typed match/workspace clients, loading/error/empty states, draft isolation, keyboard/minimal responsive |
 
@@ -85,9 +85,9 @@ A4 владеет backend/apps/common/contracts.py и contract fixtures. A3 вл
 
 #17 и #52 CI integrated. Первым коротким PR P1-02.5 материализовать frozen InfrastructureFailureReceipt/Sink и RunProblemSnapshot/Provider из принятых boundaries. Existing v1 SubmissionPermit/ResultReceipt/verdict enum не менять. Common imports без optional apps. A3/A5 уже могут писать consumers на структурно совместимых ports, ждать их ответа не нужно. Общая эксплуатация CI передана A3; P1-02 не делает его зависимым от A4.
 
-### P1-03 · access/security · READY
+### P1-03 · access/security · A4 implementation in review
 
-PublicAccessV1 для anonymous public и отдельного hashed unlisted share token (expiry/revoke, не invite). Сначала public visibility, полный share далее. Global roles/default participant, IDOR/private source/CSRF/no-store/no-referrer/proxy/rate limits/log redaction. SQL filters/ordering allowlist; unsafe Markdown/URLs/assets не исполняются. S01/S02/TEAM01/02/06; T02/T20. Резерв без judge/frontend.
+PublicAccessV1 для anonymous public и отдельный hashed unlisted share grant (expiry/revoke, не invite). A4 feature подключает token через fragment/header, per-tournament read scope, remote-peer anonymous throttles и public DTO allowlist; query/path token не принимаются. Focused 21/21, full events/tournaments/accounts 71 найдено (5 skipped), domain 68 PASS, contract/import/check/migration/compile PASS. [Audit](context/audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md). S01/S02/TEAM01/02/06; T02/T20 остаются неполностью принятыми. Reverse-proxy/dev-server redaction для legacy invite token path передана A3: [contract request](context/contracts/agent-3-token-access-log-redaction.md); A3 config/logging не менялись.
 
 ### P2-01 · bracket ORM · implementation/integration DONE, acceptance PARTIAL
 
@@ -102,7 +102,7 @@ PublicAccessV1 для anonymous public и отдельного hashed unlisted s
 1. DONE: source #57 сохранён обычным merge в feature; configure read→write SQLite race исправлен и прошёл file-backed regression/rollback suite. PR #69 MERGED в `f9da1dd`, CI 5/5; Agent 4 card/audit содержат evidence.
 2. DONE: match `GET/config/manual-start` routes в PR #74, merge `475cdf7`, exact-head CI 5/5 SUCCESS. Первая backend попытка поймала A3-owned QueueCounter lock regression; same-head повторный backend job прошёл. Retry не исправляет/не закрывает admission race; владелец A3 и P3-04.1 остаются ответственными. Implementation/publication/merge evidence — Agent 4 card и аудиты.
 3. DONE по implementation/integration: PR #77 MERGED ordinary commit `5f8e7d5`, final head `97ca670`; exact-head CI 5/5 SUCCESS. Frozen-run gateway проверяет active membership/actor/run/problem/deadline/actions; conditions доступны участнику после старта, snapshot version/checksum идёт из нужного immutable run даже после rematch. A3 worker/queue/draft factory CONNECT и browser M0 остаются открытыми. M05/M06/P03; T07–09 implementation integrated, full acceptance PARTIAL.
-4. IN_REVIEW в `feature/a4-p2-03-4-ready` (base `4bb521b`): `POST /matches/{id}/ready` для активного назначенного participant; `manual` сохраняет сигнал, `both_ready` атомарно запускает run по времени сервера на втором сигнале. Config/start/ready сохраняют scoped key/action/body receipt и исходный response payload в одной транзакции; exact retry воспроизводится, конфликтное переиспользование ключа даёт `409`. API/runtime 21/21, competition 163 found/11 skipped, file-backed ready concurrency 1/1, contracts/import/domain/check/migration/compile PASS. [Implementation audit](context/audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md); публикация ожидается.
+4. DONE: PR #82 ordinary-merge в `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`, exact-head CI 5/5 SUCCESS. `POST /matches/{id}/ready`, manual/both_ready и durable body-bound receipts для config/start/ready. Implementation [audit](context/audits/2026-10-10T054413+0300-agent-4-P2-03-4-ready-command.md), [merge audit](context/audits/2026-10-10T054825+0300-agent-4-P2-03-4-merge.md).
 
 ### P2-04 · ledger / result / failure / promotion · implementation integrated, M0 critical
 
@@ -114,7 +114,7 @@ P2-05 effect/core fixes are included through #76, including write-first exact sa
 
 ### P2-06 · public events/SSE · PARTIAL, owner A4
 
-Event store #16 integrated. P4-07 feature fixes snapshot race and atomically writes the `score.changed` result event with its snapshot; integration pending. Other lifecycle/accepted producers still need typed contracts and same-transaction wiring. P1-03 adds hashed unlisted access. Then public bracket and SSE heartbeat/Last-Event-ID/resync/caps/backpressure. Публичный DTO не содержит source/email/private tests/CE diagnostics. A5 отдельно подключает карту. V01–03/T16/T17/T20.
+Event store #16 integrated. P4-07 (#78) snapshot race and atomic `score.changed` event/snapshot write are integrated. Other lifecycle/accepted producers still need typed contracts and same-transaction wiring. P1-03 adds hashed unlisted access. Then public bracket and SSE heartbeat/Last-Event-ID/resync/caps/backpressure. Публичный DTO не содержит source/email/private tests/CE diagnostics. A5 отдельно подключает карту. V01–03/T16/T17/T20.
 
 ### P4-07 · snapshot correctness · DONE по интеграции, acceptance PARTIAL
 
