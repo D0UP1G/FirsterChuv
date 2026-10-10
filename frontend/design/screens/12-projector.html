@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — Big Screen Mode</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+.ba-proj-tasks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+</style>
+</head>
+<body>
+<div class="app-frame app-frame-projector" data-route="/watch/:tournamentId/matches/:matchId?projector=1" style="width: 1920px; height: 1080px; box-sizing: border-box; padding: 48px 64px; display: flex; flex-direction: column; gap: 32px; overflow: hidden">
+  <section class="spectator-page spectator-page-projector" style="display: flex; flex-direction: column; gap: 32px; height: 100%">
+    <header style="display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; align-items: center; gap: 24px">
+        <span class="brand" style="font-size: 28px"><span class="brand-mark" aria-hidden="true" style="width: 44px; height: 44px; font-size: 22px">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></span>
+        <span class="ba-kicker" style="font-size: 18px">Блиц 2026 · Полуфинал · M-1</span>
+      </div>
+      <div class="spectator-live-status" data-connection="live" style="margin: 0; font-size: 18px"><span class="spectator-status-dot" aria-hidden="true" style="width: 14px; height: 14px"></span>LIVE</div>
+    </header>
+
+    <div class="spectator-scoreboard" style="padding-bottom: 32px">
+      <div class="spectator-score-player">
+        <span class="ba-badge"><span class="ba-badge-avatar" aria-hidden="true">И</span><span class="ba-badge-name"><b>Ира</b><small style="font-size: 18px">штраф 01:00</small></span></span>
+        <strong>1</strong>
+      </div>
+      <div class="spectator-clock"><span class="ba-timer">12:47</span><small style="font-size: 18px">ОСТАЛОСЬ</small></div>
+      <div class="spectator-score-player spectator-score-player-right">
+        <span class="ba-badge is-p2"><span class="ba-badge-name" style="text-align: right"><b>Максим</b><small style="font-size: 18px">штраф 00:00 · <span style="color: #00ff66">ЛИДЕР</span></small></span><span class="ba-badge-avatar" aria-hidden="true">М</span></span>
+        <strong>1</strong>
+      </div>
+    </div>
+
+    <div class="spectator-map" style="padding-top: 0; gap: 40px; flex: 1">
+      <article class="spectator-lane">
+        <div class="spectator-track">
+          <span class="spectator-track-line" aria-hidden="true"></span>
+          <span class="spectator-track-progress" style="width: 25%" aria-hidden="true"></span>
+          <span class="spectator-checkpoint checkpoint-solved" data-label="A" style="left: 25%" aria-hidden="true"></span>
+          <span class="spectator-runner" style="left: 25%; width: 40px; height: 40px; margin-left: -20px; top: 12px; font-size: 16px" aria-hidden="true">И</span>
+        </div>
+        <ol class="spectator-task-grid">
+          <li class="spectator-task-state task-solved"><span class="spectator-task-label">A</span><span class="ba-tag ba-tag-breached" style="align-self: flex-start; font-size: 18px">BREACHED</span></li>
+          <li class="spectator-task-state task-attempted"><span class="spectator-task-label">B</span><span class="ba-tag ba-tag-wa" style="align-self: flex-start; font-size: 18px">WA ×2</span></li>
+          <li class="spectator-task-state"><span class="spectator-task-label">C</span><span>—</span></li>
+          <li class="spectator-task-state"><span class="spectator-task-label">D</span><span>—</span></li>
+        </ol>
+      </article>
+      <article class="spectator-lane is-p2">
+        <div class="spectator-track">
+          <span class="spectator-track-line" aria-hidden="true"></span>
+          <span class="spectator-track-progress" style="width: 25%" aria-hidden="true"></span>
+          <span class="spectator-checkpoint checkpoint-solved" data-label="C" style="left: 25%" aria-hidden="true"></span>
+          <span class="spectator-runner" style="left: 25%; width: 40px; height: 40px; margin-left: -20px; top: 12px; font-size: 16px" aria-hidden="true">М</span>
+        </div>
+        <ol class="spectator-task-grid">
+          <li class="spectator-task-state"><span class="spectator-task-label">A</span><span>—</span></li>
+          <li class="spectator-task-state"><span class="spectator-task-label">B</span><span>—</span></li>
+          <li class="spectator-task-state task-solved"><span class="spectator-task-label">C</span><span class="ba-tag ba-tag-breached" style="align-self: flex-start; font-size: 18px">BREACHED</span></li>
+          <li class="spectator-task-state"><span class="spectator-task-label">D</span><span>—</span></li>
+        </ol>
+      </article>
+    </div>
+
+    <footer style="display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid rgba(0,229,255,.22); font-size: 18px; color: #8fb3ba">
+      <span class="ba-terminal" style="font-size: 28px">&gt; 06:10 Максим → C <span style="color: #00ff66">[OK]</span> · лидер: Максим</span>
+      <span>Финал: Алина ждёт победителя M-1</span>
+    </footer>
+  </section>
+</div>
+</body>
+</html>

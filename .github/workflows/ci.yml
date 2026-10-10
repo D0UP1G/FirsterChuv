@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: contracts-and-common-imports
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: 0.12.17
+          python-version: "3.14"
+      - name: Install locked project and development dependencies
+        run: uv sync --locked --group dev
+      - name: Validate v1 fixtures against strict schemas
+        run: uv run --locked python scripts/check_contracts.py
+      - name: Verify common ports import without optional apps
+        run: uv run --locked python scripts/check_contract_imports.py
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_DEBUG: "true"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: 0.12.17
+          python-version: "3.14"
+      - name: Install locked project and development dependencies
+        run: uv sync --locked --group dev
+      - name: Compile backend packages
+        run: uv run --locked python -m compileall -q backend
+      - name: Run Django system checks
+        run: uv run --locked python manage.py check
+      - name: Check migration drift
+        run: uv run --locked python manage.py makemigrations --check --dry-run
+      - name: Run backend suite
+        run: uv run --locked python manage.py test
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v6.3.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Run frontend typecheck
+        run: npm run typecheck
+      - name: Run frontend lint
+        run: npm run lint
+      - name: Run frontend tests
+        run: npm test -- --maxWorkers=1
+      - name: Build frontend
+        run: npm run build
+
+  domain:
+    name: domain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: 0.12.17
+          python-version: "3.14"
+      - name: Install locked project and development dependencies
+        run: uv sync --locked --group dev
+      - name: Run available standalone competition domain suites
+        run: uv run --locked python scripts/check_domain_suites.py
+
+  sandbox-unit:
+    name: sandbox-unit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Detect isolated sandbox unit suite
+        id: sandbox
+        shell: bash
+        run: |
+          if [[ -d sandbox/tests ]] && find sandbox/tests -type f -name 'test_*.py' -print -quit | grep -q .; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install uv and Python
+        if: steps.sandbox.outputs.present == 'true'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: 0.12.17
+          python-version: "3.14"
+      - name: Install locked project and development dependencies
+        if: steps.sandbox.outputs.present == 'true'
+        run: uv sync --locked --group dev
+      - name: Run sandbox unit tests without starting Docker
+        if: steps.sandbox.outputs.present == 'true'
+        run: uv run --locked python -m unittest discover -s sandbox/tests -p 'test_*.py' -v
+      - name: Report sandbox unit suite not present on this ref
+        if: steps.sandbox.outputs.present != 'true'
+        run: echo "No sandbox unit suite exists in this ref; real Docker smoke is a separate manual workflow."

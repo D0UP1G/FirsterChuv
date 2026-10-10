@@ -1,0 +1,88 @@
+name: firsterchuv
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      SQLITE_PATH: /app/.data/db.sqlite3
+      DJANGO_ALLOWED_HOSTS: api,localhost,127.0.0.1
+      SANDBOX_VERIFIED_LANGUAGES: cpp20
+    command: ["/app/scripts/start-api.sh"]
+    init: true
+    volumes:
+      - app-data:/app/.data
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: unless-stopped
+
+  match-clock:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["uv", "run", "--no-sync", "python", "manage.py", "run_match_clock"]
+    environment:
+      SANDBOX_VERIFIED_LANGUAGES: cpp20
+      SQLITE_PATH: /app/.data/db.sqlite3
+      DJANGO_ALLOWED_HOSTS: api
+      DJANGO_DEBUG: "false"
+      DJANGO_REQUIRE_SECRET_KEY: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - app-data:/app/.data
+    restart: unless-stopped
+
+  judge-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["uv", "run", "--no-sync", "python", "manage.py", "run_judge_worker"]
+    environment:
+      SANDBOX_VERIFIED_LANGUAGES: cpp20
+      SQLITE_PATH: /app/.data/db.sqlite3
+      DJANGO_ALLOWED_HOSTS: api
+      DJANGO_DEBUG: "false"
+      DJANGO_REQUIRE_SECRET_KEY: "false"
+      DOCKER_HOST: unix:///var/run/docker.sock
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - app-data:/app/.data
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        bind:
+          create_host_path: false
+    group_add:
+      - "${DOCKER_SOCKET_GID:?Run scripts/start-demo.sh to detect the Docker socket group}"
+    restart: unless-stopped
+
+volumes:
+  app-data:

@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "taskId": "P4-08",
+  "recordedAt": "2026-10-10T00:14:54Z",
+  "source": {
+    "commitSha": "fdf75d89f8c2ee2417d3528e2eb0c36ac022482c",
+    "baseSha": "475cdf71fa88de6aa5aad2142fc9fdbdf90625f6",
+    "branch": "feature/p4-08-acceptance",
+    "worktreeClean": true
+  },
+  "scope": "disposable-loopback-http-api-smoke",
+  "smokeResult": "PASS",
+  "checks": [
+    {
+      "id": "api.registration_requires_csrf",
+      "status": "PASS",
+      "evidence": "registration без CSRF отклонён (403)"
+    },
+    {
+      "id": "api.registration_rejects_role_assignment",
+      "status": "PASS",
+      "evidence": "role=admin отклонён; такой identity не проходит login"
+    },
+    {
+      "id": "api.disposable_admin_login",
+      "status": "PASS",
+      "evidence": "временный application admin вошёл по HTTP"
+    },
+    {
+      "id": "api.admin_creates_tournament",
+      "status": "PASS",
+      "evidence": "application admin создал disposable турнир"
+    },
+    {
+      "id": "api.admin_creates_bounded_invite",
+      "status": "PASS",
+      "evidence": "ограниченный invite создан; bearer token используется только в памяти"
+    },
+    {
+      "id": "api.invite_preview_is_public_minimal",
+      "status": "PASS",
+      "evidence": "анонимный preview содержит только allowlisted поля и private headers"
+    },
+    {
+      "id": "api.two_participant_sessions",
+      "status": "PASS",
+      "evidence": "две participant identity вошли через отдельные sessions"
+    },
+    {
+      "id": "api.participant_admin_write_denied",
+      "status": "PASS",
+      "evidence": "participant не может создать tournament через admin API"
+    },
+    {
+      "id": "api.anonymous_admin_write_denied",
+      "status": "PASS",
+      "evidence": "анонимный клиент не может создать tournament"
+    },
+    {
+      "id": "api.invite_accept_is_idempotent",
+      "status": "PASS",
+      "evidence": "повтор первого join не создал второй membership"
+    },
+    {
+      "id": "api.two_player_bracket_generation",
+      "status": "PASS",
+      "evidence": "два участника получили один реальный bracket match"
+    },
+    {
+      "id": "api.joined_participant_reads_bracket",
+      "status": "PASS",
+      "evidence": "joined participant прочитал bracket через HTTP"
+    },
+    {
+      "id": "api.outsider_cannot_read_bracket",
+      "status": "PASS",
+      "evidence": "неучаствующий participant получил 404"
+    }
+  ],
+  "sandboxProbe": {
+    "status": "NOT_RUN",
+    "reason": "Docker Engine недоступен."
+  },
+  "m0": {
+    "status": "NOT_ACCEPTED",
+    "gates": {
+      "G01": {
+        "status": "NOT_RUN",
+        "reason": "Не проверены полный one-command runtime и normalized import."
+      },
+      "G02": {
+        "status": "NOT_RUN",
+        "reason": "Проверены auth/invite/bracket slices; run config и private submit access не проверялись."
+      },
+      "G03": {
+        "status": "NOT_RUN",
+        "reason": "Production worker, isolated verdict и durable result/failure chain не запускались."
+      },
+      "G04": {
+        "status": "NOT_RUN",
+        "reason": "Clock, draft, live score, winner и browser path не проверялись."
+      },
+      "G05": {
+        "status": "NOT_RUN",
+        "reason": "Полный hostile/restart/privacy gate не запускался; sandbox probe только synthetic."
+      },
+      "G06": {
+        "status": "NOT_RUN",
+        "reason": "Public spectator snapshot и SSE не проверялись."
+      }
+    }
+  },
+  "fullCaseAcceptance": {
+    "T01": {
+      "status": "NOT_RUN"
+    },
+    "T02": {
+      "status": "NOT_RUN"
+    },
+    "T03": {
+      "status": "NOT_RUN"
+    },
+    "T04": {
+      "status": "NOT_RUN"
+    },
+    "T05": {
+      "status": "NOT_RUN"
+    },
+    "T06": {
+      "status": "NOT_RUN"
+    },
+    "T07": {
+      "status": "NOT_RUN"
+    },
+    "T08": {
+      "status": "NOT_RUN"
+    },
+    "T09": {
+      "status": "NOT_RUN"
+    },
+    "T10": {
+      "status": "NOT_RUN"
+    },
+    "T11": {
+      "status": "NOT_RUN"
+    },
+    "T12": {
+      "status": "NOT_RUN"
+    },
+    "T13": {
+      "status": "NOT_RUN"
+    },
+    "T14": {
+      "status": "NOT_RUN"
+    },
+    "T15": {
+      "status": "NOT_RUN"
+    },
+    "T16": {
+      "status": "NOT_RUN"
+    },
+    "T17": {
+      "status": "NOT_RUN"
+    },
+    "T18": {
+      "status": "NOT_RUN"
+    },
+    "T19": {
+      "status": "NOT_RUN"
+    },
+    "T20": {
+      "status": "NOT_RUN"
+    },
+    "T21": {
+      "status": "NOT_RUN"
+    }
+  }
+}

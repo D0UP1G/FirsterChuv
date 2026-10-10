@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>BLITZ_ARENA — сетка и матчи</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../blitz.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&amp;family=Rajdhani:wght@500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;family=VT323&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#ccff00}a:hover{color:#00ff66}
+.bracket-rounds{display:flex;flex-wrap:wrap;gap:32px;align-items:center}
+.bracket-round{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.bracket-match-card{padding:14px;border:1px solid rgba(0,229,255,.22);background:#000;display:flex;flex-direction:column;gap:8px}
+.bracket-match-card.is-live{border-color:#ccff00;box-shadow:inset 3px 0 0 #ccff00}
+.bracket-slot{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.ba-cols{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.ba-col-main{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.ba-col-side{flex:1 1 400px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.pairing-row{display:grid;grid-template-columns:40px minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end;padding:8px 0}
+.problem-picker{display:flex;flex-direction:column;gap:8px}
+.problem-choice{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(0,229,255,.10);background:#000;font-size:13px}
+.problem-choice input{accent-color:#ccff00;width:18px;height:18px}
+.match-action-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;padding:12px 0;border-bottom:1px dashed rgba(0,229,255,.10)}
+.match-action-row .form-field{flex:1 1 180px}
+@media (max-width:760px){.pairing-row{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app-frame" data-route="/admin/tournaments/:tournamentId/matches" data-api="POST …/bracket/generate · GET …/bracket · PUT …/bracket/pairings · POST …/bracket/reset · PATCH|GET /api/v1/matches/{id} · POST /matches/{id}/start|pause|resume|extend|technical-result|rematches|replacements">
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="BLITZ_ARENA — на главную"><span class="brand-mark" aria-hidden="true">B</span><span>BLITZ<span class="brand-accent">_</span>ARENA</span></a>
+    <nav class="primary-nav" aria-label="Основная навигация">
+      <a class="nav-link" href="#">Зрителям</a>
+      <a class="nav-link" href="#">Кабинет</a>
+      <a class="nav-link active" href="#">Организатору</a>
+    </nav>
+    <div class="account-nav"><span class="account-name">Организатор</span><span class="role-pill role-admin">организатор</span><button class="button button-quiet button-small" type="button">Выйти</button></div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <section class="page-section management-page match-admin-page">
+      <div class="breadcrumbs"><a href="#">Турниры</a><span>/</span><a href="#">Блиц 2026</a><span>/</span><span>Сетка и матчи</span></div>
+      <div class="management-heading">
+        <div>
+          <p class="eyebrow">CONTROL ROOM // СЕТКА И МАТЧИ</p>
+          <h1>Сетка и матчи</h1>
+          <p class="page-lede">Состав заморожен 09.10 11:40. Победитель матча автоматически занимает слот следующего раунда.</p>
+        </div>
+        <div class="management-actions"><button class="button button-quiet" type="button">Обновить</button><a class="button button-outline" href="#">Публичная карта</a><button class="button button-outline" type="button" disabled="disabled" title="Доступно после результата финала" data-action="завершение турнира — endpoint в api.md не определён">Завершить турнир</button></div>
+      </div>
+
+      <section class="management-panel" aria-labelledby="bracket-heading">
+        <div class="panel-heading"><div><h2 id="bracket-heading">Турнирная сетка</h2><p>4 места · одиночное выбывание</p></div><button class="button button-small text-danger" type="button">Сбросить сетку</button></div>
+        <div class="bracket-rounds">
+          <div class="bracket-round">
+            <h3 class="ba-kicker">Полуфинал</h3>
+            <div class="bracket-match-card is-live"><div class="bracket-match-heading" style="display: flex; justify-content: space-between"><span class="ba-kicker">M-1</span><span class="ba-tag ba-tag-live">RUNNING</span></div><div class="bracket-slot"><span>1 · Ира</span><b class="ba-terminal" style="font-size: 22px">1</b></div><div class="bracket-slot"><span>2 · Максим</span><b class="ba-terminal" style="font-size: 22px">1</b></div></div>
+            <div class="bracket-match-card"><div class="bracket-match-heading" style="display: flex; justify-content: space-between"><span class="ba-kicker">M-2</span><span class="ba-tag ba-tag-ok">FINISHED</span></div><div class="bracket-slot"><span style="color: #00ff66">3 · Алина</span><b class="ba-terminal" style="font-size: 22px; color: #00ff66">3</b></div><div class="bracket-slot"><span style="color: #5d7c82">4 · Денис</span><b class="ba-terminal" style="font-size: 22px; color: #5d7c82">2</b></div></div>
+          </div>
+          <div class="bracket-round">
+            <h3 class="ba-kicker">Финал</h3>
+            <div class="bracket-match-card"><div class="bracket-match-heading" style="display: flex; justify-content: space-between"><span class="ba-kicker">M-3</span><span class="ba-tag ba-tag-neutral">WAITING</span></div><div class="bracket-slot"><span class="ba-mono-muted">Победитель M-1</span><span></span></div><div class="bracket-slot"><span style="color: #00ff66">Алина</span><span></span></div></div>
+          </div>
+          <div class="bracket-round">
+            <h3 class="ba-kicker">Обозначения</h3>
+            <div class="bracket-match-card"><div class="bracket-slot"><span>[участник]</span><span class="ba-tag ba-tag-neutral">BYE</span></div><p class="ba-indent-1 ba-mono-muted">При нечётном составе — проход без матча, без сыгранного run.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="ba-cols ba-mt-5">
+        <div class="ba-col-main">
+          <section class="management-panel ba-frame" aria-labelledby="match-ops-heading">
+            <div class="panel-heading"><div><h2 id="match-ops-heading">M-1 · Ира — Максим</h2><p>Серверное время 12:07:13 · запуск по готовности обоих</p></div><span class="ba-timer" style="font-size: 36px">12:47</span></div>
+            <div class="match-action-row">
+              <span class="ba-tag ba-tag-live">RUNNING</span>
+              <button class="button button-small" type="button" data-action="pause">Пауза</button>
+              <span class="ba-mono-muted">Стартовал, когда оба участника нажали «Готов»</span>
+            </div>
+            <div class="match-action-row">
+              <label class="form-field"><span>Продлить, секунд</span><input type="number" min="1" max="7200" value="120"></label>
+              <button class="button button-small button-outline" type="button">Продлить время</button>
+            </div>
+            <div class="match-action-row">
+              <label class="form-field"><span>Техническая победа</span><select><option>Ира</option><option>Максим</option></select></label>
+              <button class="button button-small button-outline" type="button">Зафиксировать решение</button>
+            </div>
+            <div class="match-action-row">
+              <label class="form-field"><span>Кого заменить</span><select><option>Максим</option></select></label>
+              <label class="form-field"><span>Новый участник</span><select><option>Анна</option></select></label>
+              <button class="button button-small button-outline" type="button">Заменить до старта</button>
+            </div>
+            <div class="match-action-row" style="border-bottom: 0">
+              <button class="button button-small button-outline" type="button" disabled="disabled">Создать переигровку</button>
+              <span class="ba-mono-muted">Доступна после FINISHED / TIED. Старый счёт не переносится.</span>
+            </div>
+            <label class="form-field match-reason"><span>Причина действия (обязательно, попадёт в журнал)</span><textarea rows="3" maxlength="1000">Технические работы на площадке</textarea></label>
+
+            <div class="ba-mt-5 match-task-statuses" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+              <div class="match-player-tasks"><p class="ba-h3">Ира · 1</p><p style="display: flex; gap: 6px; flex-wrap: wrap"><span class="ba-tag ba-tag-breached">A</span><span class="ba-tag ba-tag-wa">B ×2</span><span class="ba-tag ba-tag-neutral">C</span><span class="ba-tag ba-tag-neutral">D</span></p></div>
+              <div class="match-player-tasks"><p class="ba-h3">Максим · 1</p><p style="display: flex; gap: 6px; flex-wrap: wrap"><span class="ba-tag ba-tag-neutral">A</span><span class="ba-tag ba-tag-neutral">B</span><span class="ba-tag ba-tag-breached">C</span><span class="ba-tag ba-tag-neutral">D</span></p></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="ba-col-side">
+          <form class="management-panel match-form" aria-labelledby="config-heading">
+            <div class="panel-heading"><div><h2 id="config-heading">Настройки матча M-3</h2><p>Набор задач и правила замораживаются при старте.</p></div></div>
+            <div class="problem-picker">
+              <label class="problem-choice"><input type="checkbox" checked="checked"> <span>[Задача A]</span> <span class="ba-tag ba-tag-ok">READY</span></label>
+              <label class="problem-choice"><input type="checkbox" checked="checked"> <span>[Задача B]</span> <span class="ba-tag ba-tag-ok">READY</span></label>
+              <label class="problem-choice"><input type="checkbox" disabled="disabled"> <span style="color: #5d7c82">[Задача C]</span> <span class="ba-tag ba-tag-locked">NOT_READY</span></label>
+            </div>
+            <div class="ba-mt-4 form-grid">
+              <label class="form-field"><span>Длительность, с</span><input type="number" min="60" max="7200" value="1200"></label>
+              <label class="form-field"><span>Запуск</span><select><option>Вручную</option><option>Готовность обоих</option></select></label>
+              <label class="form-field"><span>Штраф, с</span><input value="60" disabled="disabled"></label>
+              <label class="form-field"><span>Равенство в финале</span><input value="Переигровка" disabled="disabled"></label>
+            </div>
+            <div class="form-actions"><button class="button button-small" type="submit">Сохранить настройки</button></div>
+          </form>
+
+          <form class="management-panel" aria-labelledby="pairings-heading">
+            <div class="panel-heading"><div><h2 id="pairings-heading">Пары первого раунда</h2><p>Сохраняется весь раунд одной командой. Только до первого старта.</p></div></div>
+            <div class="pairing-grid">
+              <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">1</span><label class="form-field"><span>Левая</span><select disabled="disabled"><option>Ира</option></select></label><label class="form-field"><span>Правая</span><select disabled="disabled"><option>Максим</option></select></label></div>
+              <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">2</span><label class="form-field"><span>Левая</span><select disabled="disabled"><option>Алина</option></select></label><label class="form-field"><span>Правая</span><select disabled="disabled"><option>Денис</option></select></label></div>
+            </div>
+            <label class="ba-mt-3 form-field"><span>Причина ручной перестановки</span><input disabled="disabled" value=""></label>
+            <p class="ba-mt-2 field-help">Матчи уже начались — перестановка недоступна.</p>
+            <div class="form-actions"><button class="button button-small" type="submit" disabled="disabled">Сохранить полный раунд</button></div>
+          </form>
+        </div>
+      </div>
+
+      <section class="ba-mt-7" aria-labelledby="before-start-heading">
+        <div class="panel-heading"><div><h2 id="before-start-heading">Состояния до старта</h2><p>Как те же блоки выглядят, пока сетка не создана и ни один матч не начался.</p></div></div>
+        <div class="ba-cols">
+          <div class="ba-col-main">
+            <div class="empty-state" data-state="bracket-empty">
+              <p class="ba-kicker">Турнирная сетка</p>
+              <h3 class="ba-h3">Сетка не создана</h3>
+              <p>Сетка строится из замороженного состава по посеву. При нечётном числе участников тот, кому не хватило пары, проходит раунд без матча (BYE). Создание сетки замораживает состав.</p>
+              <div class="ba-actions"><button class="button" type="button" data-action="POST …/bracket/generate">Сформировать сетку</button><span class="ba-mono-muted">4 участника · одиночное выбывание</span></div>
+            </div>
+          </div>
+          <div class="ba-col-side">
+            <form class="management-panel" aria-labelledby="pairings-edit-heading" data-state="pairings-editable">
+              <div class="panel-heading"><div><h2 id="pairings-edit-heading">Пары первого раунда</h2><p>Сохраняется весь раунд одной командой. Участник не может стоять в двух парах.</p></div></div>
+              <div class="pairing-grid">
+                <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">1</span><label class="form-field"><span>Левая</span><select><option>Ира</option><option>Алина</option></select></label><label class="form-field"><span>Правая</span><select><option>Денис</option><option>Максим</option></select></label></div>
+                <div class="pairing-row"><span class="ba-terminal" style="font-size: 24px">2</span><label class="form-field"><span>Левая</span><select><option>Алина</option><option>Ира</option></select></label><label class="form-field"><span>Правая</span><select><option>Максим</option><option>Денис</option></select></label></div>
+              </div>
+              <label class="ba-mt-3 form-field"><span>Причина ручной перестановки</span><input value="Разведение участников одной школы"></label>
+              <div class="form-actions"><button class="button button-small" type="submit" data-action="PUT …/bracket/pairings">Сохранить полный раунд</button><button class="button button-small button-quiet" type="button">Отмена</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#">BLITZ_ARENA</a><span>Первенство по спортивному программированию</span><span>Чувашия · 2026</span></footer>
+</div>
+</body>
+</html>

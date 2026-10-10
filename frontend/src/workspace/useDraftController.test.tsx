@@ -1,0 +1,207 @@
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError, type DraftSnapshot } from '../api/client'
+import { readLocalDraft } from './localDrafts'
+import type { WorkspaceTransport } from './transport'
+import { useDraftController } from './useDraftController'
+
+const baseProps = {
+  userId: 'user-1', runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20',
+  template: 'template A', matchId: 'match-1', enabled: true,
+}
+
+function makeTransport(overrides: Partial<WorkspaceTransport> = {}): WorkspaceTransport {
+  return {
+    devScenario: false,
+    submissionsEnabled: false,
+    match: vi.fn(),
+    problem: vi.fn(),
+    languages: vi.fn(),
+    draft: vi.fn().mockResolvedValue(null),
+    saveDraft: vi.fn().mockImplementation(async (_matchId, problemId, languageId, input) => ({
+      runId: input.runId, problemId, languageId, source: input.source,
+      revision: input.expectedRevision + 1, updatedAt: '2026-10-09T18:00:00Z',
+    })),
+    submit: vi.fn(),
+    submissions: vi.fn(),
+    submission: vi.fn(),
+    ...overrides,
+  } as unknown as WorkspaceTransport
+}
+
+describe('useDraftController', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('keeps typing made while the server draft is loading', async () => {
+    let resolveDraft!: (snapshot: DraftSnapshot | null) => void
+    const pendingDraft = new Promise<DraftSnapshot | null>((resolve) => { resolveDraft = resolve })
+    const transport = makeTransport({ draft: vi.fn(() => pendingDraft) })
+    const { result } = renderHook(() => useDraftController({ ...baseProps, transport }))
+
+    await waitFor(() => expect(result.current.scopeReady).toBe(true))
+    act(() => result.current.changeSource('typed before server response'))
+    await act(async () => { resolveDraft(null); await pendingDraft })
+
+    expect(result.current.source).toBe('typed before server response')
+    expect(result.current.draft?.source).toBe('typed before server response')
+  })
+
+  it('restores each task-scoped draft when switching away and back', async () => {
+    const transport = makeTransport({
+      saveDraft: vi.fn().mockRejectedValue(new ApiError('Server drafts unavailable', 503, 'integration_unavailable')),
+    })
+    const { result, rerender } = renderHook(
+      (props: { problemId: string; template: string }) => useDraftController({ ...baseProps, ...props, transport }),
+      { initialProps: { problemId: 'problem-1', template: 'template A' } },
+    )
+
+    await waitFor(() => expect(result.current.scopeReady).toBe(true))
+    act(() => result.current.changeSource('solution A'))
+    rerender({ problemId: 'problem-2', template: 'template B' })
+    await waitFor(() => expect(result.current.scopeReady).toBe(true))
+
+    expect(result.current.source).toBe('template B')
+    act(() => result.current.changeSource('solution B'))
+
+    rerender({ problemId: 'problem-1', template: 'template A' })
+    await waitFor(() => expect(result.current.source).toBe('solution A'))
+    rerender({ problemId: 'problem-2', template: 'template B' })
+    await waitFor(() => expect(result.current.source).toBe('solution B'))
+  })
+
+  it('keeps offline local drafts isolated when the authenticated user scope changes', async () => {
+    const offline = new ApiError('Server drafts unavailable', 503, 'integration_unavailable')
+    const transport = makeTransport({
+      draft: vi.fn().mockRejectedValue(offline),
+      saveDraft: vi.fn().mockRejectedValue(offline),
+    })
+    const { result, rerender } = renderHook(
+      (props: { userId: string }) => useDraftController({ ...baseProps, ...props, transport }),
+      { initialProps: { userId: 'user-1' } },
+    )
+
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+    act(() => result.current.changeSource('private draft for user one'))
+    await waitFor(() => expect(transport.saveDraft).toHaveBeenCalled())
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+
+    rerender({ userId: 'user-2' })
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+    expect(result.current.source).toBe('template A')
+    expect(result.current.draft?.scope.userId).toBe('user-2')
+
+    act(() => result.current.changeSource('private draft for user two'))
+    await waitFor(() => expect(transport.saveDraft).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+
+    rerender({ userId: 'user-1' })
+    await waitFor(() => expect(result.current.source).toBe('private draft for user one'))
+    expect(result.current.draft?.scope.userId).toBe('user-1')
+
+    rerender({ userId: 'user-2' })
+    await waitFor(() => expect(result.current.source).toBe('private draft for user two'))
+    expect(result.current.draft?.scope.userId).toBe('user-2')
+  })
+
+  it('restores the local copy after a reload when server draft reads and writes are unavailable', async () => {
+    const offline = new ApiError('Server drafts unavailable', 503, 'integration_unavailable')
+    const offlineTransport = () => makeTransport({
+      draft: vi.fn().mockRejectedValue(offline),
+      saveDraft: vi.fn().mockRejectedValue(offline),
+    })
+    const firstTransport = offlineTransport()
+    const first = renderHook(() => useDraftController({ ...baseProps, transport: firstTransport }))
+
+    await waitFor(() => expect(first.result.current.scopeReady).toBe(true))
+    act(() => first.result.current.changeSource('unsynced solution'))
+    await act(async () => { await first.result.current.flush() })
+    expect(first.result.current.status).toBe('unavailable')
+    first.unmount()
+
+    const reloadedTransport = offlineTransport()
+    const afterReload = renderHook(() => useDraftController({ ...baseProps, transport: reloadedTransport }))
+    await waitFor(() => expect(afterReload.result.current.status).toBe('unavailable'))
+
+    expect(afterReload.result.current.source).toBe('unsynced solution')
+  })
+
+  it('retries the local draft after the server recovers when the page becomes visible', async () => {
+    const offline = new ApiError('Server drafts unavailable', 503, 'integration_unavailable')
+    let serverAvailable = false
+    const saveDraft = vi.fn<WorkspaceTransport['saveDraft']>(async (_matchId, problemId, languageId, input) => {
+      if (!serverAvailable) throw offline
+      return {
+        runId: input.runId,
+        problemId,
+        languageId,
+        source: input.source,
+        revision: input.expectedRevision + 1,
+        updatedAt: '2026-10-09T18:00:00Z',
+      }
+    })
+    const transport = makeTransport({
+      draft: vi.fn().mockRejectedValue(offline),
+      saveDraft,
+    })
+    const { result } = renderHook(() => useDraftController({ ...baseProps, transport }))
+
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+    act(() => result.current.changeSource('solution retained while offline'))
+    await waitFor(() => expect(saveDraft).toHaveBeenCalledOnce())
+    await waitFor(() => expect(result.current.syncError).toContain('Синхронизация с сервером не удалась'))
+    expect(readLocalDraft({ userId: 'user-1', runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20' })).toMatchObject({
+      source: 'solution retained while offline',
+      localRevision: 1,
+      serverRevision: 0,
+    })
+
+    serverAvailable = true
+    act(() => document.dispatchEvent(new Event('visibilitychange')))
+
+    await waitFor(() => expect(result.current.status).toBe('saved'))
+    expect(saveDraft).toHaveBeenCalledTimes(2)
+    expect(saveDraft).toHaveBeenLastCalledWith('match-1', 'problem-1', 'cpp20', {
+      runId: 'run-1',
+      source: 'solution retained while offline',
+      expectedRevision: 0,
+    })
+    expect(result.current.draft).toMatchObject({
+      source: 'solution retained while offline',
+      serverSource: 'solution retained while offline',
+      serverRevision: 1,
+    })
+    expect(readLocalDraft({ userId: 'user-1', runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20' })).toMatchObject({
+      source: 'solution retained while offline',
+      serverRevision: 1,
+    })
+  })
+
+  it('stops autosave on a revision conflict and exposes both copies', async () => {
+    const remote: DraftSnapshot = {
+      runId: 'run-1', problemId: 'problem-1', languageId: 'cpp20',
+      source: 'server copy', revision: 4, updatedAt: '2026-10-09T18:00:00Z',
+    }
+    const transport = makeTransport({
+      saveDraft: vi.fn().mockRejectedValue(new ApiError('Revision conflict', 409, 'revision_conflict', {
+        current_draft: {
+          run_id: remote.runId,
+          problem_id: remote.problemId,
+          language_id: remote.languageId,
+          source: remote.source,
+          revision: remote.revision,
+          updated_at: remote.updatedAt,
+        },
+      })),
+    })
+    const { result } = renderHook(() => useDraftController({ ...baseProps, transport }))
+
+    await waitFor(() => expect(result.current.scopeReady).toBe(true))
+    act(() => result.current.changeSource('local copy'))
+    await act(async () => { await result.current.flush() })
+
+    expect(result.current.status).toBe('conflict')
+    expect(result.current.draft?.conflict?.localSource).toBe('local copy')
+    expect(result.current.draft?.conflict?.serverDraft?.source).toBe('server copy')
+    expect(transport.saveDraft).toHaveBeenCalledTimes(1)
+  })
+})

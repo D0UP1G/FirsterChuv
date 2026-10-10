@@ -1,0 +1,174 @@
+/* Responsive and keyboard refinements shared by the eager app and lazy routes. */
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--ba-acid, var(--green, #ccff00));
+  outline-offset: 3px;
+}
+
+.auth-form input:focus-visible {
+  outline: 3px solid var(--ba-acid, var(--green, #ccff00));
+  outline-offset: 3px;
+}
+
+.app-frame {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+body {
+  min-width: 0;
+}
+
+.site-header,
+.main-content,
+.site-footer,
+.page-section,
+.management-page,
+.workspace-page,
+.spectator-page {
+  min-width: 0;
+}
+
+.site-header {
+  height: auto;
+  min-height: 70px;
+  flex-wrap: wrap;
+  row-gap: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.primary-nav,
+.account-nav {
+  min-width: 0;
+}
+
+.primary-nav .nav-link,
+.account-nav .nav-link {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.main-content {
+  width: 100%;
+}
+
+.management-panel,
+.tournament-card,
+.roster-row,
+.invite-row,
+.directory-row,
+.bracket-round,
+.bracket-match-card,
+.pairing-row {
+  min-width: 0;
+}
+
+.tournament-card-actions,
+.management-actions,
+.roster-controls,
+.invite-controls,
+.directory-controls,
+.form-actions,
+.spectator-view-actions {
+  flex-wrap: wrap;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select,
+.management-input,
+.seed-input,
+.invite-url-row input,
+.pairing-row select,
+.match-action-row select,
+.match-action-row input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bracket-slot,
+.tournament-card h2,
+.tournament-card p,
+.roster-name,
+.directory-name,
+.invite-result,
+.invite-url-row input,
+.match-player-tasks,
+.state-card,
+.notice,
+.workspace-diagnostics,
+.spectator-match-summary,
+.spectator-reconnect-banner {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .management-heading,
+  .panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .management-actions > *,
+  .tournament-card-actions > *,
+  .roster-controls > *,
+  .invite-controls > *,
+  .directory-controls > * {
+    max-width: 100%;
+  }
+
+  .bracket-rounds {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  }
+
+  .match-action-row .form-field {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    column-gap: 12px;
+  }
+
+  .primary-nav {
+    order: 3;
+    flex: 0 0 100%;
+    gap: 14px;
+    padding-top: 7px;
+    border-top: 1px solid var(--line);
+  }
+
+  .account-nav {
+    margin-left: auto;
+  }
+
+  .management-panel {
+    padding: 16px 13px;
+  }
+
+  .form-actions,
+  .search-form,
+  .invite-url-row {
+    align-items: stretch;
+  }
+
+  .form-actions > .button,
+  .search-form > .button,
+  .invite-url-row > .button {
+    width: 100%;
+  }
+
+  .state-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid Highlight;
+  }
+}

@@ -1,0 +1,64 @@
+# Модель данных
+
+Целевая модель Django ORM/SQLite. UUID — внешние ID, timestamps UTC, длительность целыми миллисекундами/секундами. Пользовательские ID не заменяют object-level access checks. Чувствительные поля сериализуются только явным private serializer.
+
+```mermaid
+erDiagram
+  USER ||--o{ TOURNAMENT_PARTICIPANT : enters
+  TOURNAMENT ||--o{ TOURNAMENT_PARTICIPANT : has
+  TOURNAMENT ||--o{ INVITE : issues
+  TOURNAMENT ||--o{ MATCH : contains
+  MATCH ||--o{ MATCH_SLOT : pairs
+  MATCH ||--o{ MATCH_RUN : executes
+  MATCH_RUN ||--o{ RUN_PROBLEM : assigns
+  PROBLEM_VERSION ||--o{ RUN_PROBLEM : used
+  MATCH_RUN ||--o{ SUBMISSION : receives
+  USER ||--o{ SUBMISSION : owns
+  MATCH_RUN ||--o{ DRAFT : saves
+  MATCH_RUN ||--o{ MATCH_EVENT : emits
+```
+
+| Сущность | Основные поля / смысл |
+|---|---|
+| User | id, displayName, normalizedEmail unique, passwordHash, role participant/admin, isActive. Custom Django User с первой миграции. |
+| Tournament | id, slug unique, title, description, startsAt/endsAt, format single_elimination, participantLimit, visibility public/unlisted, status, createdBy, defaultMatchConfig, activeParticipantCount, rosterFrozenAt, createdAt/updatedAt. Unlisted `TournamentShareLink` хранит SHA-256 token hash, expiry/revocation и создателя (PR #84); сырой token выдаётся только при создании. `activeParticipantCount` обновляется атомарно вместе с roster mutations; `rosterFrozenAt` выставляется во внешней транзакции bracket generation. |
+| TournamentParticipant | UUID id, tournamentId, userId, seed nullable positive integer, status ACTIVE/REMOVED, addedAt/removedAt. Unique tournament/user; active non-null seeds are unique within the tournament. Removal is logical and match references preserve the entrant. |
+| Invite | UUID id, tournamentId, уникальный SHA-256 `tokenHash`, nullable `expiresAt`/`maxUses` (минимум одно ограничение), `usedCount`, `revokedAt`, `createdBy`, `createdAt`. Случайный raw token отдаётся только в create response и не хранится; list DTO не содержит hash/token. |
+| InviteAcceptance | inviteId/userId с unique constraint, acceptedAt. Идемпотентный accept; повтор не расходует use и не меняет roster. |
+| ProblemPackage | id, checksum, formatVersion, importedAt/by, validationStatus, privateStorageRef. Формат берётся из фактического README пакета. |
+| ProblemVersion | id, packageId, localKey, source metadata, statementMarkdown, publicAssetRefs, limits, privateTestRefs/checkerRef/validatorRef/referenceRef, readiness. Версия фиксируется в run. |
+| Language | serverId, displayName, compilerImage digest/tag, fixed compile/run argv, sourceFilename, template, enabled. Browser не задаёт executable/image. |
+| Match | tournamentId, roundIndex, position, slot0/slot1, nextMatchId/nextSlot, currentRunId, winnerId nullable, status. Unique tournament/round/position. |
+| MatchSlot | matchId, index 0/1, participantId nullable, upstreamMatchId nullable, resolution PLAYER/BYE/WAITING. Unique match/index. |
+| MatchRun | matchId, sequence, status, startedAt, pausedAt, accumulatedPauseMs, allowedDurationMs, scoreRule/problem/participant snapshots, scoreSnapshot, finishedAt, winnerId, technicalReason, revision. Unique match/sequence; один current run. |
+| RunProblem | runId, problemVersionId, label A/B/…, ordinal. Unique run/problem и run/label. Один набор для обоих игроков. |
+| ParticipantRunState | runId, userId, ready, solvedCount, penaltyMs, lastAcceptedElapsedMs. Unique run/user. Производная проекция из eligible submissions. |
+| Submission | id, runId, userId, problemVersionId, languageId, source, sourceHash, idempotencyKey, receivedAt, elapsedMs, processStatus, verdict nullable, attempts, availableAt, leaseToken/leaseUntil, bounded diagnostics/metrics. |
+| AcceptedAttempt / AttemptResult | Immutable accepted submission identity/timing and one idempotent final verdict. Match score reads this ledger, not transient queue state. |
+| InfrastructureFailureRecord | One safe allowlisted technical outcome per accepted submission, retryable flag and resolution time. It never creates WA/RE or a contestant loss; terminal unresolved failure blocks automatic winner settlement. |
+| Draft | userId/runId/problemVersionId/languageId unique, source, revision, updatedAt. Отдельные языки не затирают код друг друга. |
+| DraftRevision | draftId/revision unique, private source snapshot, sourceHash, createdAt. Хранит принятые версии черновика для восстановления; доступ требует `WorkspaceContext` с purpose `history`. |
+| MatchEvent | integer eventId монотонный, tournamentId, matchId/runId nullable, type, occurredAt, publicPayload allowlist. Private исходники не хранятся в publicPayload. |
+| AdminAction | actorId, tournamentId, matchId/runId, action, reason, before/after refs, timestamp. Изменения фиксируются без копирования секретов/source. |
+
+Session/cookie storage использует стандартную Django session модель; настройки безопасного cookie и CSRF обязательны.
+
+## Обязательные ограничения
+
+- `users.role` имеет только participant/admin, default participant. `is_staff`/`is_superuser` не назначаются из регистрации.
+- Назначается только активный `participant`, не admin. Активных игроков не больше cap; добавление/accept атомарно обновляет их число. Seed — положительное целое и уникален среди active entrants, если задан; один игрок не попадает дважды в раунд.
+- Для Invite БД требует хотя бы один `expiresAt`/`maxUses`, положительный лимит и `usedCount <= maxUses`. Accept условно увеличивает `usedCount`, вызывает roster service и создаёт уникальный InviteAcceptance в одной SQLite-транзакции; отказ из-за cap/freeze/status откатывает use. SQLite lock retry ограничен; повторная acceptance не расходует use.
+- Изменения состава отклоняются после `rosterFrozenAt`. `freeze_roster(tournament_id)` идемпотентен, проверяет active count и заново проверяет, что каждая активная roster-запись ссылается на активную учётную запись с ролью `participant`. Он возвращает seed-ascending roster (null seed last, `userId` tie-break) и вызывается внутри внешней транзакции генерации bracket; ошибка проверки или создания bracket откатывает freeze. После freeze нельзя снимать, добавлять или менять seed участника, поэтому ссылки будущих матчей не теряются.
+- Пары и набор задач нельзя незаметно менять после старта. Run хранит immutable версии задачи/правил.
+- Unique `(userId, runId, idempotencyKey)` связывает повторный submission request с одним объектом; при том же ключе и другом source/language/problem возвращается 409.
+- Worker claim/recovery guarded by status и leaseToken. Старый worker не перезаписывает новый результат.
+- Winner в downstream slot записывается только один раз по resolved upstream match; повторный callback не создаёт новый слот/матч.
+- Verdict может быть null до завершения; инфраструктурный сбой не хранится как RE участника.
+- Draft PUT использует conditional revision update; конфликт возвращает автору текущую server revision и source с 409, не затирает ни её, ни локальную версию клиента. Сохранённые private snapshots не входят в public payload.
+- Случайные invite/share tokens хранятся хешами. Role/draft/source/email не входят в public snapshot.
+
+## Миграции и жизненный цикл
+
+Агент 1 создаёт custom User и исходные settings. Каждая app имеет собственную последовательность Django migrations с явными зависимостями. При интеграции проверяется миграция с нуля и отсутствие нескольких leaf migrations одной app. SQLite не обеспечивает row locking через `select_for_update`; использовать atomic transactions, уникальные constraints и conditional update.
+
+Source и official data живут в private persistent storage. Purge можно выполнять после demo по отдельной политике; до окончания турнира/аудита посылки не теряются. Public asset storage отделяется от private: web proxy не обслуживает весь uploads/data каталог. Для backup использовать SQLite online backup/checkpoint при остановленных writer или подтверждённый штатный способ, не копирование одного занятого файла без WAL.
