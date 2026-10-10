@@ -12,6 +12,7 @@ import { InvitePage } from './pages/InvitePage'
 import './App.css'
 import './responsive.css'
 import { PublicTournamentsPage } from './spectator/PublicTournamentsPage'
+import { ParticipantMatches } from './pages/ParticipantMatches'
 
 const ParticipantWorkspacePage = lazy(() => import('./pages/ParticipantWorkspacePage').then((module) => ({ default: module.ParticipantWorkspacePage })))
 const SpectatorMapPage = lazy(() => import('./spectator/SpectatorMapPage').then((module) => ({ default: module.SpectatorMapPage })))
@@ -159,8 +160,8 @@ function DashboardPage() {
       <div className="dashboard-card">
         <span className="card-kicker">ВАША РОЛЬ</span>
         <strong>{user.role === 'admin' ? 'Организатор' : 'Участник'}</strong>
-        <p>{user.role === 'admin' ? 'У вас есть доступ к инструментам управления турниром.' : 'Войдите по ссылке-приглашению, чтобы присоединиться к турниру.'}</p>
-        {user.role === 'admin' ? <Link className="text-link" to="/admin">К управлению турнирами <span aria-hidden="true">↗</span></Link> : <span className="muted-copy">Список матчей появится после подключения к турниру.</span>}
+        <p>{user.role === 'admin' ? 'У вас есть доступ к инструментам управления турниром.' : 'Ваши матчи появятся здесь после вступления в турнир по приглашению и запуска матча.'}</p>
+        {user.role === 'admin' ? <Link className="text-link" to="/admin">К управлению турнирами <span aria-hidden="true">↗</span></Link> : <ParticipantMatches userId={user.id} />}
       </div>
     </section>
   )
