@@ -30,6 +30,17 @@ function commandKey(cache: Map<string, string>, operation: string, payload: unkn
   return next
 }
 
+type BracketMatch = Bracket['matches'][number]
+
+// A match with both players but no saved run answers 409; the organizer must still be able to configure it.
+function isUnconfiguredMatchError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 409 && error.code === 'match_run_not_configured'
+}
+
+function hasBothPlayers(entry: BracketMatch): boolean {
+  return entry.slots.every((slot) => slot.participant)
+}
+
 function firstRoundPairings(bracket: Bracket): FirstRoundPairing[] {
   const matches = bracket.matches.filter((match) => match.roundIndex === 0).sort((left, right) => left.position - right.position)
   return Array.from({ length: bracket.bracketSize / 2 }, (_, position) => {
@@ -78,6 +89,7 @@ export function AdminMatchPage() {
   const [problems, setProblems] = useState<ProblemCatalogEntry[]>([])
   const [bracket, setBracket] = useState<Bracket | null>(null)
   const [match, setMatch] = useState<MatchView | null>(null)
+  const [unconfigured, setUnconfigured] = useState<BracketMatch | null>(null)
   const [pairings, setPairings] = useState<FirstRoundPairing[]>([])
   const [pairingReason, setPairingReason] = useState('')
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([])
@@ -124,16 +136,26 @@ export function AdminMatchPage() {
       return left.userId.localeCompare(right.userId)
     })
     const roundOneMatches = nextBracket?.matches
-      .filter((candidate) => candidate.kind === 'MATCH' && candidate.roundIndex === 0 && candidate.status !== 'WAITING')
+      .filter((candidate) => candidate.kind === 'MATCH' && candidate.roundIndex === 0 && hasBothPlayers(candidate))
       .sort((left, right) => left.position - right.position) ?? []
     const playable = roundOneMatches.find((candidate) => candidate.id === selectedMatchId.current) ?? roundOneMatches[0]
-    const nextMatch = playable ? await source.match(playable.id) : null
+    let nextMatch: MatchView | null = null
+    let nextUnconfigured: BracketMatch | null = null
+    if (playable) {
+      try {
+        nextMatch = await source.match(playable.id)
+      } catch (error) {
+        if (!isUnconfiguredMatchError(error)) throw error
+        nextUnconfigured = playable
+      }
+    }
     selectedMatchId.current = playable?.id ?? null
     setTournament(nextTournament)
     setRoster(sortedRoster)
     setProblems(nextProblems)
     setBracket(nextBracket)
     setMatch(nextMatch)
+    setUnconfigured(nextUnconfigured)
     setPairings(nextBracket ? firstRoundPairings(nextBracket) : [])
     setSelectedProblemIds(nextMatch?.problemVersions.map((problem) => problem.problemId) ?? [])
     setDuration(String(nextMatch ? Math.round(nextMatch.allowedDurationMs / 1000) : nextTournament.matchDurationSec))
@@ -189,6 +211,11 @@ export function AdminMatchPage() {
     .map((slot) => slot.participant?.userId)
     .filter((userId): userId is string => Boolean(userId))) ?? []), [bracket])
   const availableReplacementCandidates = replacementCandidates.filter((candidate) => !bracketUserIds.has(candidate.id))
+  const configTarget = match
+    ? { id: match.matchId, names: match.players.map((player) => player.displayName), status: match.status }
+    : unconfigured
+      ? { id: unconfigured.id, names: unconfigured.slots.map((slot) => slot.participant?.displayName ?? 'Участник'), status: 'WAITING' as const }
+      : null
   const pairingsValid = Boolean(bracket)
     && pairings.length === (bracket?.bracketSize ?? 0) / 2
     && pairedUserIds.length === expectedUserIds.length
@@ -238,7 +265,7 @@ export function AdminMatchPage() {
 
   async function saveConfig(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!transport || !match) return
+    if (!transport || !configTarget) return
     const seconds = Number(duration)
     if (!Number.isInteger(seconds) || seconds < 60 || seconds > 7200) {
       setActionError('Длительность должна быть целым числом от 60 до 7200 секунд.')
@@ -253,8 +280,8 @@ export function AdminMatchPage() {
       matchDurationSec: seconds,
       startMode,
     }
-    await perform('match-config', { matchId: match.matchId, input }, async (key) => {
-      await transport.updateConfig(match.matchId, input, key)
+    await perform('match-config', { matchId: configTarget.id, input }, async (key) => {
+      await transport.updateConfig(configTarget.id, input, key)
     })
   }
 
@@ -290,6 +317,7 @@ export function AdminMatchPage() {
     try {
       const nextMatch = await transport.match(matchId)
       selectedMatchId.current = matchId
+      setUnconfigured(null)
       setMatch(nextMatch)
       setSelectedProblemIds(nextMatch.problemVersions.map((problem) => problem.problemId))
       setDuration(String(Math.round(nextMatch.allowedDurationMs / 1000)))
@@ -299,6 +327,18 @@ export function AdminMatchPage() {
         setReplacementOldId(nextMatch.players[0].userId)
       }
     } catch (error) {
+      const entry = bracket?.matches.find((candidate) => candidate.id === matchId)
+      if (entry && isUnconfiguredMatchError(error)) {
+        selectedMatchId.current = matchId
+        setMatch(null)
+        setUnconfigured(entry)
+        setSelectedProblemIds([])
+        if (tournament) {
+          setDuration(String(tournament.matchDurationSec))
+          setStartMode(tournament.startMode)
+        }
+        return
+      }
       setActionError(messageFor(error))
     }
   }
@@ -371,7 +411,7 @@ export function AdminMatchPage() {
               <div className="bracket-match-heading"><strong>{entry.key}</strong><span className={`match-status match-status-${entry.status.toLowerCase()}`}>{statusName(entry.status)}</span></div>
               {entry.slots.map((slot) => <div className={`bracket-slot ${slot.resolution.toLowerCase()}`} key={slot.index}><span>{slotName(slot)}</span>{slot.participant?.seed !== null && slot.participant && <small>Посев {slot.participant.seed}</small>}</div>)}
               {entry.winner && <p className="inline-note">Проходит дальше: {entry.winner.displayName}</p>}
-              {entry.kind === 'MATCH' && entry.roundIndex === 0 && entry.status !== 'WAITING' && (!isDevelopmentScenario || match?.matchId === entry.id) && <button className="text-button" type="button" disabled={busy} onClick={() => void openMatch(entry.id)}>Открыть матч</button>}
+              {entry.kind === 'MATCH' && entry.roundIndex === 0 && hasBothPlayers(entry) && (!isDevelopmentScenario || match?.matchId === entry.id) && <button className="text-button" type="button" disabled={busy} onClick={() => void openMatch(entry.id)}>Открыть матч</button>}
             </article>)}
           </div>
         </section>)}
@@ -399,9 +439,9 @@ export function AdminMatchPage() {
       </form>
     </section>}
 
-    {match && <>
+    {configTarget && <>
       <section className="management-panel" aria-labelledby="config-heading">
-        <div className="panel-heading"><div><h2 id="config-heading">Настройки матча · {match.players.map((player) => player.displayName).join(' — ')}</h2><p>Правила и версии задач сохраняются в snapshot матча. Условия не загружаются и не показываются до старта.</p></div><span className={`match-status match-status-${match.status.toLowerCase()}`}>{statusName(match.status)}</span></div>
+        <div className="panel-heading"><div><h2 id="config-heading">Настройки матча · {configTarget.names.join(' — ')}</h2><p>Правила и версии задач сохраняются в snapshot матча. Условия не загружаются и не показываются до старта.</p></div><span className={`match-status match-status-${configTarget.status.toLowerCase()}`}>{statusName(configTarget.status)}</span></div>
         <form className="match-form" onSubmit={(event) => void saveConfig(event)}>
           <fieldset className="problem-picker" disabled={matchHasStarted || busy}>
             <legend>Готовые задачи · одинаковый набор для обоих</legend>
@@ -420,7 +460,7 @@ export function AdminMatchPage() {
         </form>
       </section>
 
-      <section className="management-panel" aria-labelledby="match-ops-heading">
+      {match && <section className="management-panel" aria-labelledby="match-ops-heading">
         <div className="panel-heading"><div><h2 id="match-ops-heading">Матч и действия организатора</h2><p>Серверное время {new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(match.serverNow))} · прошло {formatClock(match.elapsedMs)} · осталось {formatClock(match.remainingMs)} · событие {match.lastEventId}</p></div></div>
         <div className="readiness-grid">
           {match.players.map((player) => <article className="readiness-card" key={player.userId}><strong>{player.displayName}</strong><span>{match.readyUserIds.includes(player.userId) ? 'Готов' : 'Ожидает готовности'}</span><small>{player.solvedCount} решено · штраф {Math.floor(player.penaltyMs / 1000)} сек.</small></article>)}
@@ -448,9 +488,9 @@ export function AdminMatchPage() {
         </div>}
         <label className="form-field match-reason"><span>Причина аудируемого действия</span><textarea rows={3} maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Кратко опишите основание вмешательства" /></label>
         <div className="match-task-statuses"><h3>Статус задач участников</h3>{match.players.map((player) => <div className="match-player-tasks" key={player.userId}><strong>{player.displayName}</strong><ul>{player.tasks.map((task) => <li key={task.problemId}>{task.label}: {task.status} · попыток {task.attempts}{task.lastVerdict ? ` · ${task.lastVerdict}` : ''}</li>)}</ul></div>)}</div>
-      </section>
+      </section>}
     </>}
-    {!match && <div className="state-card" role="status">Нет матча первого раунда, доступного для управления.</div>}
+    {!configTarget && <div className="state-card" role="status">Нет матча первого раунда, доступного для управления.</div>}
     {actionError && <div className="state-card state-card-error" role="alert">{actionError}</div>}
     {actionMessage && <div className="state-card" role="status">{actionMessage}</div>}
   </section>
