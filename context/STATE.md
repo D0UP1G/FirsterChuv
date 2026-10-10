@@ -1,12 +1,14 @@
 # Состояние проекта: три агента и первый рабочий матч
 
-## Release checkpoint · 2026-10-10T08:48:12+03:00
+## Release checkpoint · 2026-10-10T08:53:07+03:00
 
-Интеграционная база выпуска: `origin/develop=d524343f75149e624d56e4970cd059d6216e1f5b` (после PR #92–#100, включая A4 Wave 3 PR #93 и A3/A5 Wave 3 slices #92/#94). По поручению команды PR [#101](https://github.com/D0UP1G/FirsterChuv/pull/101) смёржен в `main` ordinary merge commit `5056e65778e5faf047270f481290561a88fd6d55`; annotated tag `v0.1.0` удалённо указывает на этот commit. Back-merge PR в develop подготавливается.
+Интеграционная база выпуска была `origin/develop=d524343f75149e624d56e4970cd059d6216e1f5b` (после PR #92–#100, включая A4 Wave 3 PR #93 и A3/A5 Wave 3 slices #92/#94). По поручению команды PR [#101](https://github.com/D0UP1G/FirsterChuv/pull/101) ordinary merge-ом вошёл в `main` как `5056e65778e5faf047270f481290561a88fd6d55`; annotated tag `v0.1.0` указывает на этот commit и [GitHub Release опубликован](https://github.com/D0UP1G/FirsterChuv/releases/tag/v0.1.0). PR [#102](https://github.com/D0UP1G/FirsterChuv/pull/102) back-merge-нул release в `develop` ordinary merge commit `93ba2e5c395aa9f8c162c88ef7fd86f39c83cc69`.
 
-Evidence на develop включает основной browser путь и реальные Docker вердикты `OK`/`WA` ([A5 verdict evidence](../docs/quality/evidence/2026-10-10T082341+0300-A5-real-verdicts.md)). Это ограниченный прогон: CE/TL/ML/RE, автоматическое завершение/переход победителя, hostile/restart проверки и официальный package не подтверждены. M0/M1/M2 и T01–T21 сохраняют текущие статусы `NOT_ACCEPTED`/`PARTIAL` в [матрице M0](../docs/quality/m0-demo.md), [приёмке](../docs/quality/mvp-acceptance.md) и [ROADMAP](../ROADMAP.md). Сам выпуск не меняет эти статусы.
+Evidence на develop включает основной browser путь и реальные Docker вердикты `OK`/`WA` ([A5 verdict evidence](../docs/quality/evidence/2026-10-10T082341+0300-A5-real-verdicts.md)). Это ограниченный прогон: CE/TL/ML/RE, автоматическое завершение/переход победителя, hostile/restart проверки и официальный package не подтверждены. Общие M0/M1/M2 остаются `NOT_ACCEPTED`/`PARTIAL`; индивидуальные T01–T21 статусы перечислены в [матрице M0](../docs/quality/m0-demo.md), [приёмке](../docs/quality/mvp-acceptance.md) и [ROADMAP](../ROADMAP.md). Сам выпуск не меняет эти статусы.
 
-Release branch базировалась ровно на указанном SHA. Python и frontend package/lock metadata теперь имеют версию `0.1.0`. Docker daemon доступен, но `.env` в этой сессии не создавался и стек не запускался; evidence #98 относится к отдельному изолированному локальному стенду.
+Release branch базировалась ровно на указанном SHA. Python и frontend package/lock metadata имеют версию `0.1.0`. Docker daemon доступен, но `.env` в этой сессии не создавался и стек повторно не запускался; evidence #98 относится к отдельному изолированному локальному стенду.
+
+После подтверждения merge из GitHub удалены 96 remote `feature/*`, доказанно слитых в develop, и `release/0.1.0`; также удалены 39 merged local refs, не занятых worktree. Сохранены основные ветки, три remote unmerged refs и local ветки, на которых стоят отдельные чистые checkout/worktree.
 
 Текущий интеграционный снимок 2026-10-10T06:02:48+03:00, Europe/Moscow. `origin/develop=ee755af6ed93e7c3996cb5e70edd8d21e527c56a`; обычный merge PR #82 интегрировал A4 P2-03.4 (ready HTTP/body-bound match receipts), exact-head CI 5/5 SUCCESS. PR #84 обычным merge интегрировал A4 P1-03 share access; exact-head CI 5/5 SUCCESS. P1-03 implementation audit, P1-03 merge audit.
 
