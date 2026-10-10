@@ -115,7 +115,7 @@ ROADMAP v4 сохраняет все37 требований и21 acceptance. Н�
 | M01–04/TEAM01 | auth/CRUD/roster/invites/bracket/manual pairings/reset | full browser/cap/history/permissions acceptance A4+A5 |
 | M05–08/P03 | persisted run/config/start/ready, gateway/workspace, ledger/result/failure/finalization and admin cores | A3 consumer CONNECT, P2-05 admin API/browser |
 | P01–02/E01–04/J01–04 | normalized catalog, LocalJudge/harness, durable queue/outboxes/draft CAS, editor UI | real import/compiler/worker/provider/workspace CONNECT A3+A4+A5; admission race A3; official adapter отдельно |
-| V01–04/TEAM02 | safe event store; P4-07 snapshot/public-only GET integrated PR #78 | hashed unlisted access in current P1-03 A4 feature; A3 legacy invite URI log-redaction follow-up; public bracket/SSE; real map CONNECT A5 |
+| V01–04/TEAM02 | safe event store; P4-07 snapshot/public-only GET integrated PR #78; hashed unlisted access integrated PR #84 | A3 legacy invite URI log-redaction follow-up; public bracket/SSE; real map CONNECT A5 |
 | S01–02/TEAM06 | basic roles/guards/private split/isolation cores | actual full-system IDOR/injections/privacy/hostile/restart evidence A3+A4+A5 |
 | D01–06 | README/env/архитектура/history/CI/case/design | actual one-command runtime A3, M0→full official/demo/video evidence всей команды |
 

@@ -12,7 +12,7 @@
 
 | Владелец | Задачи |
 |---|---|
-| A4 | P1-03: `IN_REVIEW` в `feature/a4-p1-03-public-access`. P2-03.4 интегрирован PR #82. P1-01.1 — следующая независимая задача первой волны |
+| A4 | P2-03.4 и P1-03 integrated PR #82/#84. P1-01.1: `IN_PROGRESS` в `feature/a4-p1-01-1-invite-concurrency`; остановиться после задачи Wave 1 |
 | A3 | P3-04.2: реальный исполнитель LocalJudge, фабрика воркера и `SUBMISSION_WORKER_FACTORY`, очистка контейнеров после убитого процесса. P3-02.2: программный импорт демо-задачи и проверка компилятора (сейчас `verified=False`). P1-04.2: запуск одной командой, API, воркер и таймер в Compose |
 | A5 | P5-03d: админский матч на реальные `GET/PATCH /matches/{id}`, start, pause, resume, extend, technical-result, rematches, replacements. P5-03e: публичная карта на слитом `GET /public/matches/{id}` с опросом. Кнопка «Готов» и состояния по контракту A4 |
 
@@ -49,7 +49,7 @@ M1: ручные пары и BYE в браузере, все админские 
 
 | Владелец | Вся зона | Первое READY задание | Независимый резерв |
 |---|---|---|---|
-| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | Wave 1: P2-03.4 DONE; P1-03 IN_REVIEW; P1-01.1 next | P2-05 admin HTTP and later Wave 2 producer tasks |
+| A4, прежний A1/координатор | accounts/tournaments/competition/events, common contracts, API permissions/domain/providers | Wave 1: P2-03.4/P1-03 integrated; P1-01.1 in progress | P2-05 admin HTTP and later Wave 2 producer tasks |
 | A3 | problems/submissions/drafts/judge/sandbox, config/factories/Compose/start scripts/CI, system acceptance | P3-04.1 admission contention; P3-04.2 реальный LocalJudge executor/factory + programmatic smoke import | P3-02 import/assets/compiler probes; P1-04 one-command build; P3-05 private draft access; P4-08 acceptance harness |
 | A5 | весь frontend: React/design/styles/typed clients/editor/map/UI/browser checks | P5-03 подключить готовые auth/invite/admin/bracket API; минимальный бренд из #64 | typed match/workspace clients, loading/error/empty states, draft isolation, keyboard/minimal responsive |
 
@@ -79,15 +79,15 @@ A4 владеет backend/apps/common/contracts.py и contract fixtures. A3 вл
 
 ### P1-01 · invites · backend DONE, browser/concurrency acceptance PARTIAL
 
-#12 integrated: hashed token/expiry/revoke/cap/repeat. Не повторять. Резерв P1-01.1: стабилизировать file/shared-cache SQLite acceptance без ослабления cap/assertions; не тратить use повторно. A5 проверяет real invite browser path. M02/T04.
+#12 integrated: hashed token/expiry/revoke/cap/repeat. Не повторять. P1-01.1 IN_PROGRESS в `feature/a4-p1-01-1-invite-concurrency`: стабилизировать file/shared-cache SQLite acceptance без ослабления cap/assertions; не тратить use повторно. A5 проверяет real invite browser path. M02/T04.
 
 ### P1-02 · common contracts / CI · PARTIAL
 
 #17 и #52 CI integrated. Первым коротким PR P1-02.5 материализовать frozen InfrastructureFailureReceipt/Sink и RunProblemSnapshot/Provider из принятых boundaries. Existing v1 SubmissionPermit/ResultReceipt/verdict enum не менять. Common imports без optional apps. A3/A5 уже могут писать consumers на структурно совместимых ports, ждать их ответа не нужно. Общая эксплуатация CI передана A3; P1-02 не делает его зависимым от A4.
 
-### P1-03 · access/security · A4 implementation in review
+### P1-03 · access/security · A4 backend integrated, system acceptance PARTIAL
 
-PublicAccessV1 для anonymous public и отдельный hashed unlisted share grant (expiry/revoke, не invite). A4 feature подключает token через fragment/header, per-tournament read scope, remote-peer anonymous throttles и public DTO allowlist; query/path token не принимаются. Focused 21/21, full events/tournaments/accounts 71 найдено (5 skipped), domain 68 PASS, contract/import/check/migration/compile PASS. [Audit](context/audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md). S01/S02/TEAM01/02/06; T02/T20 остаются неполностью принятыми. Reverse-proxy/dev-server redaction для legacy invite token path передана A3: [contract request](context/contracts/agent-3-token-access-log-redaction.md); A3 config/logging не менялись.
+PR #84 merged ordinary commit `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`, exact-head CI 5/5. PublicAccessV1 supports hashed unlisted share grant expiry/revoke; token travels fragment/header, with per-tournament read scope, remote-peer throttles and public DTO allowlist. P1-03 tests: full events/tournaments/accounts 71 found (5 skipped), focused 21/21. A4 evidence: [implementation audit](context/audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md), [merge audit](context/audits/2026-10-10T060220+0300-agent-4-P1-03-merge.md). S01/S02/TEAM01/02/06; T02/T20 not fully accepted. A3 legacy invite path access-log redaction is a [separate request](context/contracts/agent-3-token-access-log-redaction.md); A5 fragment/header browser CONNECT remains open.
 
 ### P2-01 · bracket ORM · implementation/integration DONE, acceptance PARTIAL
 
@@ -114,11 +114,11 @@ P2-05 effect/core fixes are included through #76, including write-first exact sa
 
 ### P2-06 · public events/SSE · PARTIAL, owner A4
 
-Event store #16 integrated. P4-07 (#78) snapshot race and atomic `score.changed` event/snapshot write are integrated. Other lifecycle/accepted producers still need typed contracts and same-transaction wiring. P1-03 adds hashed unlisted access. Then public bracket and SSE heartbeat/Last-Event-ID/resync/caps/backpressure. Публичный DTO не содержит source/email/private tests/CE diagnostics. A5 отдельно подключает карту. V01–03/T16/T17/T20.
+Event store #16 integrated. P4-07 (#78) snapshot race and atomic `score.changed` event/snapshot write are integrated. Other lifecycle/accepted producers still need typed contracts and same-transaction wiring. Hashed unlisted access integrated in #84. Then public bracket and SSE heartbeat/Last-Event-ID/resync/caps/backpressure. Публичный DTO не содержит source/email/private tests/CE diagnostics. A5 отдельно подключает карту. V01–03/T16/T17/T20.
 
 ### P4-07 · snapshot correctness · DONE по интеграции, acceptance PARTIAL
 
-#53 source head `fd79038` сохранён нетронутым и объединён ordinary merge `fbf0348` в feature. PR #78 влит ordinary merge-коммитом `fbcbca6aec775b1bec3678910e21ac8c5ab5d522`, CI 5/5 SUCCESS. Snapshot write-first/bounded whole-transaction retry; stale cursor игнорируется, равный cursor разрешён только для same run+identical payload; event+snapshot атомарны. Anonymous public-only `GET /api/v1/public/matches/{id}` фильтруется allowlist и no-store/no-referrer. Unlisted share token — P1-03; SSE/heartbeat/reconnect и browser map CONNECT остаются отдельными задачами; M0 acceptance не заявляется.
+#53 source head `fd79038` сохранён нетронутым и объединён ordinary merge `fbf0348` в feature. PR #78 влит ordinary merge-коммитом `fbcbca6aec775b1bec3678910e21ac8c5ab5d522`, CI 5/5 SUCCESS. Snapshot write-first/bounded whole-transaction retry; stale cursor игнорируется, равный cursor разрешён только для same run+identical payload; event+snapshot атомарны. Anonymous public-only `GET /api/v1/public/matches/{id}` фильтруется allowlist и no-store/no-referrer. Unlisted share token интегрирован PR #84; SSE/heartbeat/reconnect и browser map CONNECT остаются отдельными задачами; M0 acceptance не заявляется.
 
 ## A3: задачи, исполнение и запуск всей системы
 
