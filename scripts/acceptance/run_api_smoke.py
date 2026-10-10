@@ -496,6 +496,7 @@ def new_report() -> dict[str, Any]:
         "smokeResult": "NOT_RUN",
         "checks": [],
         "sandboxProbe": {"status": "NOT_RUN", "reason": "Не запрошено."},
+        "demoImport": {"status": "NOT_RUN", "reason": "Не запрошено; используйте --demo-import."},
         "m0": {
             "status": "NOT_ACCEPTED",
             "gates": {
@@ -532,7 +533,7 @@ def restore_environment(previous: dict[str, str | None]) -> None:
             os.environ[key] = value
 
 
-def disposable_api(checks: list[dict[str, Any]]) -> None:
+def disposable_api(checks: list[dict[str, Any]], *, demo_import: bool = False) -> str | None:
     with tempfile.TemporaryDirectory(prefix="firsterchuv-acceptance-") as directory:
         previous_env = temporary_environment(Path(directory) / "acceptance.sqlite3")
         previous_logging = logging.root.manager.disable
@@ -548,6 +549,19 @@ def disposable_api(checks: list[dict[str, Any]]) -> None:
             connections = db_connections
             call_command("ensure_sqlite_wal", verbosity=0, stdout=io.StringIO())
             call_command("migrate", interactive=False, verbosity=0, stdout=io.StringIO())
+            import_readiness = None
+            if demo_import:
+                import_output = io.StringIO()
+                call_command("import_demo_problem", verbosity=0, stdout=import_output)
+                match = re.search(r"\breadiness=(READY|NOT_READY)\b", import_output.getvalue())
+                if match is None:
+                    raise SmokeFailure("demo_import_readiness_missing", check_id="catalog.normalized_demo_import")
+                import_readiness = match.group(1)
+                passed(
+                    checks,
+                    "catalog.normalized_demo_import",
+                    f"normalized synthetic bundle imported into disposable DB; readiness={import_readiness}",
+                )
             admin_email = f"admin-{uuid4().hex}@example.test"
             admin_password = f"{uuid4().hex}{uuid4().hex}A!"
             os.environ["DJANGO_ADMIN_PASSWORD"] = admin_password
@@ -576,6 +590,7 @@ def disposable_api(checks: list[dict[str, Any]]) -> None:
                     raise SmokeFailure("disposable_api_start_timeout")
                 time.sleep(0.05)
             api_scenario(base_url, checks, admin_email, admin_password)
+            return import_readiness
         finally:
             try:
                 if server is not None:
@@ -670,16 +685,42 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="If Docker Engine is available, run bounded synthetic runner smoke.",
     )
+    parser.add_argument(
+        "--demo-import",
+        action="store_true",
+        help="Import the documented synthetic ProblemBundleV1 into the disposable smoke database.",
+    )
     args = parser.parse_args(argv)
     report = new_report()
     failure: SmokeFailure | None = None
     try:
-        disposable_api(report["checks"])
+        import_readiness = disposable_api(report["checks"], demo_import=args.demo_import)
+        if args.demo_import:
+            report["demoImport"] = {
+                "status": "PASS",
+                "readiness": import_readiness,
+                "reason": "Только синтетическая задача в disposable DB; это не официальный пакет и не live runtime import.",
+            }
     except SmokeFailure as error:
         failure = error
+        if args.demo_import and error.check_id == "catalog.normalized_demo_import":
+            report["demoImport"] = {"status": "FAIL", "reason": error.code}
     except Exception as error:  # noqa: BLE001 - exception text may contain private request data.
         report["smokeResult"] = "FAIL"
         report["failureCode"] = f"setup_failed_{type(error).__name__}"
+
+    if args.demo_import and report["demoImport"]["status"] == "NOT_RUN":
+        import_check = next(
+            (item for item in report["checks"] if item["id"] == "catalog.normalized_demo_import"),
+            None,
+        )
+        if import_check is not None and import_check["status"] == "PASS":
+            readiness = re.search(r"readiness=(READY|NOT_READY)", import_check["evidence"])
+            report["demoImport"] = {
+                "status": "PASS",
+                "readiness": readiness.group(1) if readiness else "UNKNOWN",
+                "reason": "Только синтетическая задача в disposable DB; это не официальный пакет и не live runtime import.",
+            }
 
     report["sandboxProbe"] = sandbox_probe(args.sandbox)
     if failure is not None:
