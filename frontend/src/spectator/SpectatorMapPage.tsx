@@ -262,7 +262,7 @@ export function SpectatorMapPage({ transport: injectedTransport }: SpectatorMapP
       commit((current) => requestPublicResync(current))
       try {
         const [freshBracketResponse, freshSnapshotResponse] = await Promise.all([
-          transport.bracket(tournamentId, activeMatchId),
+          transport.bracket(tournamentId),
           transport.snapshot(activeMatchId),
         ])
         const freshBracket = validatePublicBracket(freshBracketResponse)
@@ -336,7 +336,7 @@ export function SpectatorMapPage({ transport: injectedTransport }: SpectatorMapP
       try {
         transport = injectedTransport ?? await resolveSpectatorTransport(location.search)
         if (!active) return
-        const publicBracket = validatePublicBracket(await transport.bracket(tournamentId, routeMatchId || undefined))
+        const publicBracket = validatePublicBracket(await transport.bracket(tournamentId))
         if (publicBracket.tournamentId !== tournamentId) throw new PublicProtocolError('Bracket does not match the requested tournament.')
         const chosen = chooseMatch(publicBracket, routeMatchId)
         if (!chosen) throw new PublicProtocolError(routeMatchId

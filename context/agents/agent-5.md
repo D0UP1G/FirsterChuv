@@ -1,5 +1,12 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: волна 2 (4/4) — карта зрителя на публичной сетке и SSE
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-wave2-map-sse`, база `origin/develop` `feef318`; зависит от PR #90 (публичные эндпоинты).
+- Пути: `frontend/src/api/client.ts`, `frontend/src/spectator/{transport.ts,SpectatorMapPage.tsx,PublicTournamentsPage.tsx,validation.ts,spectator.css}`, `frontend/src/App.tsx`, тесты, собственный аудит. Backend не менялся.
+- Итог: `/watch` показывает реальный список, карта берёт реальную сетку и SSE (запасной вариант — опрос), валидатор принимает любой канонический UUID. Подробности и проверки — в аудите.
+
 ## Срез: P5-03e — публичная карта на реальном снимке матча (ROADMAP v6, волна 1)
 
 - Статус: `IN_REVIEW` (PR #81, CI 5/5, sync с develop после merge #80 и PR A3/A4).
