@@ -24,6 +24,7 @@ from backend.apps.competition.ledger_persistence import (
 )
 from backend.apps.competition.models import (
     Match,
+    MatchCommandReceipt,
     MatchRun,
     MatchRunReady,
 )
@@ -121,6 +122,7 @@ class MatchAPITests(TestCase):
 
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(retry.status_code, 200, retry.content)
+        self.assertEqual(first.json(), retry.json())
         self.assertEqual(first.json()["runId"], retry.json()["runId"])
         self.assertEqual(first.json()["problemVersions"], retry.json()["problemVersions"])
         payload = first.json()
@@ -142,10 +144,17 @@ class MatchAPITests(TestCase):
 
         changed = self.configure(duration=900)
         self.assertEqual(changed.status_code, 409)
+        self.assertEqual(changed.json()["error"]["code"], "idempotency_conflict")
         self.assertEqual(
             MatchRun.objects.get(match=self.match).allowed_duration_ms,
             600_000,
         )
+        receipt = MatchCommandReceipt.objects.get(
+            match=self.match, actor=self.admin, action="match.configure"
+        )
+        self.assertEqual(receipt.response_payload, first.json())
+        self.assertEqual(len(receipt.idempotency_sha256), 64)
+        self.assertNotEqual(receipt.idempotency_sha256, "config-match-1")
 
     def test_configuration_rejects_unknown_duplicate_and_invalid_fields(self):
         self.login_with_csrf(self.admin)
@@ -229,6 +238,30 @@ class MatchAPITests(TestCase):
             )
         self.assertEqual(not_ready.status_code, 409)
         self.assertFalse(MatchRun.objects.filter(match=self.match).exists())
+
+    def test_config_exact_retry_replays_after_start_without_reloading_catalog(self):
+        self.login_with_csrf(self.admin)
+        first = self.configure()
+        self.assertEqual(first.status_code, 200, first.content)
+        started = self.client.post(
+            f"/api/v1/matches/{self.match.pk}/start",
+            {},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="start-after-config",
+        )
+        self.assertEqual(started.status_code, 200, started.content)
+
+        with patch(
+            "backend.apps.competition.views.DjangoProblemCatalog",
+            side_effect=AssertionError("an exact receipt retry must skip catalog reads"),
+        ):
+            retry = self.configure()
+
+        self.assertEqual(retry.status_code, 200, retry.content)
+        self.assertEqual(retry.json(), first.json())
+        self.assertEqual(
+            MatchRun.objects.get(match=self.match).status, MatchRun.Status.RUNNING
+        )
 
     def test_config_maps_only_sqlite_contention_to_retryable_response(self):
         self.login_with_csrf(self.admin)
@@ -404,8 +437,147 @@ class MatchAPITests(TestCase):
         )
         self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(retry.status_code, 200, retry.content)
+        self.assertEqual(first.json(), retry.json())
+        self.assertEqual(first["Cache-Control"], "no-store")
         self.assertEqual(first.json()["status"], MatchRun.Status.RUNNING)
         self.assertEqual(MatchRun.objects.get(match=self.match).started_at, persisted_start)
+
+    def test_match_command_key_cannot_be_reused_across_actions(self):
+        self.login_with_csrf(self.admin)
+        configured = self.configure()
+        self.assertEqual(configured.status_code, 200, configured.content)
+
+        conflict = self.client.post(
+            f"/api/v1/matches/{self.match.pk}/start",
+            {},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="config-match-1",
+        )
+
+        self.assertEqual(conflict.status_code, 409, conflict.content)
+        self.assertEqual(conflict.json()["error"]["code"], "idempotency_conflict")
+        self.assertEqual(
+            MatchRun.objects.get(match=self.match).status, MatchRun.Status.READY
+        )
+
+    def test_both_ready_http_starts_at_second_participant_and_replays_receipts(self):
+        self.login_with_csrf(self.admin)
+        configured = self.configure(start_mode="both_ready")
+        match_players = [
+            slot.participant.user
+            for slot in self.match.slots.select_related("participant__user")
+        ]
+        self.client.logout()
+        self.login_with_csrf(match_players[0])
+        first_path = f"/api/v1/matches/{self.match.pk}/ready"
+        first = self.client.post(
+            first_path, {}, format="json", HTTP_IDEMPOTENCY_KEY="ready-click"
+        )
+        first_payload = first.json()
+        first_retry = self.client.post(
+            first_path, {}, format="json", HTTP_IDEMPOTENCY_KEY="ready-click"
+        )
+
+        self.assertEqual(configured.status_code, 200, configured.content)
+        self.assertEqual(first.status_code, 200, first.content)
+        self.assertEqual(first_retry.status_code, 200, first_retry.content)
+        self.assertEqual(first_retry.json(), first_payload)
+        self.assertEqual(first_payload["status"], MatchRun.Status.READY)
+        self.assertEqual(first_payload["readyUserIds"], [str(match_players[0].pk)])
+        self.assertIsNone(MatchRun.objects.get(match=self.match).started_at)
+
+        self.client.logout()
+        self.login_with_csrf(match_players[1])
+        second = self.client.post(
+            first_path, {}, format="json", HTTP_IDEMPOTENCY_KEY="ready-click"
+        )
+        second_payload = second.json()
+        second_retry = self.client.post(
+            first_path, {}, format="json", HTTP_IDEMPOTENCY_KEY="ready-click"
+        )
+
+        self.assertEqual(second.status_code, 200, second.content)
+        self.assertEqual(second_payload["status"], MatchRun.Status.RUNNING)
+        self.assertEqual(second_payload["readyUserIds"], sorted(
+            [str(match_players[0].pk), str(match_players[1].pk)]
+        ))
+        self.assertIsNotNone(MatchRun.objects.get(match=self.match).started_at)
+        self.assertEqual(second_retry.json(), second_payload)
+        # The second user deliberately reused the same human key string. Its
+        # receipt is separate from the first user's original READY response.
+        self.client.logout()
+        self.login_with_csrf(match_players[0])
+        first_replay_after_start = self.client.post(
+            first_path, {}, format="json", HTTP_IDEMPOTENCY_KEY="ready-click"
+        )
+        self.assertEqual(first_replay_after_start.json(), first_payload)
+        self.assertEqual(
+            MatchCommandReceipt.objects.filter(
+                match=self.match, action="match.ready"
+            ).count(),
+            2,
+        )
+
+    def test_manual_ready_http_persists_signal_without_start(self):
+        self.login_with_csrf(self.admin)
+        configured = self.configure(start_mode="manual")
+        self.assertEqual(configured.status_code, 200, configured.content)
+        participant = self.match.slots.select_related("participant__user").get(
+            slot_index=0
+        ).participant.user
+        self.client.logout()
+        self.login_with_csrf(participant)
+
+        response = self.client.post(
+            f"/api/v1/matches/{self.match.pk}/ready",
+            {},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="manual-ready",
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["status"], MatchRun.Status.READY)
+        self.assertEqual(response.json()["readyUserIds"], [str(participant.pk)])
+        self.assertIsNone(MatchRun.objects.get(match=self.match).started_at)
+        run = MatchRun.objects.get(match=self.match)
+        self.assertEqual(MatchRunReady.objects.filter(run=run).count(), 1)
+
+    def test_ready_is_participant_only_csrf_protected_and_body_is_strict(self):
+        self.login_with_csrf(self.admin)
+        path = f"/api/v1/matches/{self.match.pk}/ready"
+        forbidden_admin = self.client.post(
+            path, {}, format="json", HTTP_IDEMPOTENCY_KEY="admin-ready"
+        )
+        self.assertEqual(forbidden_admin.status_code, 403)
+
+        self.client.logout()
+        other_client = APIClient(enforce_csrf_checks=True)
+        other_client.force_login(self.players[2])
+        csrf = other_client.get("/api/v1/auth/csrf")
+        other_client.credentials(HTTP_X_CSRFTOKEN=csrf.json()["csrfToken"])
+        forbidden_other_match = other_client.post(
+            path, {}, format="json", HTTP_IDEMPOTENCY_KEY="foreign-ready"
+        )
+        self.assertEqual(forbidden_other_match.status_code, 404)
+
+        no_csrf_client = APIClient(enforce_csrf_checks=True)
+        no_csrf_client.force_login(self.players[0])
+        no_csrf = no_csrf_client.post(
+            path, {}, format="json", HTTP_IDEMPOTENCY_KEY="ready-no-csrf"
+        )
+        self.assertEqual(no_csrf.status_code, 403)
+
+        self.login_with_csrf(self.players[0])
+        no_key = self.client.post(path, {}, format="json")
+        extra_field = self.client.post(
+            path,
+            {"start": True},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="ready-extra-body",
+        )
+        self.assertEqual(no_key.status_code, 400)
+        self.assertEqual(extra_field.status_code, 400)
+        self.assertEqual(MatchRunReady.objects.count(), 0)
 
     def test_start_rejects_both_ready_and_unknown_body_fields(self):
         self.login_with_csrf(self.admin)

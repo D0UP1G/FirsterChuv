@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from backend.apps.common.contracts import (
     AttemptReceipt as CommonAttemptReceipt,
+    InfrastructureFailureReceipt as CommonInfrastructureFailureReceipt,
     ResultApplication,
     ResultReceipt as CommonResultReceipt,
     SubmissionPermit as CommonSubmissionPermit,
@@ -11,11 +12,17 @@ from backend.apps.common.contracts import (
 from backend.apps.submissions.adapters import (
     CompetitionGatewayAdapter,
     EventWriterAdapter,
+    InfrastructureFailureSinkAdapter,
     LanguageRegistryAdapter,
     ResultSinkAdapter,
 )
 from backend.apps.submissions.errors import IntegrationUnavailable
-from backend.apps.submissions.ports import AttemptReceipt, ResultReceipt, SubmissionPermit
+from backend.apps.submissions.ports import (
+    AttemptReceipt,
+    InfrastructureFailureReceipt,
+    ResultReceipt,
+    SubmissionPermit,
+)
 
 
 class FakeCompetitionGateway:
@@ -23,6 +30,7 @@ class FakeCompetitionGateway:
         self.authorized = []
         self.accepted = []
         self.results = []
+        self.failures = []
         self.applied = applied
 
     def authorize_submission(self, actor_id, match_id, run_id, problem_id, received_at):
@@ -35,6 +43,9 @@ class FakeCompetitionGateway:
     def apply_result(self, receipt):
         self.results.append(receipt)
         return ResultApplication(applied=self.applied)
+
+    def record_infrastructure_failure(self, receipt):
+        self.failures.append(receipt)
 
 
 class FakeEventWriter:
@@ -135,11 +146,35 @@ class SubmissionAdapterTests(TestCase):
         self.assertFalse(language_adapter.is_supported("unknown"))
         self.assertEqual(languages.queried, ["cpp20", "unknown"])
 
+    def test_infrastructure_failure_adapter_forwards_allowlisted_receipt(self):
+        gateway = FakeCompetitionGateway()
+        adapter = InfrastructureFailureSinkAdapter(gateway)
+        receipt = InfrastructureFailureReceipt(
+            submission_id=self.submission_id,
+            run_id=self.run_id,
+            reason_code="worker_lease_expired",
+            retryable=False,
+        )
+
+        adapter.record_infrastructure_failure(receipt)
+
+        self.assertEqual(
+            gateway.failures,
+            [CommonInfrastructureFailureReceipt(
+                submission_id=self.submission_id,
+                run_id=self.run_id,
+                reason_code="worker_lease_expired",
+                retryable=False,
+            )],
+        )
+
     def test_missing_or_malformed_production_ports_fail_closed(self):
         with self.assertRaises(IntegrationUnavailable):
             CompetitionGatewayAdapter(None)
         with self.assertRaises(IntegrationUnavailable):
             ResultSinkAdapter(None)
+        with self.assertRaises(IntegrationUnavailable):
+            InfrastructureFailureSinkAdapter(None)
         with self.assertRaises(IntegrationUnavailable):
             EventWriterAdapter(None)
         with self.assertRaises(IntegrationUnavailable):

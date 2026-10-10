@@ -23,5 +23,6 @@ class RequestIdMiddleware:
             )
         if request.path == "/api/v1" or request.path.startswith("/api/v1/"):
             response["Cache-Control"] = "no-store"
+            response["Referrer-Policy"] = "no-referrer"
         response["X-Request-ID"] = str(request.request_id)
         return response

@@ -17,18 +17,25 @@ from rest_framework.permissions import (
     SAFE_METHODS,
 )
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from backend.apps.accounts.models import User
 from backend.apps.accounts.permissions import IsApplicationAdmin, IsParticipant
-from backend.apps.tournaments.models import Invite, Tournament, TournamentParticipant
+from backend.apps.common.throttles import RemoteAddressScopedRateThrottle
+from backend.apps.tournaments.models import (
+    Invite,
+    Tournament,
+    TournamentParticipant,
+    TournamentShareLink,
+)
 from backend.apps.tournaments.serializers import (
     AdminUserOptionSerializer,
     AssignParticipantSerializer,
     InviteCreateSerializer,
     InviteMetadataSerializer,
     ParticipantSeedSerializer,
+    ShareLinkCreateSerializer,
+    ShareLinkMetadataSerializer,
     TournamentParticipantSerializer,
     TournamentSerializer,
 )
@@ -41,6 +48,12 @@ from backend.apps.tournaments.services import (
     invite_for_token,
     remove_participant,
     set_participant_seed,
+)
+from backend.apps.tournaments.share_links import (
+    ShareLinkError,
+    ShareLinkNotFound,
+    create_share_link,
+    revoke_share_link,
 )
 
 
@@ -112,6 +125,13 @@ class InviteMutationResponse(APIException):
         super().__init__(detail=str(error), code=error.code)
 
 
+class ShareLinkMutationResponse(APIException):
+    def __init__(self, error):
+        self.status_code = error.status_code
+        self.default_code = error.code
+        super().__init__(detail=str(error), code=error.code)
+
+
 def raise_invite_error(error: InviteMutationError):
     if error.status_code == 404:
         raise NotFound(str(error))
@@ -119,7 +139,7 @@ def raise_invite_error(error: InviteMutationError):
 
 
 class PrivateInviteAPIView(APIView):
-    """Apply private/no-referrer response headers to every invite response."""
+    """Apply private/no-referrer headers to token-bearing admin responses."""
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
@@ -190,10 +210,62 @@ class TournamentInviteRevokeView(PrivateInviteAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@method_decorator(csrf_protect, name="dispatch")
+class TournamentShareLinksView(PrivateInviteAPIView):
+    """Admin-only one-time issuance and metadata for unlisted share grants."""
+
+    permission_classes = [IsApplicationAdmin]
+
+    def get_tournament(self, tournament_id):
+        try:
+            return Tournament.objects.get(pk=tournament_id)
+        except Tournament.DoesNotExist as error:
+            raise NotFound("Турнир не найден.") from error
+
+    def get(self, request, tournament_id):
+        tournament = self.get_tournament(tournament_id)
+        links = TournamentShareLink.objects.filter(tournament=tournament)
+        return Response(ShareLinkMetadataSerializer(links, many=True).data)
+
+    def post(self, request, tournament_id):
+        tournament = self.get_tournament(tournament_id)
+        serializer = ShareLinkCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            link, token = create_share_link(
+                tournament,
+                request.user,
+                expires_at=serializer.validated_data["expires_at"],
+            )
+        except ShareLinkError as error:
+            raise ShareLinkMutationResponse(error) from error
+        return Response(
+            {
+                "share": ShareLinkMetadataSerializer(link).data,
+                "shareToken": token,
+                "shareUrl": f"/watch/{tournament.pk}#shareToken={token}",
+                "accessHeader": "X-Tournament-Share-Token",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class TournamentShareLinkRevokeView(PrivateInviteAPIView):
+    permission_classes = [IsApplicationAdmin]
+
+    def delete(self, request, tournament_id, share_link_id):
+        try:
+            revoke_share_link(tournament_id, share_link_id)
+        except ShareLinkNotFound as error:
+            raise NotFound(str(error)) from error
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class InvitePreviewView(PrivateInviteAPIView):
     authentication_classes = []
     permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]
+    throttle_classes = [RemoteAddressScopedRateThrottle]
     throttle_scope = "invite_preview"
 
     def get(self, request, token):

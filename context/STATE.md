@@ -1,5 +1,9 @@
 # Состояние проекта: три агента и первый рабочий матч
 
+Текущий интеграционный снимок 2026-10-10T06:02:48+03:00, Europe/Moscow. `origin/develop=ee755af6ed93e7c3996cb5e70edd8d21e527c56a`; обычный merge PR #82 интегрировал A4 P2-03.4 (ready HTTP/body-bound match receipts), exact-head CI 5/5 SUCCESS. PR #84 обычным merge интегрировал A4 P1-03 share access; exact-head CI 5/5 SUCCESS. [P1-03 implementation audit](audits/2026-10-10T055736+0300-agent-4-P1-03-public-access.md), [P1-03 merge audit](audits/2026-10-10T060220+0300-agent-4-P1-03-merge.md).
+
+A4 выполняет последнюю независимую задачу Wave 1 P1-01.1 в `feature/a4-p1-01-1-invite-concurrency` от `ee755af6ed93e7c3996cb5e70edd8d21e527c56a`. A3 legacy invite URI access-log redaction передано в [contract request](contracts/agent-3-token-access-log-redaction.md); A4 не меняет A3-owned Nginx/settings/Compose. Wave 2 не начата. Полный M0 остаётся NOT_ACCEPTED.
+
 Снимок 2026-10-10T03:55:27+03:00, Europe/Moscow. Активные роли: A3, A4 (прежний A1/координатор), A5. [ROADMAP v5](../ROADMAP.md), [M0 demo](../docs/quality/m0-demo.md), [review](../docs/reviews/2026-10-10-mvp-readiness.md).
 
 - Fresh `origin/develop`: `5f8e7d5a76e296e3cdc3bafe88782540c4168179` (merge #77). PR #77 final head `97ca67091a4ad54f3ac0f0db2e70323d4a03dd2d`, ordinary merge; exact-head CI 5/5 SUCCESS: backend, contracts-and-common-imports, domain, frontend, sandbox-unit. [P2-03.3 merge audit](audits/2026-10-10T035527+0300-agent-4-P2-03.3-merge.md).

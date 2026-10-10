@@ -4,7 +4,15 @@
 
 Текущая документация не означает, что защита уже реализована. Каждый контроль подтверждается в T18/T20 и аудите владельца.
 
-Текущий `develop` на `cad34ea` содержит integrated account/roster PR #5/#8 и invite API P1-01 PR #12: явную CSRF-защиту mutations, HttpOnly cookies, серверную роль participant, admin-only writes, roster capacity/freeze guards и atomic invite accept. `freeze_roster` перед фиксацией повторно проверяет active account и роль `participant`; `IsApplicationAdmin` не доверяет Django staff flags. Строгие serializers отклоняют неизвестные/read-only поля. Replacement после игры остаётся контролируемым действием A2; private match ownership — ответственностью A2/A3. Частичные тесты не закрывают T02/T20 целиком. DRF throttle cache process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
+## Актуальное состояние P1-03 (2026-10-10)
+
+PR #84 интегрировал tournament-scoped read-only share grant: в БД остаётся только SHA-256, секрет выдаётся admin один раз, срок действия обязателен, отзыв немедленно закрывает дальнейшие чтения. Raw token передаётся browser fragment → API header `X-Tournament-Share-Token`, не query/path; публичная карта выдаёт только существующий `public-match` allowlist и ставит `no-store`/`no-referrer`. Неизвестные, expired, revoked и другие tournament IDs одинаково скрываются 404. Admin share management требует global application role и CSRF. Browser fragment/header CONNECT и полная T20 приёмка остаются открыты.
+
+Anonymous scoped throttles для login/register/invite preview/public snapshot используют `REMOTE_ADDR` socket peer и намеренно игнорируют client-supplied `X-Forwarded-For`. Public snapshot ограничен 120/minute; login/register/invite используют существующие rates. Это fail-closed выбор: при одном Nginx proxy разные внешние IP в Django могут разделить peer bucket; Compose сейчас держит один API process, а shared throttle cache для нескольких процессов остаётся эксплуатационным требованием. Nginx forwarding chain проверяется отдельно; A4 не меняет A3-owned proxy/Compose/settings.
+
+Остался отдельный A3 deployment request для default access log: текущий invite-preview token находится в path, который combined Nginx access log записывает как request URI. Новые public share token в URI не входят, но legacy invite path требует log redaction/`access_log off` в Nginx либо согласованного transport migration. До изменения `deploy/nginx/default.conf` (владение A3) это конкретное deployment follow-up, а не утверждение о полной log-redaction приёмке; contract-запрос: [A3 token access-log redaction](../../context/contracts/agent-3-token-access-log-redaction.md).
+
+Исторический снимок до PR #84 описывал `develop` на `cad34ea`; текущая ветка основана на `ee755af` и содержит merged account/roster PR #5/#8, invite API #12 и public access #84. Invite path concurrency follow-up P1-01.1 выполняется в отдельной feature и до её merge не считается частью develop. `freeze_roster` перед фиксацией повторно проверяет active account и роль `participant`; `IsApplicationAdmin` не доверяет Django staff flags. Строгие serializers отклоняют неизвестные/read-only поля. Частичные тесты не закрывают T02/T20 целиком. DRF throttle cache process-local; Compose запускает один API process. До нескольких API processes/replicas нужно настроить shared throttle cache и сверить `NUM_PROXIES` с фактической доверенной proxy chain.
 
 ### Частичные доказательства backend slices Agent 1
 
@@ -28,7 +36,9 @@
 
 В интегрированном PR #12 raw token генерируется через `secrets.token_urlsafe(32)`, в таблице сохраняется только SHA-256, create response показывает token один раз, а list DTO не содержит token/hash. Anonymous preview ограничен `30/minute`, отдаёт только название и UUID турнира, не кэшируется и устанавливает `Referrer-Policy: no-referrer`. Accept имеет явные CSRF/auth/active participant guards. Условное списание use, существующий `assign_participant` (cap/freeze/status) и unique acceptance ledger работают в одной транзакции; ошибки состава откатывают use, SQLite lock retry bounded.
 
-Tests PR #12 покрывают create/list/revoke, ограничения и неизвестные поля, preview/accept 404/410, регистрацию+login+accept, повтор без расхода, CSRF/roles, cap/freeze rollback и parallel accept при use/cap limits. Это backend evidence для M02/T04 и invite role gate S02, но не full T04/T20. Токен находится в URL по контракту; application-код его не журналирует, а redaction reverse-proxy access logs остаётся задачей P1-03 до публикации ссылок.
+Tests PR #12 покрывают create/list/revoke, ограничения и неизвестные поля, preview/accept 404/410, регистрацию+login+accept, повтор без расхода, CSRF/roles, cap/freeze rollback и parallel accept при use/cap limits. Это backend evidence для M02/T04 и invite role gate S02, но не full T04/T20. Токен находится в URL по контракту; application-код его не журналирует, а redaction reverse-proxy access logs остаётся A3 deployment follow-up.
+
+P1-01.1 опубликована в PR #87: она устраняет SQLite read→write upgrade race через write reservation до чтения счётчика/ledger, bounded exponential backoff для lock retry и сохранение same-participant no-op по use count. File-backed regression проверяет use-limit, roster-cap и same-user retry. Это implementation evidence; merge не закрывает browser T04.
 
 ## Границы доверия
 
@@ -102,4 +112,4 @@ T20: SQL/XSS/CSRF/SSRF/archive/command injection и обход ролей/UUID. 
 
 ## Повторная ревизия 2026-10-09
 
-На совместном feature прошли 105 backend tests, 36 pure domain и 12 sandbox units; standard image rebuilt и 5 actual smoke pass. Bounded probes подтверждают F01/F07 fixes, ограничения/cleanup/normal job recovery, не все экспертные inputs или private-data browser paths. Queue SQLite race и bracket lifecycle/public score-event mismatch требуют fixes #15/#7/#16; [отчёт](../reviews/2026-10-09-integration-review.md). P1-03 proxy/share/log redaction и полный T18/T20 остаются обязательными.
+На совместном feature прошли 105 backend tests, 36 pure domain и 12 sandbox units; standard image rebuilt и 5 actual smoke pass. Bounded probes подтверждают F01/F07 fixes, ограничения/cleanup/normal job recovery, не все экспертные inputs или private-data browser paths. Queue SQLite race и bracket lifecycle/public score-event mismatch требуют fixes #15/#7/#16; [отчёт](../reviews/2026-10-09-integration-review.md). P1-03 share access интегрирован PR #84; A3 legacy invite log redaction и полный T18/T20 остаются обязательными.

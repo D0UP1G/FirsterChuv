@@ -2,12 +2,18 @@
 
 from collections.abc import Mapping
 
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect
 from rest_framework import serializers, status
-from rest_framework.exceptions import APIException, NotFound, ValidationError
+from rest_framework.exceptions import (
+    APIException,
+    NotFound,
+    PermissionDenied,
+    ValidationError,
+)
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,11 +32,18 @@ from backend.apps.competition.admin_runtime import (
     execute_match_admin_command,
 )
 from backend.apps.competition.match_api import MatchProjectionError, match_view_payload
+from backend.apps.competition.match_commands import (
+    MatchCommandIdempotencyConflict,
+    MatchCommandInputError,
+    execute_match_command,
+)
 from backend.apps.competition.models import Match, MatchSlot
 from backend.apps.competition.runtime import (
     MatchRuntimeError,
     configure_match_run,
+    mark_match_ready,
     start_match_run,
+    snapshot_match_problems,
 )
 from backend.apps.competition.serializers import (
     StrictEmptyObjectSerializer,
@@ -97,9 +110,18 @@ class MatchRequestError(APIException):
 
 def _require_match_idempotency_key(request):
     key = request.headers.get("Idempotency-Key")
-    if not key or len(key) > 200:
+    try:
+        encoded = key.encode("utf-8", errors="strict") if isinstance(key, str) else b""
+    except UnicodeEncodeError:
+        encoded = b""
+    if (
+        not encoded
+        or len(encoded) > 128
+        or not key.strip()
+        or any(byte < 0x20 or byte == 0x7F for byte in encoded)
+    ):
         raise ValidationError(
-            {"Idempotency-Key": "Укажите непустой ключ длиной не более 200 символов."}
+            {"Idempotency-Key": "Укажите печатный ключ длиной 1–128 байт."}
         )
     return key
 
@@ -135,13 +157,62 @@ def _match_detail_queryset(request):
 
 
 def _match_response(match, *, actor):
+    response = Response(_match_payload(match, actor=actor), status=status.HTTP_200_OK)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+def _match_payload(match, *, actor):
     try:
-        payload = match_view_payload(match, actor=actor, now=timezone.now())
+        return match_view_payload(match, actor=actor, now=timezone.now())
     except MatchProjectionError as error:
         raise MatchRequestError(str(error), code=error.code) from error
+
+
+def _execute_match_api_command(**kwargs):
+    try:
+        payload = execute_match_command(**kwargs)
+    except MatchCommandInputError as error:
+        raise ValidationError({"Idempotency-Key": str(error)}) from error
+    except MatchCommandIdempotencyConflict as error:
+        raise MatchRequestError(str(error), code=error.code) from error
+    except Match.DoesNotExist as error:
+        raise NotFound("Матч не найден.") from error
+    except MatchRuntimeError as error:
+        raise MatchRequestError(
+            str(error), code=error.code, status_code=error.status_code
+        ) from error
     response = Response(payload, status=status.HTTP_200_OK)
     response["Cache-Control"] = "no-store"
     return response
+
+
+def _authorize_admin_command(request):
+    if (
+        not request.user.is_authenticated
+        or not request.user.is_active
+        or request.user.role != User.Roles.ADMIN
+    ):
+        raise PermissionDenied("Требуются права администратора.")
+
+
+def _authorize_ready_command(match_id, request):
+    if (
+        not request.user.is_authenticated
+        or not request.user.is_active
+        or request.user.role != User.Roles.PARTICIPANT
+    ):
+        raise PermissionDenied("Готовность может подтвердить только участник матча.")
+    assigned = Match.objects.filter(
+        pk=match_id,
+        kind=Match.Kind.PLAYED,
+        slots__resolution=MatchSlot.Resolution.PLAYER,
+        slots__participant__user_id=request.user.pk,
+        slots__participant__status=TournamentParticipant.Status.ACTIVE,
+    ).exists()
+    if not assigned:
+        # Do not disclose whether an unrelated private match exists.
+        raise Http404
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -158,40 +229,58 @@ class MatchDetailView(APIView):
     def patch(self, request, match_id):
         serializer = StrictMatchConfigRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        _require_match_idempotency_key(request)
-        match = get_object_or_404(
-            Match.objects.select_related("tournament"), pk=match_id
-        )
-        if match.kind != Match.Kind.PLAYED:
-            raise MatchRequestError(
-                "Автоматический проход нельзя настраивать как матч.",
-                code="match_not_playable",
-            )
+        key = _require_match_idempotency_key(request)
 
         config = serializer.validated_data
-        tournament_config = match.tournament.default_match_config
-        scoring_rule = _runtime_scoring_rule(tournament_config)
-        try:
+        body = {
+            "problemIds": [str(item) for item in config["problem_ids"]],
+            "matchDurationSec": config["match_duration_sec"],
+            "startMode": config["start_mode"],
+        }
+
+        def prepare():
+            return snapshot_match_problems(
+                config["problem_ids"], catalog=DjangoProblemCatalog()
+            )
+
+        def perform(problem_versions):
+            current = get_object_or_404(
+                Match.objects.select_related("tournament"), pk=match_id
+            )
+            if current.kind != Match.Kind.PLAYED:
+                raise MatchRequestError(
+                    "Автоматический проход нельзя настраивать как матч.",
+                    code="match_not_playable",
+                )
             configure_match_run(
-                match.pk,
+                current.pk,
                 problem_ids=config["problem_ids"],
                 allowed_duration_ms=config["match_duration_sec"] * 1000,
                 start_mode=config["start_mode"],
-                scoring_rule=scoring_rule,
+                scoring_rule=_runtime_scoring_rule(
+                    current.tournament.default_match_config
+                ),
                 catalog=DjangoProblemCatalog(),
+                problem_versions=problem_versions,
             )
-        except MatchRuntimeError as error:
-            raise MatchRequestError(
-                str(error),
-                code=error.code,
-                status_code=error.status_code,
-            ) from error
+            updated = get_object_or_404(
+                Match.objects.select_related(
+                    "tournament", "current_run", "winner__user"
+                ),
+                pk=match_id,
+            )
+            return _match_payload(updated, actor=request.user)
 
-        updated = get_object_or_404(
-            Match.objects.select_related("tournament", "current_run", "winner__user"),
-            pk=match_id,
+        return _execute_match_api_command(
+            match_id=match_id,
+            actor_id=request.user.pk,
+            action="match.configure",
+            idempotency_key=key,
+            body=body,
+            prepare=prepare,
+            perform=perform,
+            authorize=lambda: _authorize_admin_command(request),
         )
-        return _match_response(updated, actor=request.user)
 
 
 @method_decorator(csrf_protect, name="dispatch")
@@ -201,29 +290,90 @@ class StartMatchView(APIView):
     def post(self, request, match_id):
         serializer = StrictEmptyObjectSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        _require_match_idempotency_key(request)
-        match = get_object_or_404(
-            Match.objects.select_related("current_run"), pk=match_id
-        )
-        if match.kind != Match.Kind.PLAYED or match.current_run_id is None:
-            raise MatchRequestError(
-                "Сначала настройте запускаемый матч.",
-                code="match_run_not_configured",
-            )
-        try:
-            start_match_run(match.current_run_id, now=timezone.now())
-        except MatchRuntimeError as error:
-            raise MatchRequestError(
-                str(error),
-                code=error.code,
-                status_code=error.status_code,
-            ) from error
+        key = _require_match_idempotency_key(request)
 
-        updated = get_object_or_404(
-            Match.objects.select_related("tournament", "current_run", "winner__user"),
-            pk=match_id,
+        def perform(_prepared):
+            match = get_object_or_404(
+                Match.objects.select_related("current_run"), pk=match_id
+            )
+            if match.kind != Match.Kind.PLAYED or match.current_run_id is None:
+                raise MatchRequestError(
+                    "Сначала настройте запускаемый матч.",
+                    code="match_run_not_configured",
+                )
+            start_match_run(match.current_run_id, now=timezone.now())
+            updated = get_object_or_404(
+                Match.objects.select_related(
+                    "tournament", "current_run", "winner__user"
+                ),
+                pk=match_id,
+            )
+            return _match_payload(updated, actor=request.user)
+
+        return _execute_match_api_command(
+            match_id=match_id,
+            actor_id=request.user.pk,
+            action="match.start",
+            idempotency_key=key,
+            body=serializer.validated_data,
+            perform=perform,
+            authorize=lambda: _authorize_admin_command(request),
         )
-        return _match_response(updated, actor=request.user)
+
+
+class MatchReadyPermission(BasePermission):
+    message = "Готовность может подтвердить только активный участник матча."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and user.is_active
+            and user.role == User.Roles.PARTICIPANT
+        )
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class MatchReadyView(APIView):
+    permission_classes = [MatchReadyPermission]
+
+    def post(self, request, match_id):
+        serializer = StrictEmptyObjectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        key = _require_match_idempotency_key(request)
+
+        def perform(_prepared):
+            match = get_object_or_404(
+                Match.objects.select_related("current_run"), pk=match_id
+            )
+            if match.kind != Match.Kind.PLAYED or match.current_run_id is None:
+                raise MatchRequestError(
+                    "Сначала настройте запускаемый матч.",
+                    code="match_run_not_configured",
+                )
+            mark_match_ready(
+                match.current_run_id,
+                actor_user_id=request.user.pk,
+                now=timezone.now(),
+            )
+            updated = get_object_or_404(
+                Match.objects.select_related(
+                    "tournament", "current_run", "winner__user"
+                ),
+                pk=match_id,
+            )
+            return _match_payload(updated, actor=request.user)
+
+        return _execute_match_api_command(
+            match_id=match_id,
+            actor_id=request.user.pk,
+            action="match.ready",
+            idempotency_key=key,
+            body=serializer.validated_data,
+            perform=perform,
+            authorize=lambda: _authorize_ready_command(match_id, request),
+        )
 
 
 class GenerateBracketRequestSerializer(serializers.Serializer):

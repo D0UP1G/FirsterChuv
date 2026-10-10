@@ -1,5 +1,38 @@
 # Агент 3: задачи, очередь, песочница и запуск
 
+## Волна 1 · текущая задача P3-02.2 · 2026-10-10
+
+- Статус: import implementation slice готов к review; полный P3-02.2 остаётся IN_PROGRESS до настоящего compiler probe.
+- Ветка: `feature/p3-02-2-programmatic-demo-import`; база `48cb06a4fc5a02121f117cd1f17330f0cde13fdf`.
+- Объём: программный normalized demo import command с корректным private/public split и сохранением неготового статуса, пока production compiler не подтверждён; настоящий compiler probe запускается только через gated Docker smoke.
+- Сверенные требования: P01/P02/E02; T12/T13/T20 — только частичный import/compiler implementation slice.
+- Пути: `backend/apps/problems/management/commands/`, собственные importer/demo fixture tests, `backend/apps/problems/README.md`, эта карточка и отдельный audit. Compiler registry, shared contracts, чужие app/worktrees и Compose не менять.
+- Ограничение среды: Docker Engine отсутствует (`/var/run/docker.sock`); `cpp20.verified` остаётся `False`. Никакие manifest поля не смогут включить compiler.
+- Старые worktrees `normalized-problem-import-management` и `problem-catalog-management` не открывать на запись; работа ведётся только в этой свежей ветке.
+- Реализован `import_demo_problem`: bounded regular-file input для internal normalized ZIP или встроенный synthetic M0 archive, общий hardened parser/storage, идемпотентный checksum, `NOT_READY` при unverified compiler. Fixture содержит valid PNG, markdown/TeX/table/examples/limits и private tests/reference. Официальный package/Yandex mapping не заявляются.
+- Проверки: problems+judge 42 PASS/1 skip; полный backend 347 PASS/20 skip; sandbox runner 15 PASS; Django check, migration drift, 9 v1 fixtures, common import boundary, compileall и diff check PASS. Docker Engine недоступен; gated compiler smoke NOT_RUN, registry остается `verified=False`.
+- Implementation audit: [`2026-10-10T055921+0300-agent-3-P3-02.2-demo-import.md`](../audits/2026-10-10T055921+0300-agent-3-P3-02.2-demo-import.md).
+- Следующий шаг: commit implementation + card + audits и открыть PR в `develop`, не сливать; пока compiler probe ждёт Docker Engine, продолжить P1-04.2 в отдельном свежем worktree.
+
+## Волна 1 · текущая задача P3-04.2 · 2026-10-10
+
+- Статус: IN_PROGRESS; ROADMAP v6, волна 1.
+- Ветка: feature/p3-04-2-worker-factory; изолированный worktree.
+- База: origin/develop=4bb521b4980c3262d49f8b91387499f4d2a4acc1.
+- Цель этого среза: production executor/factory через real LocalJudge и точный RunProblemSnapshot; безопасная уборка только sandbox containers, осиротевших после принудительного завершения worker.
+- Интегрированные входы: A4 CompetitionGateway/RunProblemSnapshotProvider и durable result/failure sink доступны в develop после #77/#76; queue/outbox и LocalJudge cores уже интегрированы.
+- Текущее ограничение: SUBMISSION_WORKER_FACTORY не настроен; cpp20.verified остается false до отдельного настоящего compiler probe из P3-02.2. Runtime не должен подменять provider/verdict и должен оставаться fail-closed.
+- Фактически изменяемые пути: `backend/apps/submissions/runtime.py`, `worker.py`, `adapters.py` и их тесты; `backend/apps/judge/runner.py` и recovery tests; `backend/config/settings.py`; owned README, карточка и отдельный audit. Common contracts, A4 apps, Compose и чужие worktrees не меняются.
+- Требования: J01/J02/J03/J04, S01 и частичные T14/T18/T19/T20; полный M0 не заявлять.
+- Проверка Docker на старте: Docker CLI 29.8.2 доступен, Engine на /var/run/docker.sock отсутствует; docker compose plugin отсутствует. Реальный Docker acceptance будет NOT_RUN, если среда не изменится.
+- Existing stale task worktrees не использовать и не редактировать.
+- Реализация: factory строит executor вокруг `DjangoProblemCatalog`, `LocalJudge`, `DjangoCompetitionGateway`, реального `RunProblemSnapshotProvider` и result/failure adapters. Контейнеры получают owner/submission/fencing-token labels; периодический reaper удаляет только container, чей точный DB claim больше не активен. `cpp20.verified` не менялся; Compose и Docker Engine недоступны, поэтому полного runtime claim здесь нет.
+- Проверки: targeted submissions+judge suites — 68 PASS, 2 SKIP; sandbox runner — 16 PASS; Django `check`, migration drift, contract fixtures/import boundaries, `compileall` и `git diff --check` — PASS. Полный backend suite: 343 tests, 19 SKIP и один intermittent failure в чужом `tournaments` concurrency test `test_simultaneous_accept_never_exceeds_roster_capacity` (`database_busy`); изолированный повтор прошёл. Docker daemon недоступен, real smoke NOT_RUN.
+- Implementation commit: `226130fcbd0b422894e8f4236c57208e09536a9c`; PR [#83](https://github.com/D0UP1G/FirsterChuv/pull/83) в `develop`, открыт, mergeable и не слит.
+- CI для head `226130f`: backend, frontend, domain, sandbox-unit и contracts/common-imports — 5/5 PASS. Публикационный audit: [`2026-10-10T054933+0300-agent-3-P3-04.2-publication.md`](../audits/2026-10-10T054933+0300-agent-3-P3-04.2-publication.md).
+- Следующий шаг: ждать review/решения команды; PR не сливать. После подключения P3-02.2 compiler proof и P1-04 Docker runtime продолжить реальное acceptance.
+
+
 ## Текущая сессия P4-08 · disposable system acceptance harness · 2026-10-10
 
 - ID задачи: `P4-08`; implementation slice: `IN_REVIEW`; полная задача: `IN_PROGRESS`.

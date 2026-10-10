@@ -275,6 +275,37 @@ class MatchRunReady(models.Model):
         ]
 
 
+class MatchCommandReceipt(models.Model):
+    """Original response for one actor's idempotent match API command."""
+
+    match = models.ForeignKey(Match, on_delete=models.PROTECT, related_name="command_receipts")
+    actor = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.PROTECT,
+        related_name="match_command_receipts",
+    )
+    run = models.ForeignKey(
+        "competition.MatchRun",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="command_receipts",
+    )
+    action = models.CharField(max_length=32)
+    idempotency_sha256 = models.CharField(max_length=64)
+    request_sha256 = models.CharField(max_length=64)
+    response_payload = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("match", "actor", "idempotency_sha256"),
+                name="unique_match_actor_command_key",
+            )
+        ]
+
+
 class AcceptedAttempt(models.Model):
     """Immutable server-authored admission receipt for one submission."""
 
