@@ -1,5 +1,13 @@
 # Агент 5: весь frontend и дизайн BLITZ_ARENA
 
+## Срез: P5-03e — публичная карта на реальном снимке матча (ROADMAP v6, волна 1)
+
+- Статус: `IN_REVIEW`.
+- Ветка: `feature/agent-5-public-map-connect`, база `origin/develop` `4bb521b4980c3262d49f8b91387499f4d2a4acc1` (merge #79). PR #80 (P5-03d) ещё не слит.
+- Пути: `frontend/src/spectator/transport.ts`, `frontend/src/spectator/SpectatorMapPage.tsx`, `frontend/src/spectator/transport.test.ts`, `frontend/src/api/client.ts`, эта карточка, собственный аудит. Backend не меняется.
+- Цель: реальный `GET /public/matches/{id}` вместо отказа «endpoint не подключён»; интерим-опрос снимка вместо SSE; режим одного матча по `/watch/:tournamentId/matches/:matchId`, собранный только из публичных полей снимка. Приватных данных, подмены вердиктов и fixtures в production нет.
+- `WAITING_CONNECT` (A4, P2-06/P1-03): публичная сетка турнира, список публичных турниров, SSE, ссылка по токену. Страница `/watch/:tournamentId` без матча остаётся честным состоянием «недоступно».
+
 ## Срез: ROADMAP v6 — распределение по волнам
 
 - Статус: `IN_REVIEW`.
