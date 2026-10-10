@@ -16,9 +16,10 @@
 
 - `backend/apps/problems/catalog.py`: `DjangoProblemCatalog.describe_pinned(problem_id, version, checksum)` читает публичную проекцию точной версии, закреплённой в запуске (READY и совпадающая контрольная сумма); последняя активная версия не используется.
 - `backend/apps/problems/workspace_views.py`, `urls.py`: `GET /matches/{id}/problems/{problemId}` (условие, примеры, лимиты, id ресурсов) и `.../languages` (только компиляторы с `verified=True`). Доступ через WorkspaceAccess: участник замороженного запуска или админ; посторонний получает 404; до старта 409 `condition_not_available`; `Cache-Control: no-store`, `Referrer-Policy: no-referrer`; приватные тесты, чекеры и контрольные суммы в ответ не попадают.
+- `GET /problem-assets/{assetId}` (тот же `workspace_views.py`): картинка условия по неугадываемому UUID, только для вошедших, только READY-версии и растровые типы (PNG/JPEG/WebP, без SVG); заголовки `nosniff`, `Content-Security-Policy: default-src 'none'; sandbox`, `Cross-Origin-Resource-Policy: same-origin`.
 - `backend/apps/submissions/api_runtime.py` (новый): `build_submission_service()` с реальным gateway, реестром проверенных компиляторов и писателем событий приёма. `submission.accepted` принимается и отбрасывается, потому что у него нет публичного payload-контракта (приватные поля нельзя отдавать в поток); любой другой тип отклоняется.
 - `backend/config/settings.py`: `WORKSPACE_ACCESS_FACTORY`, `SUBMISSION_SERVICE_FACTORY`.
-- Тесты: `problems/tests/test_workspace_api.py` (6), `submissions/tests/test_api_runtime.py` (3); два существующих теста («порт не задан → 503») теперь явно отключают фабрику через `override_settings`, их смысл сохранён.
+- Тесты: `problems/tests/test_workspace_api.py` (9, включая 3 на ресурсы), `submissions/tests/test_api_runtime.py` (3); два существующих теста («порт не задан → 503») теперь явно отключают фабрику через `override_settings`, их смысл сохранён.
 - `backend/apps/submissions/README.md`: убрана устаревшая запись о неподключённых портах.
 - `context/agents/agent-5.md`: запись среза. Миграций и контрактов v1 не менялось.
 
@@ -35,11 +36,13 @@ P01/P02/P03 (условие, примеры, лимиты, переключен�
 | Параллельный прогон drafts/submissions/problems/competition/events без `test_archive`, `test_import_command` | не завершён: `pickle`-ошибка параллельного раннера маскирует результат на Windows | `test_import_command` падает на Windows до слияния #88 (O_BINARY) |
 | `manage.py check` | без проблем | |
 
-Не проверялось: реальный браузер и Docker; реальный компилятор `cpp20` остаётся `verified=False`, поэтому список языков на реальном каталоге пока пуст, а посылка отклоняется как неподдерживаемый язык.
+Живая проверка (локальный стенд: backend + Vite; для проверки `cpp20` помечен проверенным только в моём dev-процессе файлом настроек вне репозитория, демо-задача импортирована командой `import_demo_problem`): админ в UI выбрал готовую задачу и сохранил настройки матча, запустил матч (таймер 29:59); участник Player One открыл `/matches/{id}`: условие с формулами и примерами, язык C++20, редактор, серверный таймер, картинка условия загрузилась (`naturalWidth` = 1); отправка решения: `POST /submissions` → 202, «Посылка принята: В очереди», история и опрос статуса работают.
+
+Не проверялось: вердикт (Docker Desktop не запущен, воркер не стартовал), реальная проверка компилятора. В репозитории `cpp20` остаётся `verified=False`: список языков на реальном каталоге пока пуст, а посылка отклоняется как неподдерживаемый язык.
 
 ## Решения и отклонения
 
-Эндпоинт списка `GET /matches/{id}/problems` и `GET /problem-assets/{id}` не добавлялись: список задач уже есть в `GET /matches/{id}` (`problemVersions`), у демо-задач нет ресурсов; ресурсы остаются открытым пунктом. Писатель событий приёма отбрасывает `submission.accepted` осознанно, пока A4 не выпустит публичный producer.
+Эндпоинт списка `GET /matches/{id}/problems` не добавлялся: список задач уже есть в `GET /matches/{id}` (`problemVersions`). Ресурсы отдаются по неугадываемому UUID без привязки к матчу (id раскрывается только авторизованным эндпоинтом условия после старта); строгая привязка к запуску остаётся возможным усилением. Писатель событий приёма отбрасывает `submission.accepted` осознанно, пока A4 не выпустит публичный producer.
 
 ## Блокеры и риски
 

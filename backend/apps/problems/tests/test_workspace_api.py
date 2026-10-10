@@ -15,7 +15,7 @@ from backend.apps.problems.bundle import parse_problem_bundle
 from backend.apps.problems.catalog import DjangoProblemCatalog
 from backend.apps.problems.compilers import COMPILERS
 from backend.apps.problems.storage import store_bundle
-from backend.apps.problems.tests.bundle_fixtures import PROBLEM_ID, make_bundle_archive
+from backend.apps.problems.tests.bundle_fixtures import PROBLEM_ID, make_bundle_archive, normalized_manifest
 from backend.apps.tournaments.models import Tournament
 from backend.apps.tournaments.services import assign_participant
 
@@ -110,3 +110,42 @@ class MatchProblemWorkspaceApiTests(TestCase):
         self.match.__class__.objects.filter(pk=self.match.pk).update(current_run=None)
         self.client.force_login(self.admin)
         self.assertEqual(self.client.get(self.url).status_code, 404)
+
+
+ASSET_ID = "00000000-0000-4000-8000-000000000111"
+
+
+class ProblemAssetApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=True)
+        self.user = User.objects.create_user(
+            email="asset-player@example.test", display_name="Asset Player", password="test-password-123456",
+        )
+        manifest = normalized_manifest()
+        manifest["public"]["assets"][0]["assetId"] = ASSET_ID
+        store_bundle(parse_problem_bundle(make_bundle_archive(manifest=manifest)), compiler_registry=VERIFIED)
+        self.url = f"/api/v1/problem-assets/{ASSET_ID}"
+
+    def test_signed_in_user_receives_the_image_with_locked_down_headers(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+        self.assertIn("sandbox", response["Content-Security-Policy"])
+        self.assertTrue(response.content.startswith(b"\x89PNG"))
+
+    def test_anonymous_and_unknown_assets_are_refused(self):
+        self.assertEqual(self.client.get(self.url).status_code, 401)
+        self.client.force_login(self.user)
+        missing = "/api/v1/problem-assets/00000000-0000-4000-8000-0000000000aa"
+        self.assertEqual(self.client.get(missing).status_code, 404)
+
+    def test_asset_of_a_not_ready_version_is_not_served(self):
+        manifest = normalized_manifest(with_private=False)
+        manifest["version"] = "draft-v1"
+        manifest["public"]["assets"][0]["assetId"] = "00000000-0000-4000-8000-000000000222"
+        store_bundle(parse_problem_bundle(make_bundle_archive(manifest=manifest)), compiler_registry=VERIFIED)
+        self.client.force_login(self.user)
+        response = self.client.get("/api/v1/problem-assets/00000000-0000-4000-8000-000000000222")
+        self.assertEqual(response.status_code, 404)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -21,6 +22,7 @@ from backend.apps.drafts.factory import get_workspace_access
 from . import compilers
 from .catalog import DjangoProblemCatalog
 from .errors import ProblemNotReady
+from .models import ProblemPublicAsset, ProblemVersion
 
 
 class ConditionNotAvailable(APIException):
@@ -99,3 +101,36 @@ class MatchProblemLanguagesView(PinnedProblemView):
                 if (spec := registry.get(item.id)) is not None and spec.verified
             ]
         )
+
+
+_IMAGE_TYPES = frozenset({"image/png", "image/jpeg", "image/webp"})
+
+
+class ProblemAssetView(APIView):
+    """Serve one public statement image by its unguessable id.
+
+    The id is revealed only by the authorized statement endpoint after the run started. Only
+    signed-in users get the bytes, only READY versions are served, only raster image types are
+    allowed (no SVG), and the response is locked down so it can never execute in the browser.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, asset_id: UUID):
+        asset = (
+            ProblemPublicAsset.objects.filter(
+                asset_id=str(asset_id),
+                public_data__version__readiness=ProblemVersion.Readiness.READY,
+            )
+            .only("media_type", "contents")
+            .first()
+        )
+        if asset is None or asset.media_type not in _IMAGE_TYPES:
+            raise NotFound("Ресурс не найден.")
+        response = HttpResponse(bytes(asset.contents), content_type=asset.media_type)
+        response["Cache-Control"] = "private, max-age=300"
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Content-Security-Policy"] = "default-src 'none'; sandbox"
+        response["Referrer-Policy"] = "no-referrer"
+        response["Cross-Origin-Resource-Policy"] = "same-origin"
+        return response

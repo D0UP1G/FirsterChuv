@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import AdminProblemVersionListView
-from .workspace_views import MatchProblemLanguagesView, MatchProblemStatementView
+from .workspace_views import MatchProblemLanguagesView, MatchProblemStatementView, ProblemAssetView
 
 urlpatterns = [
     path("problems", AdminProblemVersionListView.as_view(), name="problem-catalog"),
@@ -15,4 +15,5 @@ urlpatterns = [
         MatchProblemLanguagesView.as_view(),
         name="match-problem-languages",
     ),
+    path("problem-assets/<uuid:asset_id>", ProblemAssetView.as_view(), name="problem-asset"),
 ]
