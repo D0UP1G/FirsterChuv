@@ -15,7 +15,13 @@ from backend.apps.problems.storage import store_bundle
 
 
 def _read_bounded_regular_file(path: str) -> bytes:
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    # O_BINARY exists only on Windows; without it a ZIP is read in text mode and corrupted.
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_BINARY", 0)
+    )
     try:
         descriptor = os.open(path, flags)
     except OSError as error:
