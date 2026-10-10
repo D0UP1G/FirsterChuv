@@ -9,7 +9,13 @@
 - Предшествующие P3-04.2/import worktree активны отдельно; их исходники и карточки не изменять. Требуемые кейсовые ограничения: D01/D03, J01/J03/J04, T01/T04–T10/T14/T18/T19/T20/T21; полный M0 и T01–21 не объявлять без подтверждения сквозного SHA.
 - Реализован narrow real-HTTP runner `scripts/acceptance/run_api_smoke.py`: временная SQLite, временный application admin и participant sessions, loopback WSGI, auth/CSRF/role/invite/idempotent join/bracket permission checks. Evidence контракт и ограничения описаны в [`docs/quality/evidence/README.md`](../../docs/quality/evidence/README.md).
 - Проверки разработки: 13/13 API checks PASS на disposable DB; optional `--sandbox` сообщил `NOT_RUN` из-за недоступного Docker Engine; все полные G01–G06 и T01–T21 остаются `NOT_RUN`. Ruff, `py_compile`, `git diff --check` прошли. При разработочном прогоне worktree был dirty; сохранённое acceptance evidence будет создано после commit на точном SHA.
-- Следующий шаг: code+implementation audit одним commit; после него повторить runner на clean SHA, сохранить evidence/follow-up audit и опубликовать PR в `develop`. Полное P4-08 остаётся `IN_PROGRESS` до реальных queue/recovery/compiler/runtime и acceptance CONNECT сценариев.
+- Следующий шаг: опубликовать reviewable PR в `develop`, не сливать; полное P4-08 остаётся `IN_PROGRESS` до реальных queue/recovery/compiler/runtime и acceptance CONNECT сценариев.
+
+### Checkpoint P4-08 evidence · 2026-10-10T03:15:07+03:00
+
+- Code + implementation audit зафиксированы в `fdf75d89f8c2ee2417d3528e2eb0c36ac022482c`.
+- На clean SHA создан [`docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json`](../../docs/quality/evidence/2026-10-10T031449+0300-P4-08-api-smoke.json): 13/13 HTTP checks PASS, `worktreeClean=true` до записи manifest. Docker probe `NOT_RUN`; все G01–G06 и T01–T21 остаются `NOT_RUN`. См. [follow-up audit](../audits/2026-10-10T031507+0300-agent-3-P4-08-evidence.md).
+- Clean-SHA follow-up audit записан отдельно; текущий шаг — открыть PR в `develop`, не сливать. Полный P4-08 остаётся `IN_PROGRESS` до проверки реальных queue/recovery/compiler/runtime и acceptance CONNECT сценариев.
 
 ## Актуальное назначение координатора 2026-10-10T01:56:32+03:00: ROADMAP v5
 
