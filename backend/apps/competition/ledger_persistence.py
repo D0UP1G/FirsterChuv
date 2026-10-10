@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+import sqlite3
+import time
 from datetime import datetime
+from functools import wraps
 from uuid import UUID
 
-from django.db import IntegrityError, models, transaction
+from django.db import IntegrityError, OperationalError, connection, models, transaction
 from django.utils import timezone
 
 from backend.apps.accounts.models import User
-from backend.apps.common.contracts import AttemptReceipt, ResultReceipt
+from backend.apps.common.contracts import (
+    AttemptReceipt,
+    InfrastructureFailureReceipt,
+    ResultReceipt,
+)
 from backend.apps.competition.domain.clock import (
     ClockRunStatus,
     ClockSnapshot,
@@ -33,6 +40,7 @@ from backend.apps.competition.domain.scoring import (
 from backend.apps.competition.models import (
     AcceptedAttempt,
     AttemptResult,
+    InfrastructureFailureRecord,
     Match,
     MatchRun,
     MatchSlot,
@@ -46,6 +54,68 @@ class LedgerPersistenceError(RuntimeError):
 
     status_code = 409
     code = "ledger_conflict"
+
+
+class LedgerPersistenceBusy(LedgerPersistenceError):
+    """A short-lived SQLite write collision exhausted bounded retries."""
+
+    status_code = 503
+    code = "ledger_busy"
+
+
+def _is_sqlite_lock_error(error: OperationalError) -> bool:
+    if connection.vendor != "sqlite":
+        return False
+    current: BaseException | None = error
+    saw_sqlite_error_code = False
+    while current is not None:
+        code = getattr(current, "sqlite_errorcode", None)
+        if isinstance(code, int):
+            saw_sqlite_error_code = True
+            if (code & 0xFF) in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                return True
+        current = current.__cause__ or current.__context__
+    if saw_sqlite_error_code:
+        return False
+    message = " ".join(str(error).lower().split())
+    return (
+        message == "database is locked"
+        or message == "database table is locked"
+        or message.startswith("database table is locked: ")
+        or message == "database schema is locked"
+        or message.startswith("database schema is locked: ")
+    )
+
+
+def _retry_sqlite_transaction(function):
+    """Retry the full ledger transaction; leave unrelated DB failures visible."""
+
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        for attempt in range(3):
+            try:
+                with transaction.atomic():
+                    return function(*args, **kwargs)
+            except OperationalError as error:
+                if not _is_sqlite_lock_error(error):
+                    raise
+                if attempt == 2:
+                    raise LedgerPersistenceBusy(
+                        "База занята; повторите обработку результата позже."
+                    ) from error
+                time.sleep(0.01 * (attempt + 1))
+
+    return wrapped
+
+
+INFRA_FAILURE_REASON_CODES = frozenset(
+    {
+        "infrastructure_error",
+        "judge_infrastructure_error",
+        "judge_result_invalid",
+        "worker_lease_expired",
+    }
+)
 
 
 def _claim_run(run_id: UUID) -> MatchRun:
@@ -132,18 +202,24 @@ def _receipt_matches(existing: AcceptedAttempt, receipt: AttemptReceipt) -> bool
     )
 
 
-@transaction.atomic
+@_retry_sqlite_transaction
 def register_accepted(receipt: AttemptReceipt) -> AcceptedAttempt:
     """Persist admission before returning success; exact retries are no-ops."""
     if not isinstance(receipt, AttemptReceipt):
         raise LedgerPersistenceError("accepted receipt has an invalid type")
+    for field_name in ("submission_id", "run_id", "user_id", "problem_id"):
+        if not isinstance(getattr(receipt, field_name), UUID):
+            raise LedgerPersistenceError(f"accepted receipt {field_name} must be a UUID")
+
+    # Reserve the run writer before any receipt lookup; concurrent DEFERRED
+    # transactions must not both establish a read snapshot before upgrading it.
+    run = _claim_run(receipt.run_id)
     existing = AcceptedAttempt.objects.filter(pk=receipt.submission_id).first()
     if existing is not None:
         if _receipt_matches(existing, receipt):
             return existing
         raise LedgerPersistenceError("submission_id already has a conflicting accepted receipt")
 
-    run = _claim_run(receipt.run_id)
     Match.objects.filter(pk=run.match_id).update(updated_at=models.F("updated_at"))
     run.match.refresh_from_db()
     if run.match.current_run_id != run.pk or run.status != MatchRun.Status.RUNNING:
@@ -186,7 +262,65 @@ def register_accepted(receipt: AttemptReceipt) -> AcceptedAttempt:
         raise LedgerPersistenceError("submission_id was concurrently claimed") from error
 
 
-@transaction.atomic
+@_retry_sqlite_transaction
+def record_infrastructure_failure(
+    receipt: InfrastructureFailureReceipt,
+) -> InfrastructureFailureRecord:
+    """Persist one allowlisted failure without inventing a contestant verdict."""
+    if not isinstance(receipt, InfrastructureFailureReceipt):
+        raise LedgerPersistenceError("infrastructure failure receipt has an invalid type")
+    for field_name in ("submission_id", "run_id"):
+        if not isinstance(getattr(receipt, field_name), UUID):
+            raise LedgerPersistenceError(f"failure receipt {field_name} must be a UUID")
+    if (
+        not isinstance(receipt.reason_code, str)
+        or receipt.reason_code not in INFRA_FAILURE_REASON_CODES
+    ):
+        raise LedgerPersistenceError("infrastructure failure reason code is not allowlisted")
+    if type(receipt.retryable) is not bool:
+        raise LedgerPersistenceError("infrastructure failure retryable must be a boolean")
+
+    run = _claim_run(receipt.run_id)
+    accepted = (
+        AcceptedAttempt.objects.filter(pk=receipt.submission_id)
+        .select_related("run")
+        .first()
+    )
+    if accepted is None or accepted.run_id != run.pk:
+        raise LedgerPersistenceError("infrastructure failure has no matching accepted receipt")
+    if hasattr(accepted, "result"):
+        raise LedgerPersistenceError("a completed verdict cannot be replaced by infrastructure failure")
+
+    existing = InfrastructureFailureRecord.objects.filter(accepted=accepted).first()
+    if existing is not None:
+        if (
+            existing.reason_code == receipt.reason_code
+            and existing.retryable == receipt.retryable
+        ):
+            return existing
+        raise LedgerPersistenceError("submission_id already has a conflicting infrastructure failure")
+
+    failure = InfrastructureFailureRecord.objects.create(
+        accepted=accepted,
+        reason_code=receipt.reason_code,
+        retryable=receipt.retryable,
+    )
+    if run.match.current_run_id == run.pk:
+        ledger = _ledger(run)
+        if run.status == MatchRun.Status.FINALIZING:
+            _continue_finalization(run, ledger, now=timezone.now())
+        else:
+            failures = _unresolved_infrastructure_failures(run.pk)
+            _save_failure_snapshot(
+                run,
+                ledger,
+                failures,
+                resolution_required=any(not item.retryable for item in failures),
+            )
+    return failure
+
+
+@_retry_sqlite_transaction
 def reconcile_match_run_deadline(
     run_id: UUID | str,
     *,
@@ -226,15 +360,80 @@ def reconcile_match_run_deadline(
     match.save(update_fields=("status", "updated_at"))
 
     ledger = _ledger(run)
-    if not ledger.pending_submission_ids:
-        score = _calculate_score(ledger)
-        run.score_snapshot = _score_payload(score)
-        run.revision += 1
-        run.save(update_fields=("score_snapshot", "revision"))
-        _settle_finalizing_run(run, score, now=instant)
-        _append_score_event(run, score)
+    _continue_finalization(run, ledger, now=instant)
     run.refresh_from_db()
     return run
+
+
+def _unresolved_infrastructure_failures(run_id: UUID) -> list[InfrastructureFailureRecord]:
+    return list(
+        InfrastructureFailureRecord.objects.filter(
+            accepted__run_id=run_id,
+            resolved_at__isnull=True,
+        ).select_related("accepted").order_by("accepted__received_at", "accepted_id")
+    )
+
+
+def _failure_payload(failures: list[InfrastructureFailureRecord]) -> list[dict]:
+    return [
+        {
+            "reasonCode": failure.reason_code,
+            "retryable": failure.retryable,
+        }
+        for failure in failures
+    ]
+
+
+def _continue_finalization(
+    run: MatchRun,
+    ledger: ResultLedger,
+    *,
+    now: datetime,
+    publish_final_score: bool = True,
+) -> None:
+    """Drain results, but keep terminal infrastructure failures out of scoring."""
+    failures = _unresolved_infrastructure_failures(run.pk)
+    terminal_ids = {
+        failure.accepted_id for failure in failures if not failure.retryable
+    }
+    pending_ids = set(ledger.pending_submission_ids)
+    unresolved_ids = pending_ids - terminal_ids
+
+    if unresolved_ids:
+        if failures:
+            _save_failure_snapshot(run, ledger, failures, resolution_required=bool(terminal_ids))
+        return
+    if terminal_ids:
+        _save_failure_snapshot(run, ledger, failures, resolution_required=True)
+        return
+
+    score = _calculate_score(ledger)
+    failures = _unresolved_infrastructure_failures(run.pk)
+    score_payload = _score_payload(score)
+    score_payload["resolutionRequired"] = any(not item.retryable for item in failures)
+    score_payload["infrastructureFailures"] = _failure_payload(failures)
+    run.score_snapshot = score_payload
+    run.revision += 1
+    run.save(update_fields=("score_snapshot", "revision"))
+    _settle_finalizing_run(run, score, now=now)
+    if publish_final_score:
+        _append_score_event(run, score)
+
+
+def _save_failure_snapshot(
+    run: MatchRun,
+    ledger: ResultLedger,
+    failures: list[InfrastructureFailureRecord],
+    *,
+    resolution_required: bool,
+) -> None:
+    snapshot = _score_payload(_calculate_score(ledger))
+    snapshot["winnerUserId"] = None
+    snapshot["resolutionRequired"] = resolution_required
+    snapshot["infrastructureFailures"] = _failure_payload(failures)
+    run.score_snapshot = snapshot
+    run.revision += 1
+    run.save(update_fields=("score_snapshot", "revision"))
 
 
 def _score_payload(score) -> dict:
@@ -379,17 +578,24 @@ def _calculate_score(ledger: ResultLedger):
     )
 
 
-@transaction.atomic
+@_retry_sqlite_transaction
 def apply_result(receipt: ResultReceipt) -> bool:
     """Durably record one verdict and atomically refresh only the current run score."""
     if not isinstance(receipt, ResultReceipt):
         raise LedgerPersistenceError("result receipt has an invalid type")
-    accepted = AcceptedAttempt.objects.filter(pk=receipt.submission_id).select_related("run__match").first()
-    if accepted is None:
-        raise LedgerPersistenceError("result has no accepted receipt")
-    run = _claim_run(accepted.run_id)
+    for field_name in ("submission_id", "run_id", "user_id", "problem_id"):
+        if not isinstance(getattr(receipt, field_name), UUID):
+            raise LedgerPersistenceError(f"result receipt {field_name} must be a UUID")
+
+    # Result delivery also reserves the run before reading its accepted receipt.
+    run = _claim_run(receipt.run_id)
     Match.objects.filter(pk=run.match_id).update(updated_at=models.F("updated_at"))
     run.match.refresh_from_db()
+    accepted = AcceptedAttempt.objects.filter(pk=receipt.submission_id).first()
+    if accepted is None:
+        raise LedgerPersistenceError("result has no accepted receipt")
+    if accepted.run_id != run.pk:
+        raise LedgerPersistenceError("result run differs from its accepted receipt")
     ledger = _ledger(run)
     try:
         transition = apply_result_transition(
@@ -406,11 +612,28 @@ def apply_result(receipt: ResultReceipt) -> bool:
     )
     if not created and result.verdict != receipt.verdict:
         raise LedgerPersistenceError("submission_id already has a conflicting result")
+    InfrastructureFailureRecord.objects.filter(
+        accepted=accepted,
+        resolved_at__isnull=True,
+    ).update(resolved_at=timezone.now())
     if transition.application.applied and transition.score is not None:
-        run.score_snapshot = _score_payload(transition.score)
+        failures = _unresolved_infrastructure_failures(run.pk)
+        score_payload = _score_payload(transition.score)
+        score_payload["resolutionRequired"] = any(not item.retryable for item in failures)
+        score_payload["infrastructureFailures"] = _failure_payload(failures)
+        run.score_snapshot = score_payload
         run.revision += 1
         run.save(update_fields=("score_snapshot", "revision"))
         _append_score_event(run, transition.score)
-        if run.status == MatchRun.Status.FINALIZING and transition.can_finalize:
-            _settle_finalizing_run(run, transition.score, now=timezone.now())
+        if run.status == MatchRun.Status.FINALIZING:
+            current_run_id = Match.objects.filter(pk=run.match_id).values_list(
+                "current_run_id", flat=True
+            ).first()
+            if current_run_id == run.pk:
+                _continue_finalization(
+                    run,
+                    _ledger(run),
+                    now=timezone.now(),
+                    publish_final_score=False,
+                )
     return transition.application.applied

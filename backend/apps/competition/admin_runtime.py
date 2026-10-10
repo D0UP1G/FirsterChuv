@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sqlite3
+import time
 from datetime import datetime
+from functools import wraps
 from uuid import UUID
 
-from django.db import IntegrityError, models, transaction
+from django.db import IntegrityError, OperationalError, connection, models, transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -51,6 +54,58 @@ class AdminCommandPersistenceError(RuntimeError):
     code = "admin_command_conflict"
 
 
+class AdminCommandPersistenceBusy(AdminCommandPersistenceError):
+    """A short-lived SQLite write collision exhausted bounded retries."""
+
+    status_code = 503
+    code = "admin_command_busy"
+
+
+def _is_sqlite_lock_error(error: OperationalError) -> bool:
+    if connection.vendor != "sqlite":
+        return False
+    current: BaseException | None = error
+    saw_sqlite_error_code = False
+    while current is not None:
+        code = getattr(current, "sqlite_errorcode", None)
+        if isinstance(code, int):
+            saw_sqlite_error_code = True
+            if (code & 0xFF) in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}:
+                return True
+        current = current.__cause__ or current.__context__
+    if saw_sqlite_error_code:
+        return False
+    message = " ".join(str(error).lower().split())
+    return (
+        message == "database is locked"
+        or message == "database table is locked"
+        or message.startswith("database table is locked: ")
+        or message == "database schema is locked"
+        or message.startswith("database schema is locked: ")
+    )
+
+
+def _retry_sqlite_command(function):
+    """Retry the whole atomic command after a transient SQLite lock."""
+
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        for attempt in range(3):
+            try:
+                with transaction.atomic():
+                    return function(*args, **kwargs)
+            except OperationalError as error:
+                if not _is_sqlite_lock_error(error):
+                    raise
+                if attempt == 2:
+                    raise AdminCommandPersistenceBusy(
+                        "База занята; повторите действие позже."
+                    ) from error
+                time.sleep(0.01 * (attempt + 1))
+
+    return wrapped
+
+
 def _fingerprint(
     *, actor_id: UUID, action: AdminAction, reason: str | None,
     seconds: int | None, winner_user_id: UUID | str | None,
@@ -86,7 +141,7 @@ def _replay(previous: MatchAdminCommandReceipt, *, actor_id: UUID, fingerprint: 
     return previous.response_payload
 
 
-@transaction.atomic
+@_retry_sqlite_command
 def execute_match_admin_command(
     *,
     actor_user_id: UUID | str,
@@ -136,14 +191,6 @@ def execute_match_admin_command(
     except (TypeError, ValueError, AttributeError) as error:
         raise AdminCommandPersistenceError("actor user ID must be a UUID") from error
 
-    try:
-        actor_record = User.objects.get(pk=actor_id)
-    except User.DoesNotExist as error:
-        raise AdminCommandPersistenceError("active admin actor was not found") from error
-    if not actor_record.is_active or actor_record.role != User.Roles.ADMIN:
-        raise AdminCommandPersistenceError("match actions require an active admin")
-    actor = AdminActor(user_id=actor_record.pk, role=actor_record.role, is_active=actor_record.is_active)
-    command = AdminCommand(actor=actor, command_id=command_id, reason=reason)
     fingerprint = _fingerprint(
         actor_id=actor_id,
         action=normalized_action,
@@ -154,25 +201,31 @@ def execute_match_admin_command(
         replacement_user_id=replacement_user_id if normalized_action is AdminAction.REPLACE_PARTICIPANT else None,
     )
 
-    previous = MatchAdminCommandReceipt.objects.filter(match_id=match_id, command_id=command_id).first()
-    if previous is not None:
-        return _replay(previous, actor_id=actor_id, fingerprint=fingerprint)
-
-    match_state = Match.objects.filter(pk=match_id).values("current_run_id").first()
-    if match_state is None:
+    # Reserve a write before any database read. This serializes same-key retries
+    # and avoids SQLite DEFERRED read-to-write upgrades across separate threads.
+    changed = Match.objects.filter(pk=match_id).update(updated_at=models.F("updated_at"))
+    if not changed:
         raise AdminCommandPersistenceError("match was not found")
-    current_run_id = match_state["current_run_id"]
-    # Run → match is the shared write-lock order used by readiness and ledger services.
+
+    try:
+        actor_record = User.objects.get(pk=actor_id)
+    except User.DoesNotExist as error:
+        raise AdminCommandPersistenceError("active admin actor was not found") from error
+    if not actor_record.is_active or actor_record.role != User.Roles.ADMIN:
+        raise AdminCommandPersistenceError("match actions require an active admin")
+    actor = AdminActor(user_id=actor_record.pk, role=actor_record.role, is_active=actor_record.is_active)
+    command = AdminCommand(actor=actor, command_id=command_id, reason=reason)
+
+    match = Match.objects.get(pk=match_id)
+    current_run_id = match.current_run_id
     if current_run_id is not None:
         locked_run = MatchRun.objects.filter(pk=current_run_id).update(revision=models.F("revision"))
         if not locked_run:
             raise AdminCommandPersistenceError("current match run was not found")
-    changed = Match.objects.filter(pk=match_id).update(updated_at=models.F("updated_at"))
-    if not changed:
-        raise AdminCommandPersistenceError("match was not found")
-    match = Match.objects.get(pk=match_id)
-    if match.current_run_id != current_run_id:
-        raise AdminCommandPersistenceError("current match run changed concurrently")
+        match.refresh_from_db()
+        if match.current_run_id != current_run_id:
+            raise AdminCommandPersistenceError("current match run changed concurrently")
+
     previous = MatchAdminCommandReceipt.objects.filter(match=match, command_id=command_id).first()
     if previous is not None:
         return _replay(previous, actor_id=actor_id, fingerprint=fingerprint)
@@ -327,6 +380,7 @@ def execute_match_admin_command(
         match.save(update_fields=("status", "winner", "updated_at"))
         _advance_winner(match, winner_entry)
     elif normalized_action is AdminAction.REMATCH:
+        _reopen_unstarted_downstream(match)
         run.status = MatchRun.Status.SUPERSEDED
         run.revision += 1
         run.save(update_fields=("status", "revision"))
@@ -399,6 +453,42 @@ def _downstream_started(match: Match) -> bool:
         Q(current_run__started_at__isnull=False)
         | Q(status__in=(Match.Status.RUNNING, Match.Status.PAUSED, Match.Status.FINALIZING, Match.Status.FINISHED, Match.Status.TIED))
     ).exists()
+
+
+def _reopen_unstarted_downstream(match: Match) -> None:
+    """Remove this match's stale winner from an unstarted downstream run."""
+    if match.next_match_id is None or match.next_slot is None:
+        return
+    cleared = MatchSlot.objects.filter(
+        match_id=match.next_match_id,
+        slot_index=match.next_slot,
+        upstream_match=match,
+        resolution=MatchSlot.Resolution.PLAYER,
+    ).update(
+        participant=None,
+        resolution=MatchSlot.Resolution.WAITING,
+    )
+    if not cleared:
+        return
+
+    downstream = Match.objects.get(pk=match.next_match_id)
+    current = downstream.current_run
+    if current is not None:
+        if current.started_at is not None or current.status not in (
+            MatchRun.Status.WAITING,
+            MatchRun.Status.READY,
+        ):
+            raise AdminCommandPersistenceError(
+                "a downstream run that has started cannot be reopened"
+            )
+        current.status = MatchRun.Status.SUPERSEDED
+        current.revision += 1
+        current.save(update_fields=("status", "revision"))
+        MatchRunReady.objects.filter(run=current).delete()
+    downstream.current_run = None
+    downstream.status = Match.Status.WAITING
+    downstream.winner = None
+    downstream.save(update_fields=("current_run", "status", "winner", "updated_at"))
 
 
 def _advance_winner(match: Match, winner_entry) -> None:

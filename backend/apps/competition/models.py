@@ -315,6 +315,21 @@ class AttemptResult(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class InfrastructureFailureRecord(models.Model):
+    """A safe, durable infrastructure outcome for an accepted submission."""
+
+    accepted = models.OneToOneField(
+        AcceptedAttempt,
+        primary_key=True,
+        on_delete=models.PROTECT,
+        related_name="infrastructure_failure",
+    )
+    reason_code = models.CharField(max_length=64)
+    retryable = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class MatchAdminCommandReceipt(models.Model):
     """Durable idempotency receipt for applied match administration commands."""
 

@@ -1,19 +1,31 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from uuid import uuid4
+from unittest.mock import patch
 
 from django.test import TestCase
 
 from backend.apps.accounts.models import User
-from backend.apps.common.contracts import AttemptReceipt, ResultReceipt
+from backend.apps.common.contracts import (
+    AttemptReceipt,
+    InfrastructureFailureReceipt,
+    ResultReceipt,
+)
 from backend.apps.competition.domain.scoring import Verdict
 from backend.apps.competition.ledger_persistence import (
     LedgerPersistenceError,
     apply_result,
+    record_infrastructure_failure,
     register_accepted,
     reconcile_match_run_deadline,
 )
-from backend.apps.competition.models import Match, MatchRun, MatchSlot
+from backend.apps.competition.models import (
+    AttemptResult,
+    InfrastructureFailureRecord,
+    Match,
+    MatchRun,
+    MatchSlot,
+)
 from backend.apps.events.models import MatchEvent
 from backend.apps.competition.runtime import configure_match_run, mark_match_ready, start_match_run
 from backend.apps.competition.services import generate_bracket
@@ -106,6 +118,14 @@ class PersistedLedgerTests(TestCase):
             verdict=verdict,
         )
 
+    def failure(self, accepted, *, reason_code="judge_infrastructure_error", retryable=False):
+        return InfrastructureFailureReceipt(
+            submission_id=accepted.submission_id,
+            run_id=accepted.run_id,
+            reason_code=reason_code,
+            retryable=retryable,
+        )
+
     def test_acceptance_is_immutable_and_exact_retry_is_idempotent(self):
         receipt = self.accepted()
 
@@ -137,6 +157,21 @@ class PersistedLedgerTests(TestCase):
 
         with self.assertRaises(LedgerPersistenceError):
             apply_result(self.result(accepted, Verdict.OK))
+
+    def test_result_and_score_roll_back_when_score_event_cannot_be_written(self):
+        accepted = register_accepted(self.accepted())
+        score_before = MatchRun.objects.get(pk=self.run.pk).score_snapshot
+
+        with patch(
+            "backend.apps.competition.ledger_persistence._append_score_event",
+            side_effect=RuntimeError("injected score event failure"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "injected score event failure"):
+                apply_result(self.result(accepted, Verdict.OK))
+
+        self.assertFalse(AttemptResult.objects.filter(accepted_id=accepted.pk).exists())
+        self.assertEqual(MatchRun.objects.get(pk=self.run.pk).score_snapshot, score_before)
+        self.assertEqual(MatchEvent.objects.filter(match_id=self.match.pk).count(), 0)
 
     def test_stale_run_result_is_recorded_without_mutating_its_score(self):
         accepted = register_accepted(self.accepted())
@@ -265,3 +300,76 @@ class PersistedLedgerTests(TestCase):
         self.assertEqual(downstream_slot.resolution, MatchSlot.Resolution.PLAYER)
         self.assertEqual(MatchEvent.objects.filter(match_id=opening.pk).count(), 2)
 
+    def test_infrastructure_failure_is_durable_idempotent_and_not_a_verdict(self):
+        accepted = register_accepted(self.accepted())
+        receipt = self.failure(accepted)
+
+        first = record_infrastructure_failure(receipt)
+        retry = record_infrastructure_failure(receipt)
+
+        self.run.refresh_from_db()
+        self.match.refresh_from_db()
+        self.assertEqual(first.pk, retry.pk)
+        self.assertEqual(InfrastructureFailureRecord.objects.count(), 1)
+        self.assertFalse(hasattr(accepted, "result"))
+        self.assertEqual(self.run.status, MatchRun.Status.RUNNING)
+        self.assertIsNone(self.match.winner_id)
+        self.assertTrue(self.run.score_snapshot["resolutionRequired"])
+        self.assertEqual(
+            self.run.score_snapshot["infrastructureFailures"],
+            [{"reasonCode": receipt.reason_code, "retryable": False}],
+        )
+        self.assertEqual(MatchEvent.objects.count(), 0)
+        with self.assertRaises(LedgerPersistenceError):
+            record_infrastructure_failure(
+                self.failure(accepted, reason_code="worker_lease_expired")
+            )
+        with self.assertRaises(LedgerPersistenceError):
+            record_infrastructure_failure(
+                self.failure(accepted, reason_code="raw_exception_text")
+            )
+
+    def test_terminal_infrastructure_failure_keeps_deadline_unresolved(self):
+        accepted_ok = register_accepted(self.accepted(user=self.players[0], elapsed=10_000))
+        accepted_failure = register_accepted(self.accepted(user=self.players[1], elapsed=20_000))
+        apply_result(self.result(accepted_ok, Verdict.OK))
+        record_infrastructure_failure(self.failure(accepted_failure))
+        events_before_deadline = MatchEvent.objects.filter(match_id=self.match.pk).count()
+
+        finalizing = reconcile_match_run_deadline(
+            self.run.pk,
+            now=START + timedelta(milliseconds=self.run.allowed_duration_ms),
+        )
+
+        self.match.refresh_from_db()
+        self.assertEqual(finalizing.status, MatchRun.Status.FINALIZING)
+        self.assertEqual(self.match.status, Match.Status.FINALIZING)
+        self.assertIsNone(self.match.winner_id)
+        self.assertTrue(finalizing.score_snapshot["resolutionRequired"])
+        self.assertIsNone(finalizing.score_snapshot["winnerUserId"])
+        self.assertEqual(
+            MatchEvent.objects.filter(match_id=self.match.pk).count(),
+            events_before_deadline,
+        )
+
+    def test_retryable_infrastructure_failure_resolves_when_real_result_arrives(self):
+        accepted = register_accepted(self.accepted(user=self.players[0], elapsed=10_000))
+        failure = self.failure(accepted, retryable=True)
+        record_infrastructure_failure(failure)
+        finalizing = reconcile_match_run_deadline(
+            self.run.pk,
+            now=START + timedelta(milliseconds=self.run.allowed_duration_ms),
+        )
+        self.assertEqual(finalizing.status, MatchRun.Status.FINALIZING)
+        self.assertFalse(finalizing.score_snapshot["resolutionRequired"])
+
+        self.assertTrue(apply_result(self.result(accepted, Verdict.OK)))
+
+        finalizing.refresh_from_db()
+        failure_record = InfrastructureFailureRecord.objects.get(accepted_id=accepted.pk)
+        self.match.refresh_from_db()
+        self.assertEqual(finalizing.status, MatchRun.Status.FINISHED)
+        self.assertIsNotNone(failure_record.resolved_at)
+        self.assertEqual(finalizing.score_snapshot["infrastructureFailures"], [])
+        self.assertFalse(finalizing.score_snapshot["resolutionRequired"])
+        self.assertEqual(self.match.winner.user_id, self.players[0].pk)

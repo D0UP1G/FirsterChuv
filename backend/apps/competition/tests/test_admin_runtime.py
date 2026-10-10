@@ -219,6 +219,134 @@ class PersistedAdminClockCommandsTests(TestCase):
         self.assertEqual(downstream_slot.participant.user_id, winner_id)
         self.assertEqual(downstream_slot.resolution, MatchSlot.Resolution.PLAYER)
 
+    def test_rematch_reopens_unstarted_downstream_and_started_downstream_blocks_it(self):
+        tournament = Tournament.objects.create(
+            title="Four player rematch",
+            starts_at=START,
+            ends_at=START + timedelta(hours=1),
+            participant_limit=4,
+            created_by=self.admin,
+        )
+        extra_players = [
+            User.objects.create_user(
+                email=f"rematch-extra-{index}@example.test",
+                display_name=f"Rematch extra {index}",
+                password="test-password-123456",
+            )
+            for index in range(2)
+        ]
+        for index, player in enumerate((*self.players, *extra_players), start=1):
+            assign_participant(tournament.pk, player.pk, seed=index)
+        opening_matches = sorted(
+            (
+                item for item in generate_bracket(tournament.pk)
+                if item.kind == Match.Kind.PLAYED and item.round_index == 0
+            ),
+            key=lambda item: item.position,
+        )
+        for index, opening in enumerate(opening_matches):
+            problem_id = uuid4()
+            run = configure_match_run(
+                opening.pk,
+                problem_ids=[problem_id],
+                allowed_duration_ms=600_000,
+                start_mode="manual",
+                scoring_rule=None,
+                catalog=TestCatalog(problem_id),
+            )
+            start_match_run(run.pk, now=START)
+            winner_id = opening.slots.get(slot_index=0).participant.user_id
+            execute_match_admin_command(
+                actor_user_id=self.admin.pk,
+                match_id=opening.pk,
+                command_id=f"advance-before-rematch-{index}",
+                action="technical_result",
+                reason="Opponent withdrew",
+                winner_user_id=winner_id,
+                now=START + timedelta(seconds=10),
+            )
+
+        downstream = Match.objects.get(pk=opening_matches[0].next_match_id)
+        opening_matches[0].refresh_from_db()
+        stale_winner_id = opening_matches[0].winner.user_id
+        downstream_problem_id = uuid4()
+        stale_downstream_run = configure_match_run(
+            downstream.pk,
+            problem_ids=[downstream_problem_id],
+            allowed_duration_ms=600_000,
+            start_mode="manual",
+            scoring_rule=None,
+            catalog=TestCatalog(downstream_problem_id),
+        )
+        old_upstream_run = opening_matches[0].current_run
+
+        execute_match_admin_command(
+            actor_user_id=self.admin.pk,
+            match_id=opening_matches[0].pk,
+            command_id="rematch-reopens-final",
+            action="rematch",
+            reason="Correct the semifinal result",
+            now=START + timedelta(minutes=1),
+        )
+
+        opening_matches[0].refresh_from_db()
+        downstream.refresh_from_db()
+        stale_downstream_run.refresh_from_db()
+        old_upstream_run.refresh_from_db()
+        slot = MatchSlot.objects.get(
+            match=downstream,
+            slot_index=opening_matches[0].next_slot,
+        )
+        self.assertEqual(opening_matches[0].current_run.status, MatchRun.Status.READY)
+        self.assertIsNone(opening_matches[0].winner_id)
+        self.assertEqual(slot.resolution, MatchSlot.Resolution.WAITING)
+        self.assertIsNone(slot.participant_id)
+        self.assertEqual(stale_downstream_run.status, MatchRun.Status.SUPERSEDED)
+        self.assertIsNone(downstream.current_run_id)
+        self.assertEqual(downstream.status, Match.Status.WAITING)
+        self.assertIsNone(downstream.winner_id)
+        self.assertEqual(old_upstream_run.status, MatchRun.Status.SUPERSEDED)
+
+        replacement_winner_id = opening_matches[0].slots.get(slot_index=1).participant.user_id
+        new_upstream_run = opening_matches[0].current_run
+        start_match_run(new_upstream_run.pk, now=START + timedelta(minutes=2))
+        execute_match_admin_command(
+            actor_user_id=self.admin.pk,
+            match_id=opening_matches[0].pk,
+            command_id="advance-replacement-winner",
+            action="technical_result",
+            reason="Opponent withdrew",
+            winner_user_id=replacement_winner_id,
+            now=START + timedelta(minutes=3),
+        )
+        slot.refresh_from_db()
+        self.assertEqual(slot.resolution, MatchSlot.Resolution.PLAYER)
+        self.assertEqual(slot.participant.user_id, replacement_winner_id)
+        self.assertNotEqual(slot.participant.user_id, stale_winner_id)
+
+        new_downstream_problem_id = uuid4()
+        configured_downstream_run = configure_match_run(
+            downstream.pk,
+            problem_ids=[new_downstream_problem_id],
+            allowed_duration_ms=600_000,
+            start_mode="manual",
+            scoring_rule=None,
+            catalog=TestCatalog(new_downstream_problem_id),
+        )
+        start_match_run(configured_downstream_run.pk, now=START + timedelta(minutes=4))
+        current_upstream_run_id = opening_matches[0].current_run_id
+        with self.assertRaises(AdminCommandPersistenceError):
+            execute_match_admin_command(
+                actor_user_id=self.admin.pk,
+                match_id=opening_matches[0].pk,
+                command_id="rematch-after-final-started",
+                action="rematch",
+                reason="Must be rejected",
+                now=START + timedelta(minutes=5),
+            )
+        opening_matches[0].refresh_from_db()
+        self.assertEqual(opening_matches[0].current_run_id, current_upstream_run_id)
+
     def test_running_replacement_preserves_old_run_identity_and_starts_clean_run(self):
         old_slot = self.match.slots.select_related("participant").get(slot_index=0)
         old_user_id = old_slot.participant.user_id
@@ -317,4 +445,3 @@ class PersistedAdminClockCommandsTests(TestCase):
         self.assertIsNone(receipt.run_id)
         self.assertEqual(response["status"], MatchRun.Status.WAITING)
         self.assertEqual(self.match.slots.get(slot_index=0).participant.user_id, replacement.pk)
-

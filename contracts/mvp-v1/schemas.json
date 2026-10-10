@@ -102,6 +102,15 @@
         "conditionAvailable": { "type": "boolean" }
       }
     },
+    "infrastructureFailure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reasonCode", "retryable"],
+      "properties": {
+        "reasonCode": { "enum": ["infrastructure_error", "judge_infrastructure_error", "judge_result_invalid", "worker_lease_expired"] },
+        "retryable": { "type": "boolean" }
+      }
+    },
     "bracket": {
       "type": "object",
       "additionalProperties": false,
@@ -155,7 +164,7 @@
     "match": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["matchId", "runId", "status", "serverNow", "elapsedMs", "remainingMs", "allowedDurationMs", "leaderUserId", "winnerUserId", "lastEventId", "scoringRule", "players", "tournamentId", "startMode", "readyUserIds", "problemVersions"],
+      "required": ["matchId", "runId", "status", "serverNow", "elapsedMs", "remainingMs", "allowedDurationMs", "leaderUserId", "winnerUserId", "lastEventId", "scoringRule", "players", "tournamentId", "startMode", "readyUserIds", "resolutionRequired", "infrastructureFailures", "problemVersions"],
       "properties": {
         "matchId": { "$ref": "#/$defs/uuid" },
         "runId": { "$ref": "#/$defs/uuid" },
@@ -172,6 +181,8 @@
         "tournamentId": { "$ref": "#/$defs/uuid" },
         "startMode": { "enum": ["manual", "both_ready"] },
         "readyUserIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/uuid" } },
+        "resolutionRequired": { "type": "boolean" },
+        "infrastructureFailures": { "type": "array", "items": { "$ref": "#/$defs/infrastructureFailure" } },
         "problemVersions": { "type": "array", "items": { "$ref": "#/$defs/problemVersion" } }
       }
     },
