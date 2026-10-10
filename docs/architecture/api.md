@@ -141,14 +141,12 @@ Draft PUT `{runId, source, expectedRevision}` возвращает новый re
 | Метод и путь | Право | Содержание |
 |---|---|---|
 | GET `/public/tournaments` | Public | Только public, pagination |
-| GET `/public/tournaments/{slug}` | Public | Турнир без user email/secrets |
-| GET `/public/tournaments/{slug}/bracket` | Public | Сетка, statuses, scores |
-| GET `/public/tournaments/{slug}/events` | Public | SSE advancement/lifecycle |
+| GET `/public/tournaments/{id}/bracket` | Public | Сетка, statuses, scores; `{id}` — UUID турнира |
 | GET `/public/matches/{id}` | Public | Anonymous public/unlisted snapshot; unlisted uses `X-Tournament-Share-Token`, `public-match` v1 allowlist |
 | GET `/tournaments/{id}/share-links` | A | Share-link metadata only; no raw token or hash |
 | POST `/tournaments/{id}/share-links` | A | CSRF; `{expiresAt}`; raw token returned once; link uses URL fragment |
 | DELETE `/tournaments/{id}/share-links/{shareLinkId}` | A | CSRF; idempotent revoke |
-| GET `/public/matches/{id}/events` | Public | SSE allowlist, Last-Event-ID, heartbeat/resync |
+| GET `/public/matches/{id}/events` | Public | SSE allowlist (`score.changed`, `match.admin_action`), Last-Event-ID, heartbeat/resync |
 
 Unlisted read требует действующий tournament-scoped share grant. В БД хранится SHA-256; create endpoint показывает raw token один раз. Он передаётся через URL fragment (`/watch/{tournamentId}#shareToken=...`), который browser не отправляет серверу; frontend читает его и передаёт API заголовком `X-Tournament-Share-Token`. Query/path token transport не поддерживается. Unknown, чужой, истёкший и отозванный grant дают одинаковый 404. Grant даёт только read-only доступ и не является invite/membership. Public response устанавливает `Cache-Control: no-store` и `Referrer-Policy: no-referrer`. Public DTO не включает source, tests, checker, private email или CE diagnostics; public routes state не меняют.
 

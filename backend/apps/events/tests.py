@@ -103,6 +103,26 @@ class PublicEventStoreTests(TestCase):
         self.assertEqual(snapshot["lastEventId"], 4)
         self.assertEqual(snapshot["payload"], payload)
 
+    def test_admin_action_payload_is_strict_and_publicly_serialized(self):
+        event_id = append_event(
+            tournament_id=self.tournament_id,
+            match_id=self.match_id,
+            run_id=self.run_id,
+            event_type=MatchEvent.Types.ADMIN_ACTION,
+            public_payload={"action": "pause", "status": "PAUSED", "revision": 3},
+        )
+        event = read_events_after(tournament_id=self.tournament_id)[0]
+        self.assertEqual(event["eventId"], event_id)
+        self.assertEqual(event["payload"], {"action": "pause", "status": "PAUSED", "revision": 3})
+        with self.assertRaises(PublicEventInputError):
+            append_event(
+                tournament_id=self.tournament_id,
+                match_id=self.match_id,
+                run_id=self.run_id,
+                event_type=MatchEvent.Types.ADMIN_ACTION,
+                public_payload={"action": "pause", "status": "PAUSED", "revision": 3, "reason": "private"},
+            )
+
     def test_equal_cursor_is_idempotent_only_for_same_run_and_payload(self):
         payload = self.score_payload()
         self.assertTrue(save_snapshot(match_id=self.match_id, run_id=self.run_id, last_event_id=4, public_payload=payload))
